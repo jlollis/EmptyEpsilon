@@ -1,20 +1,15 @@
-project(EmptyEpsilon)
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.7)
+#cmake_policy(SET CMP0048 NEW) # VERSION in project (3.0)
+string(TIMESTAMP MAJOR "%Y")
+string(TIMESTAMP MINOR "%m")
+string(TIMESTAMP PATCH "%d")
+project(EmptyEpsilon VERSION ${MAJOR}.${MINOR}.${PATCH})
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Options
 option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)
 message(STATUS "ENABLE_CRASH_LOGGER is " ${ENABLE_CRASH_LOGGER})
-
-# Check if serious proton dir is set.
-if(NOT DEFINED SERIOUS_PROTON_DIR)
- message(FATAL_ERROR "SERIOUS_PROTON_DIR was not set. Unable to continue")
-endif(NOT DEFINED SERIOUS_PROTON_DIR)
-if(NOT IS_ABSOLUTE "${SERIOUS_PROTON_DIR}")
-  get_filename_component(SERIOUS_PROTON_DIR "${CMAKE_BINARY_DIR}/${SERIOUS_PROTON_DIR}" ABSOLUTE)
-endif()
-
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-	add_definitions(-DDEBUG)
-endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 if(ENABLE_CRASH_LOGGER)
  if(WIN32)
@@ -24,62 +19,53 @@ if(ENABLE_CRASH_LOGGER)
  endif(WIN32)
 endif(ENABLE_CRASH_LOGGER)
 
-if(NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
- string(TIMESTAMP CPACK_PACKAGE_VERSION_MAJOR "%Y")
- string(TIMESTAMP CPACK_PACKAGE_VERSION_MINOR "%m")
- string(TIMESTAMP CPACK_PACKAGE_VERSION_PATCH "%d")
-endif(NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
+set(OpenGL_GL_PREFERENCE LEGACY)
 
-set(VERSION_NUMBER ${CPACK_PACKAGE_VERSION_MAJOR}${CPACK_PACKAGE_VERSION_MINOR}${CPACK_PACKAGE_VERSION_PATCH})
-message(STATUS "EmptyEpsilon Version = ${VERSION_NUMBER}")
+message(STATUS "EmptyEpsilon Version = ${PROJECT_VERSION}")
 
-# Set our optimization flags.
-set(OPTIMIZER_FLAGS)
-if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    # On gcc, we want some general optimalizations that improve speed a lot.
-    set(OPTIMIZER_FLAGS ${OPTIMIZER_FLAGS} -O3 -flto -funsafe-math-optimizations)
-
-    # If we are compiling for a rasberry pi, we want to aggressively optimize for the CPU we are running on.
-    # Note that this check only works if we are compiling directly on the pi, as it is a dirty way of checkif if we are on the pi.
-    if(EXISTS /opt/vc/include/bcm_host.h OR COMPILE_FOR_PI)
-        set(OPTIMIZER_FLAGS ${OPTIMIZER_FLAGS} -mcpu=native -mfpu=neon-vfpv4 -mfloat-abi=hard)
-    endif()
-endif()
-
-if(MSVC)
-	add_definitions(-DNOMINMAX)
-else()
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror=return-type")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror=return-type")
-endif()
-
+# Globals
 # install resources, scripts, and packs to app bundle instead of system dir.
 if(APPLE)
-    set(CMAKE_INSTALL_PREFIX "./")
-elseif(UNIX)
-    # Set RESOURCE_BASE_DIR on Unix so the built binary is able to find resources
-    add_definitions(-DRESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/")
-endif()
-
-# Set minimum target macOS version
-if(APPLE)
+	set(CMAKE_INSTALL_PREFIX "./")
+	# Set minimum target macOS version
 	set(MACOSX_DEPLOYMENT_TARGET "10.10")
 endif()
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-if(CONFIG_DIR)
-    add_definitions(-DCONFIG_DIR="${CONFIG_DIR}")
-elseif(UNIX)
-    add_definitions(-DCONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/")
+# Dependencies
+
+# Setup OpenGl
+if(NOT ANDROID)
+	find_package(OpenGL REQUIRED)
 endif()
 
-## ensure c++11 is used
-if(NOT ${CMAKE_VERSION} VERSION_LESS 3.1)
-    set(CMAKE_CXX_STANDARD 11)
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# SeriousProton
+add_subdirectory(SeriousProton)
+
+# Opus for voice chat
+add_subdirectory("SeriousProton/src/libopus/" "${PROJECT_BINARY_DIR}/libopus")
+
+# Discord
+# Some magical Win 32 stuff
+if(WIN32)
+  if(NOT EXISTS "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll.lib")
+    file(DOWNLOAD "https://dl-game-sdk.discordapp.net/latest/discord_game_sdk.zip" "${PROJECT_BINARY_DIR}/discord/game_sdk.zip" TIMEOUT 60 TLS_VERIFY ON)
+	execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${PROJECT_BINARY_DIR}/discord/game_sdk.zip" WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/discord")
+	if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+      # Discord uses Windows.h (capital W) and that does not play nice when cross-compiling.
+      # we want to patch with a lowercase windows.h
+      message(STATUS "Patching discord_game._sdk.h, using a lowercase Windows.h (cross-compilation compatibility)")
+      execute_process(COMMAND sed -i "s/<Windows.h>/<windows.h>/g" c/discord_game_sdk.h WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/discord")
+    endif()
+  endif()
+  add_library(discord SHARED IMPORTED)
+  set_target_properties(discord PROPERTIES
+  	IMPORTED_LOCATION "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll"
+  	IMPORTED_IMPLIB "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll.lib"
+	INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/discord/c/"
+  )
 endif()
 
-set(EXECUTABLE_NAME "EmptyEpsilon")
 set(SOURCES
 	src/main.cpp
 	src/threatLevelEstimate.cpp
@@ -262,207 +248,85 @@ set(SOURCES
 	src/hardware/devices/uDMXDevice.cpp
 	src/hardware/devices/virtualOutputDevice.cpp
 	src/hardware/devices/philipsHueDevice.cpp
+	$<$<BOOL:${WIN32}>:EmptyEpsilon.rc>
+	$<$<BOOL:${WIN32}>:src/discord.cpp>
 )
 
-if(WIN32)
-    list(APPEND SOURCES EmptyEpsilon.rc src/discord.cpp)
+if(ANDROID)
+    add_library(${PROJECT_NAME} SHARED ${SOURCES})
+else()
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE WIN32 ${SOURCES})
 endif()
 
-foreach(SP_SOURCE
-	src/soundManager.cpp
-	src/clipboard.cpp
-	src/postProcessManager.cpp
-	src/fixedSocket.cpp
-	src/input.cpp
-	src/tween.cpp
-	src/multiplayer_client.cpp
-	src/PlayerController.cpp
-	src/logging.cpp
-	src/random.cpp
-	src/gameEntity.cpp
-	src/multiplayer_server_scanner.cpp
-	src/networkRecorder.cpp
-	src/multiplayer_server.cpp
-	src/multiplayer_proxy.cpp
-	src/scriptInterfaceMagic.cpp
-	src/Renderable.cpp
-	src/Updatable.cpp
-	src/textureManager.cpp
-	src/collisionable.cpp
-	src/stringImproved.cpp
-	src/resources.cpp
-	src/scriptInterface.cpp
-	src/event.cpp
-	src/multiplayer.cpp
-	src/P.cpp
-	src/i18n.cpp
-	src/Box2D/Dynamics/Contacts/b2EdgeAndCircleContact.cpp
-	src/Box2D/Dynamics/Contacts/b2ContactSolver.cpp
-	src/Box2D/Dynamics/Contacts/b2ChainAndPolygonContact.cpp
-	src/Box2D/Dynamics/Contacts/b2CircleContact.cpp
-	src/Box2D/Dynamics/Contacts/b2PolygonAndCircleContact.cpp
-	src/Box2D/Dynamics/Contacts/b2EdgeAndPolygonContact.cpp
-	src/Box2D/Dynamics/Contacts/b2Contact.cpp
-	src/Box2D/Dynamics/Contacts/b2ChainAndCircleContact.cpp
-	src/Box2D/Dynamics/Contacts/b2PolygonContact.cpp
-	src/Box2D/Dynamics/Joints/b2MouseJoint.cpp
-	src/Box2D/Dynamics/Joints/b2MotorJoint.cpp
-	src/Box2D/Dynamics/Joints/b2PulleyJoint.cpp
-	src/Box2D/Dynamics/Joints/b2FrictionJoint.cpp
-	src/Box2D/Dynamics/Joints/b2Joint.cpp
-	src/Box2D/Dynamics/Joints/b2WheelJoint.cpp
-	src/Box2D/Dynamics/Joints/b2RopeJoint.cpp
-	src/Box2D/Dynamics/Joints/b2PrismaticJoint.cpp
-	src/Box2D/Dynamics/Joints/b2DistanceJoint.cpp
-	src/Box2D/Dynamics/Joints/b2WeldJoint.cpp
-	src/Box2D/Dynamics/Joints/b2RevoluteJoint.cpp
-	src/Box2D/Dynamics/Joints/b2GearJoint.cpp
-	src/Box2D/Dynamics/b2Fixture.cpp
-	src/Box2D/Dynamics/b2World.cpp
-	src/Box2D/Dynamics/b2Island.cpp
-	src/Box2D/Dynamics/b2Body.cpp
-	src/Box2D/Dynamics/b2ContactManager.cpp
-	src/Box2D/Dynamics/b2WorldCallbacks.cpp
-	src/Box2D/Rope/b2Rope.cpp
-	src/Box2D/Collision/b2CollidePolygon.cpp
-	src/Box2D/Collision/b2Distance.cpp
-	src/Box2D/Collision/b2CollideCircle.cpp
-	src/Box2D/Collision/Shapes/b2CircleShape.cpp
-	src/Box2D/Collision/Shapes/b2ChainShape.cpp
-	src/Box2D/Collision/Shapes/b2EdgeShape.cpp
-	src/Box2D/Collision/Shapes/b2PolygonShape.cpp
-	src/Box2D/Collision/b2TimeOfImpact.cpp
-	src/Box2D/Collision/b2DynamicTree.cpp
-	src/Box2D/Collision/b2BroadPhase.cpp
-	src/Box2D/Collision/b2CollideEdge.cpp
-	src/Box2D/Collision/b2Collision.cpp
-	src/Box2D/Common/b2BlockAllocator.cpp
-	src/Box2D/Common/b2StackAllocator.cpp
-	src/Box2D/Common/b2Math.cpp
-	src/Box2D/Common/b2Timer.cpp
-	src/Box2D/Common/b2Draw.cpp
-	src/Box2D/Common/b2Settings.cpp
-	src/httpServer.cpp
-	src/networkAudioStream.cpp
-	src/engine.cpp
-	src/windowManager.cpp
-	src/shaderManager.cpp
-	src/GL/glew.c
-	src/lua/lundump.c
-	src/lua/lmem.c
-	src/lua/lctype.c
-	src/lua/lparser.c
-	src/lua/lmathlib.c
-	src/lua/lbaselib.c
-	src/lua/ltm.c
-	src/lua/lstrlib.c
-	src/lua/lfunc.c
-	src/lua/ldo.c
-	src/lua/lcorolib.c
-	src/lua/lcode.c
-	src/lua/lapi.c
-	src/lua/lstate.c
-	src/lua/llex.c
-	src/lua/lopcodes.c
-	src/lua/lobject.c
-	src/lua/ldebug.c
-	src/lua/lstring.c
-	src/lua/ltable.c
-	src/lua/lzio.c
-	src/lua/ldblib.c
-	src/lua/ldump.c
-	src/lua/lvm.c
-	src/lua/loadlib.c
-	src/lua/lauxlib.c
-	src/lua/ltablib.c
-	src/lua/lgc.c
-	src/lua/lbitlib.c
-	src/json11/json11.cpp
-	)
-	list(APPEND SOURCES ${SERIOUS_PROTON_DIR}/${SP_SOURCE})
-endforeach()
+target_include_directories(${PROJECT_NAME} PUBLIC
+	"${PROJECT_SOURCE_DIR}/src"
+	${SFML_INCLUDE_DIR}
+	${SDL2_INCLUDE_DIRS}
+	${OPENGL_INCLUDE_DIR}
+	$<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
+)
 
-add_definitions(-DWINDOW_TITLE="EmptyEpsilon")
-add_definitions(-DVERSION_NUMBER=${VERSION_NUMBER})
-if(ENABLE_CRASH_LOGGER)
-  add_definitions(-DENABLE_CRASH_LOGGER)
-  if(WIN32)
-    link_directories(${DRMINGW_ROOT}/lib/)
-  endif()
-endif()
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
+	WINDOW_TITLE="${PROJECT_NAME}"
+	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework OpenGL -framework Foundation")
-endif()
+	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<NOT:$<BOOL:${MSVC}>>>:ENABLE_CRASH_LOGGER>
+	# Platform-specific
+	$<$<BOOL:${WIN32}>:NOMINMAX>
+	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+	$<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
+	$<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+)
+
+target_compile_definitions(SeriousProton PUBLIC
+	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
+	WINDOW_TITLE="${PROJECT_NAME}"
+	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
+
+	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<NOT:$<BOOL:${MSVC}>>>:ENABLE_CRASH_LOGGER>
+	# Platform-specific
+	$<$<BOOL:${WIN32}>:NOMINMAX>
+	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+	$<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
+	$<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+)
+
+target_compile_options(${PROJECT_NAME} PUBLIC
+	$<$<NOT:$<BOOL:${MSVC}>>:-Wall -Werror=return-type>
+	$<$<BOOL:${MSVC}>:/MP>
+)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+	#LINK_FLAGS $<$<SYSTEM_NAME:Darwin>:-framework OpenGL -framework Foundation>
+	MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/osx/MacOSXBundleInfo.plist.in
+	MACOSX_BUNDLE_ICON_FILE "${PROJECT_NAME}.icns"
+)
 
 if(ANDROID)
-    add_library(${EXECUTABLE_NAME} SHARED ${SOURCES})
+  target_link_libraries(${PROJECT_NAME}
+	  GLESv1_CM ${SFML_main_LIBRARY} log android EGL
+	  "-Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
 else()
-    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE ${SOURCES})
+	target_link_libraries(${PROJECT_NAME} PUBLIC
+	SeriousProton
+	opus
+	${OPENGL_LIBRARIES}
+	${SDL2_LIBRARIES}
+	$<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
+	$<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_CRASH_LOGGER}>,$<NOT:$<BOOL:${MSVC}>>>:${DRMINGW_ROOT}/lib/exchndl>
+)	  
 endif()
-
-target_include_directories(${EXECUTABLE_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_include_directories(${EXECUTABLE_NAME} PUBLIC ${SERIOUS_PROTON_DIR}/src)
-target_compile_options(${EXECUTABLE_NAME} PUBLIC $<$<CONFIG:Release>:${OPTIMIZER_FLAGS}>)
-target_compile_options(${EXECUTABLE_NAME} PUBLIC $<$<CONFIG:RelWithDebInfo>:-g1 ${OPTIMIZER_FLAGS}>)
-
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
-## Setup SFML
-find_package(SFML 2.3 REQUIRED system window graphics network audio)
-include_directories(${SFML_INCLUDE_DIR})
-target_link_libraries(${EXECUTABLE_NAME} ${SFML_LIBRARIES})
-add_definitions(-DSFML_NO_DEPRECATED_WARNINGS) # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
-
-# Setup OpenGl
-if(ANDROID)
-  target_link_libraries(${EXECUTABLE_NAME} GLESv1_CM)
-else()
-  find_package(OpenGL REQUIRED)
-  include_directories(${OPENGL_INCLUDE_DIR})
-  target_link_libraries(${EXECUTABLE_NAME} ${OPENGL_LIBRARIES})
-endif()
-
-# Opus for voice chat
-add_subdirectory("${SERIOUS_PROTON_DIR}/src/libopus/" "${CMAKE_CURRENT_BINARY_DIR}/libopus")
-target_link_libraries(${EXECUTABLE_NAME} opus)
-
-# Some magical Win 32 stuff
-if(WIN32)
-  target_link_libraries(${EXECUTABLE_NAME} wsock32 iphlpapi)
-  if(ENABLE_CRASH_LOGGER)
-    include_directories(${DRMINGW_ROOT}/include/)
-    target_link_libraries(${EXECUTABLE_NAME} exchndl)
-  endif()
-  if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll.lib")
-    file(DOWNLOAD "https://dl-game-sdk.discordapp.net/latest/discord_game_sdk.zip" "${CMAKE_CURRENT_BINARY_DIR}/discord/game_sdk.zip" TIMEOUT 60 TLS_VERIFY ON)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${CMAKE_CURRENT_BINARY_DIR}/discord/game_sdk.zip" WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/discord")
-    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
-      # Discord uses Windows.h (capital W) and that does not play nice when cross-compiling.
-      # we want to patch with a lowercase windows.h
-      message(STATUS "Patching discord_game._sdk.h, using a lowercase Windows.h (cross-compilation compatibility)")
-      execute_process(COMMAND sed -i "s/<Windows.h>/<windows.h>/g" c/discord_game_sdk.h WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/discord")
-    endif()
-  endif()
-  target_link_libraries(${EXECUTABLE_NAME} "${CMAKE_CURRENT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll.lib")
-  target_include_directories(${EXECUTABLE_NAME} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/discord/c/")
-elseif(ANDROID)
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
-  target_link_libraries(${EXECUTABLE_NAME} log android EGL)
-elseif(APPLE)
-  set_target_properties(${EXECUTABLE_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/osx/MacOSXBundleInfo.plist.in)
-  set_target_properties(${EXECUTABLE_NAME} PROPERTIES MACOSX_BUNDLE_ICON_FILE "${EXECUTABLE_NAME}.icns")
-endif()
-
 
 include(InstallRequiredSystemLibraries)
 
 if(WIN32)
+if(NOT MSVC)
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++-6.dll OUTPUT_VARIABLE MINGW_STDCPP_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libgcc_s_sjlj-1.dll OUTPUT_VARIABLE MINGW_LIBGCC_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libwinpthread-1.dll OUTPUT_VARIABLE MINGW_PTHREAD_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
   install(FILES ${MINGW_STDCPP_DLL} ${MINGW_LIBGCC_DLL} ${MINGW_PTHREAD_DLL} DESTINATION .)
   install(FILES /usr/i686-w64-mingw32/lib/libwinpthread-1.dll DESTINATION .)
+endif()
   install(FILES ${SFML_ROOT}/bin/OpenAL32.dll DESTINATION .)
   #install(FILES ${SFML_ROOT}/bin/libFLAC-8.dll DESTINATION .)
   #install(FILES ${SFML_ROOT}/bin/libjpeg-62.dll DESTINATION .)
@@ -482,14 +346,14 @@ if(WIN32)
     install(FILES ${DRMINGW_ROOT}/bin/symsrv.dll DESTINATION .)
     install(FILES ${DRMINGW_ROOT}/bin/symsrv.yes DESTINATION .)
   endif()
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll" DESTINATION .)
+  install(FILES "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll" DESTINATION .)
 
   install(DIRECTORY resources DESTINATION .)
   install(DIRECTORY scripts DESTINATION .)
   install(DIRECTORY packs DESTINATION .)
-  install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION .)
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
 elseif(APPLE)
-  install(FILES logo.icns DESTINATION "EmptyEpsilon.app/Contents/Resources" RENAME "${EXECUTABLE_NAME}.icns")
+  install(FILES logo.icns DESTINATION "EmptyEpsilon.app/Contents/Resources" RENAME "${PROJECT_NAME}.icns")
 
   install(DIRECTORY resources DESTINATION "EmptyEpsilon.app/Contents/Resources")
   install(DIRECTORY scripts DESTINATION "EmptyEpsilon.app/Contents/Resources")
@@ -501,35 +365,35 @@ else()
   install(DIRECTORY resources DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
   install(DIRECTORY scripts DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
   install(DIRECTORY packs DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
-  install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 endif()
 
 find_package(PythonInterp)
 if(PYTHONINTERP_FOUND)
   add_custom_command(
-        OUTPUT ${CMAKE_BINARY_DIR}/script_reference.html
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/compile_script_docs.py ${CMAKE_BINARY_DIR}/script_reference.html
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT ${PROJECT_BINARY_DIR}/script_reference.html
+        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/compile_script_docs.py ${PROJECT_BINARY_DIR}/script_reference.html
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Building script reference documentation.")
-  add_custom_target(script_reference ALL DEPENDS ${CMAKE_BINARY_DIR}/script_reference.html)
-  install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION .)
+  add_custom_target(script_reference ALL DEPENDS ${PROJECT_BINARY_DIR}/script_reference.html)
+  install(FILES ${PROJECT_BINARY_DIR}/script_reference.html DESTINATION .)
 endif()
 
 add_custom_target(update_locale
 	COMMAND xgettext --keyword=tr:1c,2 --keyword=tr:1 --keyword=trMark:1c,2 --keyword=trMark:1 --omit-header -j -d resources/locale/en ${SOURCES}
 	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/en scripts/shipTemplates_*.lua scripts/comms_ship.lua scripts/comms_station.lua scripts/comms_supply_drop.lua scripts/factionInfo.lua scripts/science_db.lua
 	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/tutorial.en scripts/tutorial_*.lua
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-set(CPACK_PACKAGE_EXECUTABLES ${EXECUTABLE_NAME})
-set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}")
+set(CPACK_PACKAGE_EXECUTABLES ${PROJECT_NAME})
+set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_CONTACT "https://github.com/daid/")
 if(NOT DEFINED CPACK_GENERATOR)
   if(WIN32)
     set(CPACK_GENERATOR "ZIP")
   elseif(UNIX)
     set(CPACK_GENERATOR "DEB")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfml-dev")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfml")
   endif()
 endif()
 include(CPack)
