@@ -130,7 +130,7 @@ void ScreenMainScreen::onClick(sf::Vector2f mouse_position)
     if (!my_spaceship)
         return;
 
-    if (InputHandler::mouseIsPressed(sf::Mouse::Left))
+    if (InputHandler::mouseIsPressed(SDL_BUTTON_LEFT))
     {
         switch(my_spaceship->main_screen_setting)
         {
@@ -141,7 +141,7 @@ void ScreenMainScreen::onClick(sf::Vector2f mouse_position)
         default: my_spaceship->commandMainScreenSetting(MSS_Front); break;
         }
     }
-    if (InputHandler::mouseIsPressed(sf::Mouse::Right))
+    if (InputHandler::mouseIsPressed(SDL_BUTTON_RIGHT))
     {
         switch(my_spaceship->main_screen_setting)
         {
@@ -152,7 +152,7 @@ void ScreenMainScreen::onClick(sf::Vector2f mouse_position)
         default: my_spaceship->commandMainScreenSetting(MSS_Front); break;
         }
     }
-    if (InputHandler::mouseIsPressed(sf::Mouse::Middle))
+    if (InputHandler::mouseIsPressed(SDL_BUTTON_MIDDLE))
     {
         switch(my_spaceship->main_screen_setting)
         {
@@ -197,24 +197,24 @@ void ScreenMainScreen::onHotkey(const HotkeyResult& key)
     }
 }
 
-void ScreenMainScreen::onKey(sf::Event::KeyEvent key, int unicode)
+void ScreenMainScreen::onKey(const SDL_Keysym& key, int unicode)
 {
-    switch (key.code)
+    switch (key.scancode)
     {
     //TODO: This is more generic code and is duplicated.
-    case sf::Keyboard::Escape:
-    case sf::Keyboard::Home:
+    case SDL_SCANCODE_ESCAPE:
+    case SDL_SCANCODE_HOME:
         soundManager->stopMusic();
         impulse_sound->stop();
         destroy();
         returnToShipSelection();
         break;
-    case sf::Keyboard::Slash:
-    case sf::Keyboard::F1:
+    case SDL_SCANCODE_SLASH:
+    case SDL_SCANCODE_F1:
         // Toggle keyboard help.
         keyboard_help->frame->setVisible(!keyboard_help->frame->isVisible());
         break;
-    case sf::Keyboard::P:
+    case SDL_SCANCODE_P:
         if (game_server)
             engine->setGameSpeed(0.0);
         break;

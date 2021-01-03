@@ -201,13 +201,13 @@ OptionsMenu::OptionsMenu()
     }))->setPosition(200, -50, ABottomLeft)->setSize(150, 50);
 }
 
-void OptionsMenu::onKey(sf::Event::KeyEvent key, int unicode)
+void OptionsMenu::onKey(const SDL_Keysym& key, int unicode)
 {
-    switch(key.code)
+    switch(key.scancode)
     {
     //TODO: This is more generic code and is duplicated.
-    case sf::Keyboard::Escape:
-    case sf::Keyboard::Home:
+    case SDL_SCANCODE_ESCAPE:
+    case SDL_SCANCODE_HOME:
         destroy();
         soundManager->stopMusic();
         returnToMainMenu();

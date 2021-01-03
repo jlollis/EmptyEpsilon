@@ -34,7 +34,7 @@ MouseCalibrator::MouseCalibrator(string filename)
 
 void MouseCalibrator::update(float delta)
 {
-    if (InputHandler::mouseIsReleased(sf::Mouse::Left))
+    if (InputHandler::mouseIsReleased(SDL_BUTTON_LEFT))
     {
         if (state < 3)
         {

@@ -3,6 +3,7 @@
 
 #include <tuple>
 #include <SFML/Window/Event.hpp>
+#include "SDL_events.h"
 #include "stringImproved.h"
 
 class JoystickConfig;
@@ -12,7 +13,7 @@ class HotkeyConfigItem
 public:
     string key;
     std::tuple<string, string> value;
-    sf::Event::KeyEvent hotkey;
+    SDL_Keysym hotkey;
 
     HotkeyConfigItem(string key, std::tuple<string, string>);
 
@@ -45,7 +46,7 @@ public:
     std::vector<string> getCategories();
     std::vector<std::pair<string, string>> listHotkeysByCategory(string hotkey_category);
 
-    std::vector<HotkeyResult> getHotkey(sf::Event::KeyEvent key);
+    std::vector<HotkeyResult> getHotkey(const SDL_Keysym& key);
 private:
     std::vector<HotkeyConfigCategory> categories;
 

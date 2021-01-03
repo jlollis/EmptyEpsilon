@@ -1,3 +1,5 @@
+#include "SDL.h"
+
 #include <memory>
 #include <string.h>
 #include <i18n.h>
@@ -118,7 +120,7 @@ int main(int argc, char** argv)
         *value++ = '\0';
         PreferencesManager::set(string(argv[n]).strip(), string(value).strip());
     }
-
+    SDL_Init(SDL_INIT_VIDEO);
     new Engine();
 
     if (PreferencesManager::get("proxy") != "")
@@ -294,8 +296,8 @@ int main(int argc, char** argv)
         }
     }
     NetworkAudioRecorder* nar = new NetworkAudioRecorder();
-    nar->addKeyActivation(sf::Keyboard::Key::Tilde, 0);
-    nar->addKeyActivation(sf::Keyboard::Key::BackSpace, 1);
+    nar->addKeyActivation(SDL_SCANCODE_GRAVE, 0);
+    nar->addKeyActivation(SDL_SCANCODE_BACKSPACE, 1);
 
     P<HardwareController> hardware_controller = new HardwareController();
 #ifdef CONFIG_DIR
@@ -356,7 +358,7 @@ int main(int argc, char** argv)
     }
 
     delete engine;
-
+    SDL_Quit();
     return 0;
 }
 

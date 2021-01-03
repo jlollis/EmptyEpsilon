@@ -48,24 +48,24 @@ void WindowScreen::update(float delta)
     }
 }
 
-void WindowScreen::onKey(sf::Event::KeyEvent key, int unicode)
+void WindowScreen::onKey(const SDL_Keysym& key, int unicode)
 {
-    switch(key.code)
+    switch(key.scancode)
     {
-    case sf::Keyboard::Left:
+    case SDL_SCANCODE_LEFT:
         angle -= 5.0f;
         break;
-    case sf::Keyboard::Right:
+    case SDL_SCANCODE_RIGHT:
         angle += 5.0f;
         break;
 
     //TODO: This is more generic code and is duplicated.
-    case sf::Keyboard::Escape:
-    case sf::Keyboard::Home:
+    case SDL_SCANCODE_ESCAPE:
+    case SDL_SCANCODE_HOME:
         destroy();
         returnToShipSelection();
         break;
-    case sf::Keyboard::P:
+    case SDL_SCANCODE_P:
         if (game_server)
             engine->setGameSpeed(0.0);
         break;

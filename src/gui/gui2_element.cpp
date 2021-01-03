@@ -29,7 +29,7 @@ void GuiElement::onMouseUp(sf::Vector2f position)
 {
 }
 
-bool GuiElement::onKey(sf::Event::KeyEvent key, int unicode)
+bool GuiElement::onKey(const SDL_Keysym& key, int unicode)
 {
     return false;
 }

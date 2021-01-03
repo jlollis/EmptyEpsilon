@@ -19,7 +19,7 @@ public:
     DebugRenderer();
 
     virtual void render(sf::RenderTarget& window);
-    virtual void handleKeyPress(sf::Event::KeyEvent key, int unicode);
+    virtual void handleKeyPress(SDL_Keysym key, int unicode);
 };
 
 #endif//DEBUG_RENDERER_H

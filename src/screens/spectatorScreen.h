@@ -24,7 +24,7 @@ public:
     void onMouseDrag(sf::Vector2f position);
     void onMouseUp(sf::Vector2f position);
 
-    void onKey(sf::Event::KeyEvent key, int unicode);
+    void onKey(const SDL_Keysym& key, int unicode);
 };
 
 

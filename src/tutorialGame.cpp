@@ -130,12 +130,12 @@ void TutorialGame::update(float delta)
     }
 }
 
-void TutorialGame::onKey(sf::Event::KeyEvent key, int unicode)
+void TutorialGame::onKey(const SDL_Keysym& key, int unicode)
 {
-    switch(key.code)
+    switch(key.scancode)
     {
-    case sf::Keyboard::Escape:
-    case sf::Keyboard::Home:
+    case SDL_SCANCODE_ESCAPE:
+    case SDL_SCANCODE_HOME:
         finish();
         break;
     default:

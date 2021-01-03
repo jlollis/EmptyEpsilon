@@ -51,7 +51,7 @@ public:
     virtual bool onMouseDown(sf::Vector2f position);
     virtual void onMouseDrag(sf::Vector2f position);
     virtual void onMouseUp(sf::Vector2f position);
-    virtual bool onKey(sf::Event::KeyEvent key, int unicode);
+    virtual bool onKey(const SDL_Keysym& key, int unicode);
     virtual void onHotkey(const HotkeyResult& key);
     virtual bool onJoystickAxis(const AxisAction& axisAction);
     virtual void onFocusGained() {}

@@ -117,108 +117,108 @@ HotkeyConfig::HotkeyConfig()
 
 }
 
-static std::vector<std::pair<string, sf::Keyboard::Key> > sfml_key_names = {
-    {"A", sf::Keyboard::A},
-    {"B", sf::Keyboard::B},
-    {"C", sf::Keyboard::C},
-    {"D", sf::Keyboard::D},
-    {"E", sf::Keyboard::E},
-    {"F", sf::Keyboard::F},
-    {"G", sf::Keyboard::G},
-    {"H", sf::Keyboard::H},
-    {"I", sf::Keyboard::I},
-    {"J", sf::Keyboard::J},
-    {"K", sf::Keyboard::K},
-    {"L", sf::Keyboard::L},
-    {"M", sf::Keyboard::M},
-    {"N", sf::Keyboard::N},
-    {"O", sf::Keyboard::O},
-    {"P", sf::Keyboard::P},
-    {"Q", sf::Keyboard::Q},
-    {"R", sf::Keyboard::R},
-    {"S", sf::Keyboard::S},
-    {"T", sf::Keyboard::T},
-    {"U", sf::Keyboard::U},
-    {"V", sf::Keyboard::V},
-    {"W", sf::Keyboard::W},
-    {"X", sf::Keyboard::X},
-    {"Y", sf::Keyboard::Y},
-    {"Z", sf::Keyboard::Z},
-    {"Num0", sf::Keyboard::Num0},
-    {"Num1", sf::Keyboard::Num1},
-    {"Num2", sf::Keyboard::Num2},
-    {"Num3", sf::Keyboard::Num3},
-    {"Num4", sf::Keyboard::Num4},
-    {"Num5", sf::Keyboard::Num5},
-    {"Num6", sf::Keyboard::Num6},
-    {"Num7", sf::Keyboard::Num7},
-    {"Num8", sf::Keyboard::Num8},
-    {"Num9", sf::Keyboard::Num9},
-    {"Escape", sf::Keyboard::Escape},
-    {"LControl", sf::Keyboard::LControl},
-    {"LShift", sf::Keyboard::LShift},
-    {"LAlt", sf::Keyboard::LAlt},
-    {"LSystem", sf::Keyboard::LSystem},
-    {"RControl", sf::Keyboard::RControl},
-    {"RShift", sf::Keyboard::RShift},
-    {"RAlt", sf::Keyboard::RAlt},
-    {"RSystem", sf::Keyboard::RSystem},
-    {"Menu", sf::Keyboard::Menu},
-    {"LBracket", sf::Keyboard::LBracket},
-    {"RBracket", sf::Keyboard::RBracket},
-    {"SemiColon", sf::Keyboard::SemiColon},
-    {"Comma", sf::Keyboard::Comma},
-    {"Period", sf::Keyboard::Period},
-    {"Quote", sf::Keyboard::Quote},
-    {"Slash", sf::Keyboard::Slash},
-    {"BackSlash", sf::Keyboard::BackSlash},
-    {"Tilde", sf::Keyboard::Tilde},
-    {"Equal", sf::Keyboard::Equal},
-    {"Dash", sf::Keyboard::Dash},
-    {"Space", sf::Keyboard::Space},
-    {"Return", sf::Keyboard::Return},
-    {"BackSpace", sf::Keyboard::BackSpace},
-    {"Tab", sf::Keyboard::Tab},
-    {"PageUp", sf::Keyboard::PageUp},
-    {"PageDown", sf::Keyboard::PageDown},
-    {"End", sf::Keyboard::End},
-    {"Home", sf::Keyboard::Home},
-    {"Insert", sf::Keyboard::Insert},
-    {"Delete", sf::Keyboard::Delete},
-    {"Add", sf::Keyboard::Add},
-    {"Subtract", sf::Keyboard::Subtract},
-    {"Multiply", sf::Keyboard::Multiply},
-    {"Divide", sf::Keyboard::Divide},
-    {"Left", sf::Keyboard::Left},
-    {"Right", sf::Keyboard::Right},
-    {"Up", sf::Keyboard::Up},
-    {"Down", sf::Keyboard::Down},
-    {"Numpad0", sf::Keyboard::Numpad0},
-    {"Numpad1", sf::Keyboard::Numpad1},
-    {"Numpad2", sf::Keyboard::Numpad2},
-    {"Numpad3", sf::Keyboard::Numpad3},
-    {"Numpad4", sf::Keyboard::Numpad4},
-    {"Numpad5", sf::Keyboard::Numpad5},
-    {"Numpad6", sf::Keyboard::Numpad6},
-    {"Numpad7", sf::Keyboard::Numpad7},
-    {"Numpad8", sf::Keyboard::Numpad8},
-    {"Numpad9", sf::Keyboard::Numpad9},
-    {"F1", sf::Keyboard::F1},
-    {"F2", sf::Keyboard::F2},
-    {"F3", sf::Keyboard::F3},
-    {"F4", sf::Keyboard::F4},
-    {"F5", sf::Keyboard::F5},
-    {"F6", sf::Keyboard::F6},
-    {"F7", sf::Keyboard::F7},
-    {"F8", sf::Keyboard::F8},
-    {"F9", sf::Keyboard::F9},
-    {"F10", sf::Keyboard::F10},
-    {"F11", sf::Keyboard::F11},
-    {"F12", sf::Keyboard::F12},
-    {"F13", sf::Keyboard::F13},
-    {"F14", sf::Keyboard::F14},
-    {"F15", sf::Keyboard::F15},
-    {"Pause", sf::Keyboard::Pause},
+static std::vector<std::pair<string, SDL_Scancode> > sdl_key_names = {
+    {"A", SDL_SCANCODE_A},
+    {"B", SDL_SCANCODE_B},
+    {"C", SDL_SCANCODE_C},
+    {"D", SDL_SCANCODE_D},
+    {"E", SDL_SCANCODE_E},
+    {"F", SDL_SCANCODE_F},
+    {"G", SDL_SCANCODE_G},
+    {"H", SDL_SCANCODE_H},
+    {"I", SDL_SCANCODE_I},
+    {"J", SDL_SCANCODE_J},
+    {"K", SDL_SCANCODE_K},
+    {"L", SDL_SCANCODE_L},
+    {"M", SDL_SCANCODE_M},
+    {"N", SDL_SCANCODE_N},
+    {"O", SDL_SCANCODE_O},
+    {"P", SDL_SCANCODE_P},
+    {"Q", SDL_SCANCODE_Q},
+    {"R", SDL_SCANCODE_R},
+    {"S", SDL_SCANCODE_S},
+    {"T", SDL_SCANCODE_T},
+    {"U", SDL_SCANCODE_U},
+    {"V", SDL_SCANCODE_V},
+    {"W", SDL_SCANCODE_W},
+    {"X", SDL_SCANCODE_X},
+    {"Y", SDL_SCANCODE_Y},
+    {"Z", SDL_SCANCODE_Z},
+    {"Num0", SDL_SCANCODE_0},
+    {"Num1", SDL_SCANCODE_1},
+    {"Num2", SDL_SCANCODE_2},
+    {"Num3", SDL_SCANCODE_3},
+    {"Num4", SDL_SCANCODE_4},
+    {"Num5", SDL_SCANCODE_5},
+    {"Num6", SDL_SCANCODE_6},
+    {"Num7", SDL_SCANCODE_7},
+    {"Num8", SDL_SCANCODE_8},
+    {"Num9", SDL_SCANCODE_9},
+    {"Escape", SDL_SCANCODE_ESCAPE},
+    {"LControl", SDL_SCANCODE_LCTRL},
+    {"LShift", SDL_SCANCODE_LSHIFT},
+    {"LAlt", SDL_SCANCODE_LALT},
+    {"LSystem", SDL_SCANCODE_LGUI},
+    {"RControl", SDL_SCANCODE_RCTRL},
+    {"RShift", SDL_SCANCODE_RSHIFT},
+    {"RAlt", SDL_SCANCODE_RALT},
+    {"RSystem", SDL_SCANCODE_RGUI},
+    {"Menu", SDL_SCANCODE_MENU},
+    {"LBracket", SDL_SCANCODE_LEFTBRACKET},
+    {"RBracket", SDL_SCANCODE_RIGHTBRACKET},
+    {"SemiColon", SDL_SCANCODE_SEMICOLON},
+    {"Comma", SDL_SCANCODE_COMMA},
+    {"Period", SDL_SCANCODE_PERIOD},
+    {"Quote", SDL_SCANCODE_APOSTROPHE},
+    {"Slash", SDL_SCANCODE_SLASH},
+    {"BackSlash", SDL_SCANCODE_BACKSLASH},
+    {"Tilde", SDL_SCANCODE_GRAVE},
+    {"Equal", SDL_SCANCODE_EQUALS},
+    {"Dash", SDL_SCANCODE_MINUS},
+    {"Space", SDL_SCANCODE_SPACE},
+    {"Return", SDL_SCANCODE_RETURN},
+    {"BackSpace", SDL_SCANCODE_BACKSPACE},
+    {"Tab", SDL_SCANCODE_TAB},
+    {"PageUp", SDL_SCANCODE_PAGEUP},
+    {"PageDown", SDL_SCANCODE_PAGEDOWN},
+    {"End", SDL_SCANCODE_END},
+    {"Home", SDL_SCANCODE_HOME},
+    {"Insert", SDL_SCANCODE_INSERT},
+    {"Delete", SDL_SCANCODE_DELETE},
+    {"Add", SDL_SCANCODE_KP_PLUS},
+    {"Subtract", SDL_SCANCODE_KP_MINUS},
+    {"Multiply", SDL_SCANCODE_KP_MULTIPLY},
+    {"Divide", SDL_SCANCODE_KP_DIVIDE},
+    {"Left", SDL_SCANCODE_LEFT},
+    {"Right", SDL_SCANCODE_RIGHT},
+    {"Up", SDL_SCANCODE_UP},
+    {"Down", SDL_SCANCODE_DOWN},
+    {"Numpad0", SDL_SCANCODE_KP_0},
+    {"Numpad1", SDL_SCANCODE_KP_1},
+    {"Numpad2", SDL_SCANCODE_KP_2},
+    {"Numpad3", SDL_SCANCODE_KP_3},
+    {"Numpad4", SDL_SCANCODE_KP_4},
+    {"Numpad5", SDL_SCANCODE_KP_5},
+    {"Numpad6", SDL_SCANCODE_KP_6},
+    {"Numpad7", SDL_SCANCODE_KP_7},
+    {"Numpad8", SDL_SCANCODE_KP_8},
+    {"Numpad9", SDL_SCANCODE_KP_9},
+    {"F1", SDL_SCANCODE_F1},
+    {"F2", SDL_SCANCODE_F2},
+    {"F3", SDL_SCANCODE_F3},
+    {"F4", SDL_SCANCODE_F4},
+    {"F5", SDL_SCANCODE_F5},
+    {"F6", SDL_SCANCODE_F6},
+    {"F7", SDL_SCANCODE_F7},
+    {"F8", SDL_SCANCODE_F8},
+    {"F9", SDL_SCANCODE_F9},
+    {"F10", SDL_SCANCODE_F10},
+    {"F11", SDL_SCANCODE_F11},
+    {"F12", SDL_SCANCODE_F12},
+    {"F13", SDL_SCANCODE_F13},
+    {"F14", SDL_SCANCODE_F14},
+    {"F15", SDL_SCANCODE_F15},
+    {"Pause", SDL_SCANCODE_PAUSE},
 };
 
 void HotkeyConfig::load()
@@ -233,14 +233,18 @@ void HotkeyConfig::load()
     }
 }
 
-std::vector<HotkeyResult> HotkeyConfig::getHotkey(sf::Event::KeyEvent key)
+std::vector<HotkeyResult> HotkeyConfig::getHotkey(const SDL_Keysym& key)
 {
     std::vector<HotkeyResult> results;
+    // SDL will report *all* mod keys - and that includes caps lock and num.
+    // However, the game only cares about ctrl/alt/shift/gui (or 'system' in SFML lingo)
+    static constexpr uint16_t relevant_mods = KMOD_CTRL | KMOD_ALT | KMOD_GUI | KMOD_SHIFT;
     for(HotkeyConfigCategory& cat : categories)
     {
         for(HotkeyConfigItem& item : cat.hotkeys)
         {
-            if (item.hotkey.code == key.code && item.hotkey.alt == key.alt && item.hotkey.control == key.control && item.hotkey.shift == key.shift && item.hotkey.system == key.system)
+            const auto filtered_mod = key.mod & relevant_mods;
+            if (item.hotkey.scancode == key.scancode && item.hotkey.mod == filtered_mod)
             {
                 results.emplace_back(cat.key, item.key);
             }
@@ -285,16 +289,16 @@ std::vector<std::pair<string, string>> HotkeyConfig::listHotkeysByCategory(strin
         {
             for(HotkeyConfigItem& item : cat.hotkeys)
             {
-                for(auto key_name : sfml_key_names)
+                for(const auto &key_name : sdl_key_names)
                 {
-                    if (key_name.second == item.hotkey.code)
+                    if (key_name.second == item.hotkey.scancode)
                     {
                         string keyModifier = "";
-                        if (item.hotkey.shift) {
+                        if (item.hotkey.mod & KMOD_SHIFT) {
                             keyModifier = "Shift+";
-                        } else if (item.hotkey.control) {
+                        } else if (item.hotkey.mod & KMOD_CTRL) {
                             keyModifier = "Ctrl+";
-                        } else if (item.hotkey.alt){
+                        } else if (item.hotkey.mod & KMOD_ALT){
                             keyModifier = "Alt+";
                         }
                         ret.push_back({std::get<0>(item.value), keyModifier + key_name.first});
@@ -311,11 +315,8 @@ HotkeyConfigItem::HotkeyConfigItem(string key, std::tuple<string, string> value)
 {
     this->key = key;
     this->value = value;
-    hotkey.code = sf::Keyboard::KeyCount;
-    hotkey.alt = false;
-    hotkey.control = false;
-    hotkey.shift = false;
-    hotkey.system = false;
+    hotkey.scancode = SDL_NUM_SCANCODES;
+    hotkey.mod = 0;
 }
 
 void HotkeyConfigItem::load(string key_config)
@@ -323,20 +324,20 @@ void HotkeyConfigItem::load(string key_config)
     for(const string& config : key_config.split(";"))
     {
         if (config == "[alt]")
-            hotkey.alt = true;
+            hotkey.mod |= KMOD_ALT;
         else if (config == "[control]")
-            hotkey.control = true;
+            hotkey.mod |= KMOD_CTRL;
         else if (config == "[shift]")
-            hotkey.shift = true;
+            hotkey.mod |= KMOD_CTRL;
         else if (config == "[system]")
-            hotkey.system = true;
+            hotkey.mod |= KMOD_GUI;
         else
         {
-            for(auto key_name : sfml_key_names)
+            for(const auto &key_name : sdl_key_names)
             {
                 if (key_name.first == config)
                 {
-                    hotkey.code = key_name.second;
+                    hotkey.scancode = key_name.second;
                     break;
                 }
             }

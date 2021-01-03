@@ -26,20 +26,20 @@ void GuiCanvas::render(sf::RenderTarget& window)
         drawDebugElements(window_rect, window);
     }
 
-    if (InputHandler::mouseIsPressed(sf::Mouse::Left) || InputHandler::mouseIsPressed(sf::Mouse::Right) || InputHandler::mouseIsPressed(sf::Mouse::Middle))
+    if (InputHandler::mouseIsPressed(SDL_BUTTON_LEFT) || InputHandler::mouseIsPressed(SDL_BUTTON_RIGHT) || InputHandler::mouseIsPressed(SDL_BUTTON_MIDDLE))
     {
         click_element = getClickElement(mouse_position);
         if (!click_element)
             onClick(mouse_position);
         focus(click_element);
     }
-    if (InputHandler::mouseIsDown(sf::Mouse::Left) || InputHandler::mouseIsDown(sf::Mouse::Right) || InputHandler::mouseIsDown(sf::Mouse::Middle))
+    if (InputHandler::mouseIsDown(SDL_BUTTON_LEFT) || InputHandler::mouseIsDown(SDL_BUTTON_RIGHT) || InputHandler::mouseIsDown(SDL_BUTTON_MIDDLE))
     {
         if (previous_mouse_position != mouse_position)
             if (click_element)
                 click_element->onMouseDrag(mouse_position);
     }
-    if (InputHandler::mouseIsReleased(sf::Mouse::Left) || InputHandler::mouseIsReleased(sf::Mouse::Right) || InputHandler::mouseIsReleased(sf::Mouse::Middle))
+    if (InputHandler::mouseIsReleased(SDL_BUTTON_LEFT) || InputHandler::mouseIsReleased(SDL_BUTTON_RIGHT) || InputHandler::mouseIsReleased(SDL_BUTTON_MIDDLE))
     {
         if (click_element)
         {
@@ -50,7 +50,7 @@ void GuiCanvas::render(sf::RenderTarget& window)
     previous_mouse_position = mouse_position;
 }
 
-void GuiCanvas::handleKeyPress(sf::Event::KeyEvent key, int unicode)
+void GuiCanvas::handleKeyPress(SDL_Keysym key, int unicode)
 {
     if (focus_element)
         if (focus_element->onKey(key, unicode))
@@ -87,7 +87,7 @@ void GuiCanvas::onHotkey(const HotkeyResult& key)
 {
 }
 
-void GuiCanvas::onKey(sf::Event::KeyEvent key, int unicode)
+void GuiCanvas::onKey(const SDL_Keysym& key, int unicode)
 {
 }
 

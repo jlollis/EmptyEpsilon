@@ -44,7 +44,7 @@ void GuiViewportMainScreen::onDraw(sf::RenderTarget& window)
         sf::Vector2f cameraPosition2D = my_spaceship->getPosition() + sf::vector2FromAngle(target_camera_yaw) * -camera_ship_distance;
         sf::Vector3f targetCameraPosition(cameraPosition2D.x, cameraPosition2D.y, camera_ship_height);
 #ifdef DEBUG
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+        if (SDL_SCANCODE_isKeyPressed(SDL_SCANCODE_Z))
         {
             targetCameraPosition.x = my_spaceship->getPosition().x;
             targetCameraPosition.y = my_spaceship->getPosition().y;

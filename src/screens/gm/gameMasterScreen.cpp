@@ -376,7 +376,7 @@ void GameMasterScreen::onMouseDown(sf::Vector2f position)
 {
     if (click_and_drag_state != CD_None)
         return;
-    if (InputHandler::mouseIsDown(sf::Mouse::Right))
+    if (InputHandler::mouseIsDown(SDL_BUTTON_RIGHT))
     {
         click_and_drag_state = CD_DragViewOrOrder;
     }
@@ -435,7 +435,7 @@ void GameMasterScreen::onMouseUp(sf::Vector2f position)
     case CD_DragViewOrOrder:
         {
             //Right click
-            bool shift_down = InputHandler::keyboardIsDown(sf::Keyboard::LShift) || InputHandler::keyboardIsDown(sf::Keyboard::RShift);
+            bool shift_down = InputHandler::keyboardIsDown(SDL_SCANCODE_LSHIFT) || InputHandler::keyboardIsDown(SDL_SCANCODE_RSHIFT);
             P<SpaceObject> target;
             PVector<Collisionable> list = CollisionManager::queryArea(position, position);
             foreach(Collisionable, collisionable, list)
@@ -498,10 +498,11 @@ void GameMasterScreen::onMouseUp(sf::Vector2f position)
         break;
     case CD_BoxSelect:
         {
-            bool shift_down = InputHandler::keyboardIsDown(sf::Keyboard::LShift) || InputHandler::keyboardIsDown(sf::Keyboard::RShift);
-            //Using sf::Keyboard::isKeyPressed, as CTRL does not seem to generate keydown/key up events in SFML.
-            bool ctrl_down = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::RControl);
-            bool alt_down = InputHandler::keyboardIsDown(sf::Keyboard::LAlt) || InputHandler::keyboardIsDown(sf::Keyboard::RAlt);
+            auto mods = SDL_GetModState();
+            bool shift_down = (mods & KMOD_SHIFT) != 0;
+            //Using SDL_SCANCODE_isKeyPressed, as CTRL does not seem to generate keydown/key up events in SFML.
+            bool ctrl_down = (mods & KMOD_CTRL) != 0;
+            bool alt_down = (mods & KMOD_ALT) != 0;
             PVector<Collisionable> objects = CollisionManager::queryArea(drag_start_position, position);
             PVector<SpaceObject> space_objects;
             foreach(Collisionable, c, objects)
@@ -536,28 +537,28 @@ void GameMasterScreen::onMouseUp(sf::Vector2f position)
     box_selection_overlay->hide();
 }
 
-void GameMasterScreen::onKey(sf::Event::KeyEvent key, int unicode)
+void GameMasterScreen::onKey(const SDL_Keysym& key, int unicode)
 {
-    switch(key.code)
+    switch(key.scancode)
     {
-    case sf::Keyboard::Delete:
+    case SDL_SCANCODE_DELETE:
         for(P<SpaceObject> obj : targets.getTargets())
         {
             if (obj)
                 obj->destroy();
         }
         break;
-    case sf::Keyboard::F5:
+    case SDL_SCANCODE_F5:
         Clipboard::setClipboard(getScriptExport(false));
         break;
 
     //TODO: This is more generic code and is duplicated.
-    case sf::Keyboard::Escape:
-    case sf::Keyboard::Home:
+    case SDL_SCANCODE_ESCAPE:
+    case SDL_SCANCODE_HOME:
         destroy();
         returnToShipSelection();
         break;
-    case sf::Keyboard::P:
+    case SDL_SCANCODE_P:
         if (game_server)
             engine->setGameSpeed(0.0);
         break;

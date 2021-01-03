@@ -95,14 +95,14 @@ void DebugRenderer::render(sf::RenderTarget& window)
     window.draw(textElement);
 }
 
-void DebugRenderer::handleKeyPress(sf::Event::KeyEvent key, int unicode)
+void DebugRenderer::handleKeyPress(SDL_Keysym key, int unicode)
 {
-    if (key.code == sf::Keyboard::F10)
+    if (key.scancode == SDL_SCANCODE_F10)
     {
         show_fps = !show_fps;
         show_datarate = !show_datarate;
     }
-    if (key.code == sf::Keyboard::F11)
+    if (key.scancode == SDL_SCANCODE_F11)
     {
         show_timing_graph = !show_timing_graph;
         timing_graph_points.clear();

@@ -210,24 +210,24 @@ void CrewStationScreen::onHotkey(const HotkeyResult& key)
     }
 }
 
-void CrewStationScreen::onKey(sf::Event::KeyEvent key, int unicode)
+void CrewStationScreen::onKey(const SDL_Keysym& key, int unicode)
 {
-    switch(key.code)
+    switch(key.scancode)
     {
     //TODO: This is more generic code and is duplicated.
-    case sf::Keyboard::Escape:
-    case sf::Keyboard::Home:
+    case SDL_SCANCODE_ESCAPE:
+    case SDL_SCANCODE_HOME:
         destroy();
         soundManager->stopMusic();
         impulse_sound->stop();
         returnToShipSelection();
         break;
-    case sf::Keyboard::Slash:
-    case sf::Keyboard::F1:
+    case SDL_SCANCODE_SLASH:
+    case SDL_SCANCODE_F1:
         // Toggle keyboard help.
         keyboard_help->frame->setVisible(!keyboard_help->frame->isVisible());
         break;
-    case sf::Keyboard::P:
+    case SDL_SCANCODE_P:
         if (game_server)
             engine->setGameSpeed(0.0);
         break;
