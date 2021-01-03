@@ -1,4 +1,5 @@
 #include "warpJammer.h"
+#include <SFML/Graphics/CircleShape.hpp>
 #include "playerInfo.h"
 #include "spaceObjects/playerSpaceship.h"
 #include "explosionEffect.h"

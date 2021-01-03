@@ -1,7 +1,10 @@
+#include "wormHole.h"
+#include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/OpenGL.hpp>
 
 #include "main.h"
-#include "wormHole.h"
+
 #include "spaceship.h"
 #include "scriptInterface.h"
 

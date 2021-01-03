@@ -3,7 +3,6 @@
 #define JOYSTICK_CONFIG_H
 
 #include <tuple>
-#include <SFML/Window/Event.hpp>
 #include "stringImproved.h"
 #include "input.h"
 #include "hotkeyConfig.h"

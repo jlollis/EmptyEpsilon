@@ -2,8 +2,8 @@
 #define VIRTUAL_OUTPUT_DEVICE_H
 
 #include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
-#include <stdint.h>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <cstdint>
 #include "hardware/hardwareOutputDevice.h"
 
 //The virtual output device is a debugging output device.

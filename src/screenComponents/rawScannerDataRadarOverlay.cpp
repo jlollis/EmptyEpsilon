@@ -1,4 +1,5 @@
 #include "rawScannerDataRadarOverlay.h"
+#include <SFML/Graphics/VertexArray.hpp>
 #include "radarView.h"
 #include "playerInfo.h"
 #include "spaceObjects/playerSpaceship.h"

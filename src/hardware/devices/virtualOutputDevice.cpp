@@ -1,4 +1,5 @@
 #include "virtualOutputDevice.h"
+#include <SFML/Graphics/RectangleShape.hpp>
 #include "main.h"
 
 class VirtualOutputRenderer : public Renderable

@@ -1,4 +1,5 @@
 #include "gui2_container.h"
+#include <SFML/Graphics/RectangleShape.hpp>
 #include "gui2_element.h"
 #include "gui2_canvas.h"
 #include "input.h"

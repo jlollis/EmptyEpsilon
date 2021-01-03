@@ -1,7 +1,9 @@
+#include "nebula.h"
+#include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/OpenGL.hpp>
 
 #include "main.h"
-#include "nebula.h"
+
 #include "playerInfo.h"
 
 #include "scriptInterface.h"

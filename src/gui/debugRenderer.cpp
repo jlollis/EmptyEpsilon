@@ -1,4 +1,6 @@
 #include "debugRenderer.h"
+#include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/Text.hpp>
 #include "main.h"
 
 DebugRenderer::DebugRenderer()

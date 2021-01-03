@@ -1,4 +1,5 @@
 #include "scriptError.h"
+#include <SFML/Graphics/Text.hpp>
 #include "main.h"
 
 ScriptErrorRenderer::ScriptErrorRenderer()

@@ -1,5 +1,7 @@
-#include "main.h"
 #include "gui2_advancedscrolltext.h"
+#include <SFML/Graphics/Font.hpp>
+#include "main.h"
+
 
 GuiAdvancedScrollText::GuiAdvancedScrollText(GuiContainer* owner, string id)
 : GuiElement(owner, id), text_size(30)

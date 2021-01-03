@@ -1,4 +1,5 @@
 #include "signalQualityIndicator.h"
+#include <SFML/Graphics/VertexArray.hpp>
 #include "engine.h"
 
 GuiSignalQualityIndicator::GuiSignalQualityIndicator(GuiContainer* owner, string id)

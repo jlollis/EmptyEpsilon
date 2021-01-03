@@ -2,7 +2,6 @@
 #define HOTKEY_CONFIG_H
 
 #include <tuple>
-#include <SFML/Window/Event.hpp>
 #include "SDL_events.h"
 #include "stringImproved.h"
 

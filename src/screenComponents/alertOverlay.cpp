@@ -1,4 +1,6 @@
 #include "alertOverlay.h"
+#include <SFML/Graphics/Text.hpp>
+
 #include "playerInfo.h"
 #include "spaceObjects/playerSpaceship.h"
 

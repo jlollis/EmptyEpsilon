@@ -1,5 +1,8 @@
-#include "engine.h"
 #include "gui2_overlay.h"
+#include <SFML/Graphics/RectangleShape.hpp>
+
+#include "engine.h"
+
 
 GuiOverlay::GuiOverlay(GuiContainer* owner, string id, sf::Color color)
 : GuiElement(owner, id), color(color)

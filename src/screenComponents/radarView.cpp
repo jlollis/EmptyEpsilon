@@ -1,3 +1,7 @@
+#include "radarView.h"
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/Graphics/Text.hpp>
 #include <SFML/OpenGL.hpp>
 
 #include "main.h"
@@ -5,7 +9,7 @@
 #include "spaceObjects/nebula.h"
 #include "spaceObjects/scanProbe.h"
 #include "playerInfo.h"
-#include "radarView.h"
+
 #include "missileTubeControls.h"
 #include "targetsContainer.h"
 

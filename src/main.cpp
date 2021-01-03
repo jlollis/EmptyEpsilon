@@ -1,5 +1,5 @@
 #include "SDL.h"
-
+#include <SFML/Graphics/Font.hpp>
 #include <memory>
 #include <string.h>
 #include <i18n.h>

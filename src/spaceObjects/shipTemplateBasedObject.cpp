@@ -1,5 +1,5 @@
 #include "shipTemplateBasedObject.h"
-
+#include <SFML/Graphics/VertexArray.hpp>
 #include "scriptInterface.h"
 REGISTER_SCRIPT_SUBCLASS_NO_CREATE(ShipTemplateBasedObject, SpaceObject)
 {

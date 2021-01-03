@@ -1,4 +1,6 @@
 #include "frequencyCurve.h"
+#include <SFML/Graphics/RectangleShape.hpp>
+
 #include "spaceObjects/spaceship.h"
 #include "spaceObjects/playerSpaceship.h"
 #include "playerInfo.h"

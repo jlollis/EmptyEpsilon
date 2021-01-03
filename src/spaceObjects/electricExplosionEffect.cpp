@@ -1,6 +1,8 @@
+#include "electricExplosionEffect.h"
+#include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/OpenGL.hpp>
 #include "main.h"
-#include "electricExplosionEffect.h"
+
 
 /// ElectricExplosionEffect is a visible electrical explosion, as seen from EMP missiles
 /// Example: ElectricExplosionEffect():setPosition(500,5000):setSize(20)

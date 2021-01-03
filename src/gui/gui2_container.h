@@ -3,7 +3,7 @@
 
 #include <list>
 #include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
 #include "gui/joystickConfig.h"
 
 class GuiElement;

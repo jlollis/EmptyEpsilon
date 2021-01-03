@@ -7,6 +7,11 @@
 #define VERSION_NUMBER 0x0000
 #endif
 
+namespace sf
+{
+	class Font;
+}
+
 extern sf::Vector3f camera_position;
 extern float camera_yaw;
 extern float camera_pitch;

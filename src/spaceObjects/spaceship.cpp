@@ -1,5 +1,8 @@
-#include <i18n.h>
 #include "spaceship.h"
+#include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <i18n.h>
+
 #include "mesh.h"
 #include "shipTemplate.h"
 #include "playerInfo.h"

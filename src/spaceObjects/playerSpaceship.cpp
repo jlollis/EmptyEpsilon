@@ -1,4 +1,5 @@
 #include "playerSpaceship.h"
+#include <SFML/Graphics/CircleShape.hpp>
 #include "gui/colorConfig.h"
 #include "scanProbe.h"
 #include "repairCrew.h"

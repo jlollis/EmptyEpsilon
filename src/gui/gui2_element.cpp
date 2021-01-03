@@ -1,4 +1,7 @@
 #include "gui2_element.h"
+#include <SFML/Graphics/Text.hpp>
+#include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
 #include "main.h"
 
 GuiElement::GuiElement(GuiContainer* owner, string id)

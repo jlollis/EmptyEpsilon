@@ -1,5 +1,7 @@
-#include "main.h"
 #include "mine.h"
+#include <SFML/Graphics/CircleShape.hpp>
+#include "main.h"
+
 #include "playerInfo.h"
 #include "particleEffect.h"
 #include "explosionEffect.h"

@@ -1,4 +1,7 @@
 #include "chatDialog.h"
+
+#include <SFML/Graphics/VertexArray.hpp>
+
 #include "gameGlobalInfo.h"
 #include "spaceObjects/playerSpaceship.h"
 

@@ -1,7 +1,9 @@
+#include "ai/ai.h"
+#include <SFML/Graphics/VertexArray.hpp>
 #include "spaceObjects/nebula.h"
 #include "spaceObjects/cpuShip.h"
 #include "spaceObjects/scanProbe.h"
-#include "ai/ai.h"
+
 #include "ai/aiFactory.h"
 
 REGISTER_SHIP_AI(ShipAI, "default");

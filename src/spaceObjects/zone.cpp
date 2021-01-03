@@ -1,5 +1,8 @@
-#include "main.h"
 #include "zone.h"
+#include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/Text.hpp>
+#include "main.h"
+
 #include "playerInfo.h"
 #include "particleEffect.h"
 #include "explosionEffect.h"

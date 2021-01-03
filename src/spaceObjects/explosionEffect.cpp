@@ -1,6 +1,8 @@
+#include "explosionEffect.h"
+#include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/OpenGL.hpp>
 #include "main.h"
-#include "explosionEffect.h"
+
 
 /// ExplosionEffect is a visible explosion, like from nukes, missiles, ship destruction, etc
 /// Example: ExplosionEffect():setPosition(500,5000):setSize(20)

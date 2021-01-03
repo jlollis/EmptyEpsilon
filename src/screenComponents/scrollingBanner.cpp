@@ -1,4 +1,6 @@
 #include "scrollingBanner.h"
+#include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/Text.hpp>
 #include "gameGlobalInfo.h"
 
 GuiScrollingBanner::GuiScrollingBanner(GuiContainer* owner)

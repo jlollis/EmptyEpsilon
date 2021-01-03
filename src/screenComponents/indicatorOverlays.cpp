@@ -1,5 +1,8 @@
-#include <i18n.h>
 #include "indicatorOverlays.h"
+
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <i18n.h>
+
 #include "playerInfo.h"
 #include "gameGlobalInfo.h"
 #include "main.h"
