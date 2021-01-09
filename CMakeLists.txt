@@ -3,20 +3,20 @@ cmake_minimum_required(VERSION 3.7)
 string(TIMESTAMP MAJOR "%Y")
 string(TIMESTAMP MINOR "%m")
 string(TIMESTAMP PATCH "%d")
+
 project(EmptyEpsilon VERSION ${MAJOR}.${MINOR}.${PATCH})
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Options
 option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)
 message(STATUS "ENABLE_CRASH_LOGGER is " ${ENABLE_CRASH_LOGGER})
 
 if(ENABLE_CRASH_LOGGER)
- if(WIN32)
+ if(MINGW)
   if(NOT DEFINED DRMINGW_ROOT)
    message(FATAL_ERROR "DRMINGW_ROOT was not set. Unable to continue")
   endif(NOT DEFINED DRMINGW_ROOT)
- endif(WIN32)
+ endif(MINGW)
 endif(ENABLE_CRASH_LOGGER)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
@@ -48,20 +48,25 @@ add_subdirectory("SeriousProton/src/libopus/" "${PROJECT_BINARY_DIR}/libopus")
 # Discord
 # Some magical Win 32 stuff
 if(WIN32)
-  if(NOT EXISTS "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll.lib")
+  set(DISCORD_ARCH "x86_64")
+  if(${CMAKE_SIZEOF_VOID_P} EQUAL 4)
+    set(DISCORD_ARCH "x86")
+  endif()
+  set(DISCORD_LIB_PATH "${PROJECT_BINARY_DIR}/discord/lib/${DISCORD_ARCH}")
+  if(NOT EXISTS "${DISCORD_LIB_PATH}/discord_game_sdk.dll.lib")
     file(DOWNLOAD "https://dl-game-sdk.discordapp.net/latest/discord_game_sdk.zip" "${PROJECT_BINARY_DIR}/discord/game_sdk.zip" TIMEOUT 60 TLS_VERIFY ON)
-	execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${PROJECT_BINARY_DIR}/discord/game_sdk.zip" WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/discord")
-	if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${PROJECT_BINARY_DIR}/discord/game_sdk.zip" WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/discord")
+    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
       # Discord uses Windows.h (capital W) and that does not play nice when cross-compiling.
       # we want to patch with a lowercase windows.h
       message(STATUS "Patching discord_game._sdk.h, using a lowercase Windows.h (cross-compilation compatibility)")
-      execute_process(COMMAND sed -i "s/<Windows.h>/<windows.h>/g" c/discord_game_sdk.h WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/discord")
+      execute_process(COMMAND sed -i "s/<Windows.h>/<windows.h>/g" c/discord_game_sdk.h WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/discord")
     endif()
   endif()
   add_library(discord SHARED IMPORTED)
   set_target_properties(discord PROPERTIES
-  	IMPORTED_LOCATION "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll"
-  	IMPORTED_IMPLIB "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll.lib"
+  	IMPORTED_LOCATION "${DISCORD_LIB_PATH}/discord_game_sdk.dll"
+  	IMPORTED_IMPLIB "${DISCORD_LIB_PATH}/discord_game_sdk.dll.lib"
 	INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/discord/c/"
   )
 endif()
@@ -263,7 +268,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${SFML_INCLUDE_DIR}
 	${SDL2_INCLUDE_DIRS}
 	${OPENGL_INCLUDE_DIR}
-	$<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
+	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
 )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
@@ -271,7 +276,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 	WINDOW_TITLE="${PROJECT_NAME}"
 	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
 
-	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<NOT:$<BOOL:${MSVC}>>>:ENABLE_CRASH_LOGGER>
+	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
 	# Platform-specific
 	$<$<BOOL:${WIN32}>:NOMINMAX>
 	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
@@ -284,7 +289,7 @@ target_compile_definitions(SeriousProton PUBLIC
 	WINDOW_TITLE="${PROJECT_NAME}"
 	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
 
-	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<NOT:$<BOOL:${MSVC}>>>:ENABLE_CRASH_LOGGER>
+	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
 	# Platform-specific
 	$<$<BOOL:${WIN32}>:NOMINMAX>
 	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
@@ -294,7 +299,7 @@ target_compile_definitions(SeriousProton PUBLIC
 
 target_compile_options(${PROJECT_NAME} PUBLIC
 	$<$<NOT:$<BOOL:${MSVC}>>:-Wall -Werror=return-type>
-	$<$<BOOL:${MSVC}>:/MP>
+	$<$<BOOL:${MSVC}>:/MP /permissive->
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	#LINK_FLAGS $<$<SYSTEM_NAME:Darwin>:-framework OpenGL -framework Foundation>
@@ -313,19 +318,18 @@ else()
 	${OPENGL_LIBRARIES}
 	${SDL2_LIBRARIES}
 	$<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
-	$<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_CRASH_LOGGER}>,$<NOT:$<BOOL:${MSVC}>>>:${DRMINGW_ROOT}/lib/exchndl>
+	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/lib/exchndl>
 )	  
 endif()
 
 include(InstallRequiredSystemLibraries)
 
 if(WIN32)
-if(NOT MSVC)
+if(MINGW)
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++-6.dll OUTPUT_VARIABLE MINGW_STDCPP_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libgcc_s_sjlj-1.dll OUTPUT_VARIABLE MINGW_LIBGCC_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
   execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libwinpthread-1.dll OUTPUT_VARIABLE MINGW_PTHREAD_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
   install(FILES ${MINGW_STDCPP_DLL} ${MINGW_LIBGCC_DLL} ${MINGW_PTHREAD_DLL} DESTINATION .)
-  install(FILES /usr/i686-w64-mingw32/lib/libwinpthread-1.dll DESTINATION .)
 endif()
   install(FILES ${SFML_ROOT}/bin/OpenAL32.dll DESTINATION .)
   #install(FILES ${SFML_ROOT}/bin/libFLAC-8.dll DESTINATION .)
@@ -339,14 +343,14 @@ endif()
   install(FILES ${SFML_ROOT}/bin/sfml-network-2.dll DESTINATION .)
   install(FILES ${SFML_ROOT}/bin/sfml-system-2.dll DESTINATION .)
   install(FILES ${SFML_ROOT}/bin/sfml-window-2.dll DESTINATION .)
-  if(ENABLE_CRASH_LOGGER)
+  if(ENABLE_CRASH_LOGGER AND MINGW)
     install(FILES ${DRMINGW_ROOT}/bin/dbghelp.dll DESTINATION .)
     install(FILES ${DRMINGW_ROOT}/bin/exchndl.dll DESTINATION .)
     install(FILES ${DRMINGW_ROOT}/bin/mgwhelp.dll DESTINATION .)
     install(FILES ${DRMINGW_ROOT}/bin/symsrv.dll DESTINATION .)
     install(FILES ${DRMINGW_ROOT}/bin/symsrv.yes DESTINATION .)
   endif()
-  install(FILES "${PROJECT_BINARY_DIR}/discord/lib/x86/discord_game_sdk.dll" DESTINATION .)
+  install(FILES "${DISCORD_LIB_PATH}/discord_game_sdk.dll" DESTINATION .)
 
   install(DIRECTORY resources DESTINATION .)
   install(DIRECTORY scripts DESTINATION .)
@@ -375,11 +379,22 @@ if(PYTHONINTERP_FOUND)
         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/compile_script_docs.py ${PROJECT_BINARY_DIR}/script_reference.html
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Building script reference documentation.")
-  add_custom_target(script_reference ALL DEPENDS ${PROJECT_BINARY_DIR}/script_reference.html)
-  install(FILES ${PROJECT_BINARY_DIR}/script_reference.html DESTINATION .)
+  add_custom_target(script_reference ALL DEPENDS ${CMAKE_BINARY_DIR}/script_reference.html)
+  
+  # Matches install logic above.
+  if(WIN32)
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION .)
+  elseif(APPLE)
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "EmptyEpsilon.app/Contents/Resources")
+  elseif(NOT ANDROID)
+	# DOCDIR already has PROJECT_NAME (EmptyEpsilon) appended (from CMake docs)
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_FULL_DOCDIR}")
+  endif()
 endif()
 
 add_custom_target(update_locale
+	COMMAND sed -i "/^#: /d" resources/locale/en.po
+	COMMAND sed -i "/^#: /d" resources/locale/tutorial.en.po
 	COMMAND xgettext --keyword=tr:1c,2 --keyword=tr:1 --keyword=trMark:1c,2 --keyword=trMark:1 --omit-header -j -d resources/locale/en ${SOURCES}
 	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/en scripts/shipTemplates_*.lua scripts/comms_ship.lua scripts/comms_station.lua scripts/comms_supply_drop.lua scripts/factionInfo.lua scripts/science_db.lua
 	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/tutorial.en scripts/tutorial_*.lua
