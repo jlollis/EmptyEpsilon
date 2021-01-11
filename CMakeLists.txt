@@ -276,7 +276,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 	WINDOW_TITLE="${PROJECT_NAME}"
 	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
 
-	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
+	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
 	# Platform-specific
 	$<$<BOOL:${WIN32}>:NOMINMAX>
 	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
@@ -289,7 +289,7 @@ target_compile_definitions(SeriousProton PUBLIC
 	WINDOW_TITLE="${PROJECT_NAME}"
 	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
 
-	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
+	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
 	# Platform-specific
 	$<$<BOOL:${WIN32}>:NOMINMAX>
 	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
