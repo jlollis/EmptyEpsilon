@@ -44,8 +44,12 @@ public:
     void load();
     std::vector<string> getCategories();
     std::vector<std::pair<string, string>> listHotkeysByCategory(string hotkey_category);
+    std::vector<std::pair<string, string>> listAllHotkeysByCategory(string hotkey_category);
 
     std::vector<HotkeyResult> getHotkey(const SDL_Keysym& key);
+    bool setHotkey(std::string work_cat, std::pair<string,string> key, string new_value);
+    string getStringForKey(SDL_Scancode key);
+    SDL_Scancode getKeyByHotkey(string hotkey_category, string hotkey_name);
 private:
     std::vector<HotkeyConfigCategory> categories;
 

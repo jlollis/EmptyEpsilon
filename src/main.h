@@ -27,5 +27,6 @@ extern PostProcessor* warpPostProcessor;
 
 void returnToMainMenu();
 void returnToShipSelection();
+void returnToOptionMenu();
 
 #endif//MAIN_H
