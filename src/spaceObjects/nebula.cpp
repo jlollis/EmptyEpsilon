@@ -1,6 +1,6 @@
 #include "nebula.h"
 #include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/OpenGL.hpp>
+#include <GL/glew.h>
 
 #include "main.h"
 
@@ -100,9 +100,10 @@ void Nebula::draw3DTransparent()
 
         
         shader->setUniform("textureMap", *textureManager.getTexture("Nebula" + string(cloud.texture) + ".png"));
+        sf::Shader::bind(shader); // we need to rebind the shader (for the texture unit)
         shader->setUniform("color", sf::Glsl::Vec4(alpha * 0.8f, alpha * 0.8f, alpha * 0.8f, size));
 
-        sf::Shader::bind(shader); // we need to rebind the shader (for the texture unit)
+        
 
         glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
         glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));

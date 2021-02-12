@@ -1,6 +1,6 @@
 #include "explosionEffect.h"
 #include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/OpenGL.hpp>
+#include <GL/glew.h>
 #include "main.h"
 
 #include "glObjects.h"

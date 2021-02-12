@@ -1,7 +1,7 @@
 #include "wormHole.h"
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/OpenGL.hpp>
+#include <GL/glew.h>
 
 #include "main.h"
 

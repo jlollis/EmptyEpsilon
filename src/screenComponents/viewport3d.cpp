@@ -161,8 +161,9 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     // Draw starbox.
     glDepthMask(GL_FALSE);
     {
-        starbox_shader->setUniform("scale", 100.f);
+        
         sf::Shader::bind(starbox_shader);
+        starbox_shader->setUniform("scale", 100.f);
 
         // Setup shared state (uniforms)
         glBindTexture(GL_TEXTURE_CUBE_MAP, starbox_texture[0]);

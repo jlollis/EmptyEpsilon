@@ -66,8 +66,10 @@ void BlackHole::draw3DTransparent()
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     shader->setUniform("textureMap", *textureManager.getTexture("blackHole3d.png"));
-    shader->setUniform("color", sf::Glsl::Vec4(1.f, 1.f, 1.f, 5000.f));
+
     sf::Shader::bind(shader);
+    shader->setUniform("color", sf::Glsl::Vec4(1.f, 1.f, 1.f, 5000.f));
+    
 
     glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
     glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));
