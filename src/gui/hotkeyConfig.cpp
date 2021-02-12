@@ -245,9 +245,9 @@ static std::vector<std::pair<string, SDL_Scancode> > sdl_key_names = {
     {"Pause", SDL_SCANCODE_PAUSE},
 };
 
-string HotkeyConfig::getStringForKey(sf::Keyboard::Key key)
+string HotkeyConfig::getStringForKey(SDL_Scancode key)
 {
-    for(auto key_name : sfml_key_names)
+    for(auto key_name : sdl_key_names)
     {
         if (key_name.second == key)
         {
@@ -367,7 +367,7 @@ std::vector<std::pair<string, string>> HotkeyConfig::listAllHotkeysByCategory(st
     return ret;
 }
 
-sf::Keyboard::Key HotkeyConfig::getKeyByHotkey(string hotkey_category, string hotkey_name)
+SDL_Scancode HotkeyConfig::getKeyByHotkey(string hotkey_category, string hotkey_name)
 {
     for(HotkeyConfigCategory& cat : categories)
     {
@@ -377,14 +377,14 @@ sf::Keyboard::Key HotkeyConfig::getKeyByHotkey(string hotkey_category, string ho
             {
                 if (item.key == hotkey_name)
                 {
-                    return item.hotkey.code;
+                    return item.hotkey.scancode;
                 }
             }
         }
     }
 
     LOG(WARNING) << "Requested an SFML Key from hotkey " << hotkey_category << ", " << hotkey_name << ", but none was found.";
-    return sf::Keyboard::KeyCount;
+    return SDL_NUM_SCANCODES;
 }
 
 HotkeyConfigItem::HotkeyConfigItem(string key, std::tuple<string, string> value)
@@ -424,9 +424,9 @@ void HotkeyConfigItem::load(string key_config)
 bool HotkeyConfig::setHotkey(std::string work_cat, std::pair<string,string> key, string new_value)
 {
     // test if new_value is part of the sfml_list
-    for (std::pair<string, sf::Keyboard::Key> sfml_key : sfml_key_names)
+    for (std::pair<string, SDL_Scancode> sdl_key : sdl_key_names)
     {
-        if ((sfml_key.first.lower() == new_value.lower()) || new_value == "")
+        if ((sdl_key.first.lower() == new_value.lower()) || new_value == "")
         {
             for (HotkeyConfigCategory &cat : categories)
             {
