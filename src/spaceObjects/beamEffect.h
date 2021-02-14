@@ -28,7 +28,7 @@ public:
     virtual ~BeamEffect();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
+    virtual void draw3DTransparent() override;
 #endif
     virtual void update(float delta);
 
@@ -45,6 +45,7 @@ public:
     void setDuration(float duration) {this->lifetime = duration;}
     void setRing(bool ring) {this->fire_ring = ring;}
 protected:
+    glm::mat4 getModelMatrix() const override;
     bool beam_sound_played;
 };
 

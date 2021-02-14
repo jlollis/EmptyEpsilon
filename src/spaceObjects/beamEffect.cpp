@@ -77,7 +77,7 @@ BeamEffect::~BeamEffect()
 }
 
 #if FEATURE_3D_RENDERING
-void BeamEffect::draw3DTransparent(const glm::mat4& model_matrix)
+void BeamEffect::draw3DTransparent()
 {
     sf::Vector3f startPoint(getPosition().x, getPosition().y, sourceOffset.z);
     sf::Vector3f endPoint(targetLocation.x, targetLocation.y, targetOffset.z);
@@ -87,7 +87,7 @@ void BeamEffect::draw3DTransparent(const glm::mat4& model_matrix)
     shader->setUniform("color", sf::Glsl::Vec4(lifetime, lifetime, lifetime, 1.f));
     shader->setUniform("textureMap", *textureManager.getTexture(beam_texture));
     sf::Shader::bind(shader);
-    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(glm::translate(model_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f))));
+    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     gl::ScopedVertexAttribArray positions(shaderPositionAttribute);
     gl::ScopedVertexAttribArray texcoords(shaderTexCoordsAttribute);
 
@@ -198,4 +198,9 @@ void BeamEffect::setTarget(P<SpaceObject> target, sf::Vector2f hitLocation)
     sf::Vector3f hitPos(targetLocation.x, targetLocation.y, targetOffset.z);
     sf::Vector3f targetPos(target->getPosition().x, target->getPosition().y, 0);
     hitNormal = sf::normalize(targetPos - hitPos);
+}
+
+glm::mat4 BeamEffect::getModelMatrix() const
+{
+    return glm::translate(SpaceObject::getModelMatrix(), -glm::vec3(getPosition().x, getPosition().y, 0.f));
 }

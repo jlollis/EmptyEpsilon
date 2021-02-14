@@ -73,12 +73,10 @@ WormHole::WormHole()
 }
 
 #if FEATURE_3D_RENDERING
-void WormHole::draw3DTransparent(const glm::mat4& model_matrix)
+void WormHole::draw3DTransparent()
 {
-    auto worm_matrix = glm::rotate(model_matrix, glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
-    worm_matrix = glm::translate(worm_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
     sf::Shader::bind(shader);
-    glUniformMatrix4fv(glGetUniformLocation(shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(worm_matrix));
+    glUniformMatrix4fv(glGetUniformLocation(shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
 
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
@@ -204,4 +202,10 @@ sf::Vector2f WormHole::getTargetPosition()
 void WormHole::onTeleportation(ScriptSimpleCallback callback)
 {
     this->on_teleportation = callback;
+}
+
+glm::mat4 WormHole::getModelMatrix() const
+{
+    auto worm_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
+    return glm::translate(worm_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
 }

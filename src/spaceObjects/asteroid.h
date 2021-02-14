@@ -17,7 +17,7 @@ public:
 
     Asteroid();
 
-    virtual void draw3D(const glm::mat4& model_matrix) override;
+    virtual void draw3D() override;
 
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
 
@@ -27,6 +27,9 @@ public:
     float getSize();
 
     virtual string getExportLine() override { return "Asteroid():setPosition(" + string(getPosition().x, 0) + ", " + string(getPosition().y, 0) + ")" + ":setSize(" + string(getSize(),0) + ")"; }
+
+private:
+    glm::mat4 getModelMatrix() const override;
 };
 
 class VisualAsteroid : public SpaceObject
@@ -43,12 +46,16 @@ public:
 
     VisualAsteroid();
 
-    virtual void draw3D(const glm::mat4& model_matrix) override;
+    virtual void draw3D() override;
 
     void setSize(float size);
     float getSize();
 
     virtual string getExportLine() override { return "VisualAsteroid():setPosition(" + string(getPosition().x, 0) + ", " + string(getPosition().y, 0) + ")" ":setSize(" + string(getSize(),0) + ")"; }
+
+private:
+    glm::mat4 getModelMatrix() const override;
+
 };
 
 #endif//ASTEROID_H

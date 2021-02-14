@@ -55,19 +55,16 @@ Asteroid::Asteroid()
 #endif
 }
 
-void Asteroid::draw3D(const glm::mat4& model_matrix)
+void Asteroid::draw3D()
 {
 #if FEATURE_3D_RENDERING
     if (size != getRadius())
         setRadius(size);
 
-    auto asteroid_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, z));
-    asteroid_matrix = glm::rotate(asteroid_matrix, glm::radians(engine->getElapsedTime() * rotation_speed), glm::vec3(0.f, 0.f, 1.f));
-    asteroid_matrix = glm::scale(asteroid_matrix, glm::vec3(getRadius()));
     shader->setUniform("baseMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_d.png"));
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
-    glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(asteroid_matrix));
+    glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING
@@ -119,6 +116,13 @@ float Asteroid::getSize()
     return size;
 }
 
+glm::mat4 Asteroid::getModelMatrix() const
+{
+    auto asteroid_matrix = glm::translate(SpaceObject::getModelMatrix(), glm::vec3(0.f, 0.f, z));
+    asteroid_matrix = glm::rotate(asteroid_matrix, glm::radians(engine->getElapsedTime() * rotation_speed), glm::vec3(0.f, 0.f, 1.f));
+    return glm::scale(asteroid_matrix, glm::vec3(getRadius()));
+}
+
 #if FEATURE_3D_RENDERING
 sf::Shader* VisualAsteroid::shader = nullptr;
 int32_t VisualAsteroid::shader_model_location = -1;
@@ -160,19 +164,16 @@ VisualAsteroid::VisualAsteroid()
 #endif
 }
 
-void VisualAsteroid::draw3D(const glm::mat4& model_matrix)
+void VisualAsteroid::draw3D()
 {
 #if FEATURE_3D_RENDERING
     if (size != getRadius())
         setRadius(size);
 
-    auto asteroid_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, z));
-    asteroid_matrix = glm::rotate(asteroid_matrix, glm::radians(engine->getElapsedTime() * rotation_speed), glm::vec3(0.f, 0.f, 1.f));
-    asteroid_matrix = glm::scale(asteroid_matrix, glm::vec3(getRadius()));
     shader->setUniform("baseMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_d.png"));
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
-    glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(asteroid_matrix));
+    glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING
@@ -189,4 +190,12 @@ void VisualAsteroid::setSize(float size)
 float VisualAsteroid::getSize()
 {
     return size;
+}
+
+glm::mat4 VisualAsteroid::getModelMatrix() const
+{
+    auto asteroid_matrix = glm::translate(SpaceObject::getModelMatrix(), glm::vec3(0.f, 0.f, z));
+    asteroid_matrix = glm::rotate(asteroid_matrix, glm::radians(engine->getElapsedTime() * rotation_speed), glm::vec3(0.f, 0.f, 1.f));
+    return glm::scale(asteroid_matrix, glm::vec3(getRadius()));
+
 }

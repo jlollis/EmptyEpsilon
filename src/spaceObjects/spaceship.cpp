@@ -318,10 +318,10 @@ void SpaceShip::applyTemplateValues()
 }
 
 #if FEATURE_3D_RENDERING
-void SpaceShip::draw3DTransparent(const glm::mat4& model_matrix)
+void SpaceShip::draw3DTransparent()
 {
     if (!ship_template) return;
-    ShipTemplateBasedObject::draw3DTransparent(model_matrix);
+    ShipTemplateBasedObject::draw3DTransparent();
 
     if ((has_jump_drive && jump_delay > 0.0f) ||
         (wormhole_alpha > 0.0f))
@@ -330,7 +330,7 @@ void SpaceShip::draw3DTransparent(const glm::mat4& model_matrix)
         if (wormhole_alpha > 0.0f)
             delay = wormhole_alpha;
         float alpha = 1.0f - (delay / 10.0f);
-        model_info.renderOverlay(textureManager.getTexture("electric_sphere_texture.png"), alpha, model_matrix);
+        model_info.renderOverlay(textureManager.getTexture("electric_sphere_texture.png"), alpha, getModelMatrix());
     }
 }
 #endif//FEATURE_3D_RENDERING

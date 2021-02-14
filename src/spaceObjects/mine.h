@@ -23,8 +23,8 @@ public:
     Mine();
     virtual ~Mine();
 
-    virtual void draw3D(const glm::mat4& model_matrix) override;
-    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
+    virtual void draw3D() override;
+    virtual void draw3DTransparent() override;
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
     virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
     virtual void update(float delta) override;

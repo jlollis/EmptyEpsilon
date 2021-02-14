@@ -309,9 +309,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         for(const auto &info : render_list)
         {
             SpaceObject* obj = info.object;
-            auto model_matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(obj->getPosition().x, obj->getPosition().y, 0.f));
-            model_matrix = glm::rotate(model_matrix, glm::radians(obj->getRotation()), glm::vec3(0.f, 0.f, 1.f));
-            obj->draw3D(model_matrix);
+            obj->draw3D();
         }
         sf::Shader::bind(nullptr);
         glEnable(GL_BLEND);
@@ -321,11 +319,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         for(auto info : render_list)
         {
             SpaceObject* obj = info.object;
-
-            auto model_matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(obj->getPosition().x, obj->getPosition().y, 0.f));
-            model_matrix = glm::rotate(model_matrix, glm::radians(obj->getRotation()), glm::vec3(0.f, 0.f, 1.f));
-
-            obj->draw3DTransparent(model_matrix);
+            obj->draw3DTransparent();
         }
     }
     

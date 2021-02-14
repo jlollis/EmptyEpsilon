@@ -204,13 +204,14 @@ void ShipTemplateBasedObject::drawShieldsOnRadar(sf::RenderTarget& window, sf::V
 }
 
 #if FEATURE_3D_RENDERING
-void ShipTemplateBasedObject::draw3DTransparent(const glm::mat4& model_matrix)
+void ShipTemplateBasedObject::draw3DTransparent()
 {
     if (shield_count < 1)
         return;
 
     float angle = 0.0;
     float arc = 360.0f / shield_count;
+    auto model_matrix = getModelMatrix();
     for(int n = 0; n<shield_count; n++)
     {
         if (shield_hit_effect[n] > 0)

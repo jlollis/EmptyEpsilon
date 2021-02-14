@@ -35,11 +35,11 @@ Mine::~Mine()
 {
 }
 
-void Mine::draw3D(const glm::mat4& model_matrix)
+void Mine::draw3D()
 {
 }
 
-void Mine::draw3DTransparent(const glm::mat4& model_matrix)
+void Mine::draw3DTransparent()
 {
 }
 

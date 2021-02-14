@@ -27,7 +27,7 @@ public:
     WormHole();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
+    virtual void draw3DTransparent() override;
 #endif//FEATURE_3D_RENDERING
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
     virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
@@ -39,6 +39,9 @@ public:
     void onTeleportation(ScriptSimpleCallback callback);
 
     virtual string getExportLine() override { return "WormHole():setPosition(" + string(getPosition().x, 0) + ", " + string(getPosition().y, 0) + "):setTargetPosition(" + string(target_position.x, 0) + ", " + string(target_position.y, 0) + ")"; }
+
+protected:
+    glm::mat4 getModelMatrix() const override;
 };
 
 #endif//WORM_HOLE_H

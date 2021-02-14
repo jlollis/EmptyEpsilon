@@ -66,7 +66,7 @@ ElectricExplosionEffect::~ElectricExplosionEffect()
 }
 
 #if FEATURE_3D_RENDERING
-void ElectricExplosionEffect::draw3DTransparent(const glm::mat4& model_matrix)
+void ElectricExplosionEffect::draw3DTransparent()
 {
     float f = (1.0f - (lifetime / maxLifetime));
     float scale;
@@ -79,6 +79,7 @@ void ElectricExplosionEffect::draw3DTransparent(const glm::mat4& model_matrix)
         alpha = Tween<float>::easeInQuad(f, 0.2, 1.0, 0.5f, 0.0f);
     }
 
+    auto model_matrix = getModelMatrix();
     auto explosion_matrix = glm::scale(model_matrix, glm::vec3(scale * size));
     glColor3f(alpha, alpha, alpha);
 

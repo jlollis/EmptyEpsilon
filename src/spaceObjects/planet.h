@@ -11,8 +11,8 @@ public:
     Planet();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3D(const glm::mat4& model_matrix) override;
-    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
+    virtual void draw3D() override;
+    virtual void draw3DTransparent() override;
 #endif//FEATURE_3D_RENDERING
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
     virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f draw_position, float scale, float rotation, bool long_range) override;
@@ -34,7 +34,8 @@ public:
     void setOrbit(P<SpaceObject> target, float orbit_time);
 
     virtual string getExportLine() override;
-
+protected:
+    glm::mat4 getModelMatrix() const override;
 private:
     //Config:
     float planet_size;

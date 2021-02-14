@@ -258,7 +258,7 @@ void Planet::update(float delta)
 }
 
 #if FEATURE_3D_RENDERING
-void Planet::draw3D(const glm::mat4& model_matrix)
+void Planet::draw3D()
 {
     float distance = sf::length(camera_position - sf::Vector3f(getPosition().x, getPosition().y, distance_from_movement_plane));
 
@@ -272,8 +272,7 @@ void Planet::draw3D(const glm::mat4& model_matrix)
 
     if (planet_texture != "" && planet_size > 0)
     {
-        auto planet_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, distance_from_movement_plane));
-        planet_matrix = glm::scale(planet_matrix, glm::vec3(planet_size));
+        auto planet_matrix = glm::scale(getModelMatrix(), glm::vec3(planet_size));
         glColor3f(1, 1, 1);
 
         if (!planet_mesh[level_of_detail])
@@ -290,7 +289,7 @@ void Planet::draw3D(const glm::mat4& model_matrix)
     }
 }
 
-void Planet::draw3DTransparent(const glm::mat4& model_matrix)
+void Planet::draw3DTransparent()
 {
     float distance = sf::length(camera_position - sf::Vector3f(getPosition().x, getPosition().y, distance_from_movement_plane));
 
@@ -302,7 +301,7 @@ void Planet::draw3DTransparent(const glm::mat4& model_matrix)
     if (view_scale < 0.1)
         level_of_detail = 3;
 
-    auto planet_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, distance_from_movement_plane));
+    auto planet_matrix = getModelMatrix();
     if (cloud_texture != "" && cloud_size > 0)
     {
         auto cloud_matrix = glm::scale(planet_matrix, glm::vec3(cloud_size));
@@ -407,4 +406,9 @@ string Planet::getExportLine()
     //TODO setAxialRotationTime
     //TODO setOrbit
     return ret;
+}
+
+glm::mat4 Planet::getModelMatrix() const
+{
+    return glm::translate(SpaceObject::getModelMatrix(), glm::vec3(0.f, 0.f, distance_from_movement_plane));
 }

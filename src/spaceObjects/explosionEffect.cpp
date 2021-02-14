@@ -68,7 +68,7 @@ ExplosionEffect::~ExplosionEffect()
 }
 
 #if FEATURE_3D_RENDERING
-void ExplosionEffect::draw3DTransparent(const glm::mat4& model_matrix)
+void ExplosionEffect::draw3DTransparent()
 {
     float f = (1.0f - (lifetime / maxLifetime));
     float scale;
@@ -82,7 +82,7 @@ void ExplosionEffect::draw3DTransparent(const glm::mat4& model_matrix)
     }
 
 
-    auto explosion_matrix = glm::scale(model_matrix, glm::vec3(scale * size));
+    auto explosion_matrix = glm::scale(getModelMatrix(), glm::vec3(scale * size));
     glColor3f(alpha, alpha, alpha);
 
     sf::Vector3f v1 = sf::Vector3f(-1, -1, 0);
@@ -128,7 +128,7 @@ void ExplosionEffect::draw3DTransparent(const glm::mat4& model_matrix)
     particlesShader->setUniform("textureMap", *textureManager.getTexture("particle.png"));
     
     sf::Shader::bind(particlesShader);
-    glUniformMatrix4fv(particlesShaderModelLocation, 1, GL_FALSE, glm::value_ptr(model_matrix));
+    glUniformMatrix4fv(particlesShaderModelLocation, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     scale = Tween<float>::easeInCubic(f, 0.0, 1.0, 0.3f, 5.0f);
     float r = Tween<float>::easeInQuad(f, 0.0, 1.0, 1.0f, 0.0f);
     float g = Tween<float>::easeOutQuad(f, 0.0, 1.0, 1.0f, 0.0f);

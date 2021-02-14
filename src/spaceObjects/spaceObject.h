@@ -111,7 +111,7 @@ public:
     SpaceObject(float collisionRange, string multiplayerName, float multiplayer_significant_range=-1);
     virtual ~SpaceObject();
 
-    float getRadius() { return object_radius; }
+    float getRadius() const { return object_radius; }
     void setRadius(float radius) { object_radius = radius; setCollisionRadius(radius); }
 
     bool hasWeight() { return has_weight; }
@@ -171,8 +171,8 @@ public:
         on_destroyed = callback;
     }
 
-    virtual void draw3D(const glm::mat4& model_matrix);
-    virtual void draw3DTransparent(const glm::mat4& model_matrix) {}
+    virtual void draw3D();
+    virtual void draw3DTransparent() {}
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool longRange);
     virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool longRange);
     virtual void destroy();
@@ -231,6 +231,7 @@ public:
     ScriptSimpleCallback on_destroyed;
 
 protected:
+    virtual glm::mat4 getModelMatrix() const;
     ModelInfo model_info;
     bool has_weight = true;
 };

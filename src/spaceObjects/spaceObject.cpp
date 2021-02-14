@@ -1,4 +1,7 @@
 #include "spaceObject.h"
+
+#include <glm/ext/matrix_transform.hpp>
+
 #include "factionInfo.h"
 #include "gameGlobalInfo.h"
 
@@ -304,10 +307,10 @@ SpaceObject::~SpaceObject()
 {
 }
 
-void SpaceObject::draw3D(const glm::mat4& model_matrix)
+void SpaceObject::draw3D()
 {
 #if FEATURE_3D_RENDERING
-    model_info.render(getPosition(), getRotation(), model_matrix);
+    model_info.render(getPosition(), getRotation(), getModelMatrix());
 #endif//FEATURE_3D_RENDERING
 }
 
@@ -580,6 +583,12 @@ bool SpaceObject::sendCommsMessage(P<PlayerSpaceship> target, string message)
         target->addToShipLogBy(message, this);
     }
     return result;
+}
+
+glm::mat4 SpaceObject::getModelMatrix() const
+{
+    auto model_matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(getPosition().x, getPosition().y, 0.f));
+    return glm::rotate(model_matrix, glm::radians(getRotation()), glm::vec3(0.f, 0.f, 1.f));
 }
 
 // Define a script conversion function for the DamageInfo structure.

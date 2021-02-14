@@ -69,13 +69,10 @@ Nebula::Nebula()
 }
 
 #if FEATURE_3D_RENDERING
-void Nebula::draw3DTransparent(const glm::mat4& model_matrix)
+void Nebula::draw3DTransparent()
 {
-    auto nebula_matrix = glm::rotate(model_matrix, glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
-    nebula_matrix = glm::translate(nebula_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
-
     sf::Shader::bind(shader);
-    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(nebula_matrix));
+    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
         sf::Vector3f(), {1.f, 0.f},
@@ -207,4 +204,10 @@ sf::Vector2f Nebula::getFirstBlockedPosition(sf::Vector2f start, sf::Vector2f en
 PVector<Nebula> Nebula::getNebulas()
 {
     return nebula_list;
+}
+
+glm::mat4 Nebula::getModelMatrix() const
+{
+    auto nebula_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
+    return glm::translate(nebula_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
 }
