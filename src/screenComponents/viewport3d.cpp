@@ -162,7 +162,6 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     glClearDepth(1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
-    glColor4f(1,1,1,1);
 
     projection_matrix = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f);
     view_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
@@ -301,7 +300,6 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         glDepthMask(true);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        glColor4f(1,1,1,1);
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);

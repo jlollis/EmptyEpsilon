@@ -13,6 +13,7 @@
 #if FEATURE_3D_RENDERING
 sf::Shader* ModelInfo::shader = nullptr;
 int32_t ModelInfo::shader_model_location = -1;
+int32_t ModelInfo::shader_color_location = -1;
 #endif
 
 
@@ -24,6 +25,7 @@ ModelInfo::ModelInfo()
     {
         shader = ShaderManager::getShader("shaders/basicShader");
         shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
+        shader_color_location = glGetUniformLocation(shader->getNativeHandle(), "color");
     }
 #endif
 }
@@ -89,10 +91,10 @@ void ModelInfo::renderOverlay(sf::Texture* texture, float alpha, const glm::mat4
     overlay_matrix = glm::translate(overlay_matrix, glm::vec3(data->mesh_offset.x, data->mesh_offset.y, data->mesh_offset.z));
     
     glDepthFunc(GL_EQUAL);
-    glColor4f(alpha, alpha, alpha, 1);
 
     shader->setUniform("textureMap", *texture);
     sf::Shader::bind(shader);
+    glUniform4fv(shader_color_location, 1, glm::value_ptr(glm::vec4(alpha, alpha, alpha, 1.f)));
     glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(overlay_matrix));
     data->mesh->render();
     glDepthFunc(GL_LESS);
@@ -108,7 +110,7 @@ void ModelInfo::renderShield(float alpha, const glm::mat4& model_matrix)
     auto shield_matrix = glm::rotate(model_matrix, glm::radians(engine->getElapsedTime() * 5), glm::vec3(0.f, 0.f, 1.f));
     shield_matrix = glm::scale(shield_matrix, 1.2f * glm::vec3(data->radius));
     glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(shield_matrix));
-    glColor4f(alpha, alpha, alpha, 1);
+    glUniform4fv(shader_color_location, 1, glm::value_ptr(glm::vec4(alpha, alpha, alpha, 1.f)));
     Mesh* m = Mesh::getMesh("sphere.obj");
     m->render();
 #endif//FEATURE_3D_RENDERING
@@ -126,7 +128,7 @@ void ModelInfo::renderShield(float alpha, float angle, const glm::mat4& model_ma
     shield_matrix = glm::rotate(shield_matrix, glm::radians(engine->getElapsedTime() * 5), glm::vec3(0.f, 0.f, 1.f));
     shield_matrix = glm::scale(shield_matrix, 1.2f * glm::vec3(data->radius));
     glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(shield_matrix));
-    glColor4f(alpha, alpha, alpha, 1);
+    glUniform4fv(shader_color_location, 1, glm::value_ptr(glm::vec4(alpha, alpha, alpha, 1.f)));
     Mesh* m = Mesh::getMesh("half_sphere.obj");
     m->render();
 #endif//FEATURE_3D_RENDERING

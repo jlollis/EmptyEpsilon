@@ -11,6 +11,7 @@ sf::Shader* ExplosionEffect::basicShader = nullptr;
 uint32_t ExplosionEffect::basicShaderPositionAttribute = 0;
 uint32_t ExplosionEffect::basicShaderTexCoordsAttribute = 0;
 int32_t ExplosionEffect::basicShaderModelLocation = -1;
+int32_t ExplosionEffect::basicShaderColorLocation = -1;
 
 sf::Shader* ExplosionEffect::particlesShader = nullptr;
 uint32_t ExplosionEffect::particlesShaderPositionAttribute = 0;
@@ -53,6 +54,7 @@ ExplosionEffect::ExplosionEffect()
         basicShaderPositionAttribute = glGetAttribLocation(basicShader->getNativeHandle(), "position");
         basicShaderTexCoordsAttribute = glGetAttribLocation(basicShader->getNativeHandle(), "texcoords");
         basicShaderModelLocation = glGetUniformLocation(basicShader->getNativeHandle(), "model");
+        basicShaderColorLocation = glGetUniformLocation(basicShader->getNativeHandle(), "color");
 
         particlesShader = ShaderManager::getShader("shaders/billboard");
         particlesShaderPositionAttribute = glGetAttribLocation(particlesShader->getNativeHandle(), "position");
@@ -83,7 +85,6 @@ void ExplosionEffect::draw3DTransparent()
 
 
     auto explosion_matrix = glm::scale(getModelMatrix(), glm::vec3(scale * size));
-    glColor3f(alpha, alpha, alpha);
 
     sf::Vector3f v1 = sf::Vector3f(-1, -1, 0);
     sf::Vector3f v2 = sf::Vector3f( 1, -1, 0);
@@ -92,6 +93,7 @@ void ExplosionEffect::draw3DTransparent()
 
     basicShader->setUniform("textureMap", *textureManager.getTexture("fire_sphere_texture.png"));
     sf::Shader::bind(basicShader);
+    glUniform4fv(basicShaderColorLocation, 1, glm::value_ptr(glm::vec4(alpha, alpha, alpha, 1.f)));
     glUniformMatrix4fv(basicShaderModelLocation, 1, GL_FALSE, glm::value_ptr(explosion_matrix));
     Mesh* m = Mesh::getMesh("sphere.obj");
     m->render();
@@ -105,6 +107,7 @@ void ExplosionEffect::draw3DTransparent()
     constexpr size_t quad_count = 10;
     std::array<VertexAndTexCoords, 4*quad_count> quads;
     // Initialize texcoords per quad.
+
     for (auto i = 0; i < quads.size(); i += 4)
     {
         quads[i + 0].texcoords = { 0.f, 0.f };

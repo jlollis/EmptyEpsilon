@@ -18,6 +18,7 @@ class ExplosionEffect : public SpaceObject, public Updatable
     static uint32_t basicShaderPositionAttribute;
     static uint32_t basicShaderTexCoordsAttribute;
     static int32_t basicShaderModelLocation;
+    static int32_t basicShaderColorLocation;
 
     static sf::Shader* particlesShader;
     static uint32_t particlesShaderPositionAttribute;

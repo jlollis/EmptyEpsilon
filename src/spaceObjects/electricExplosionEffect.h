@@ -19,6 +19,7 @@ class ElectricExplosionEffect : public SpaceObject, public Updatable
     static uint32_t particlesShaderPositionAttribute;
     static uint32_t particlesShaderTexCoordsAttribute;
     static int32_t basicShaderModelLocation;
+    static int32_t basicShaderColorLocation;
     static int32_t particlesShaderModelLocation;
 #endif
 public:
