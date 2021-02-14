@@ -8,6 +8,7 @@ class Asteroid : public SpaceObject
 #if FEATURE_3D_RENDERING
     static sf::Shader* shader;
     static int32_t shader_model_location;
+    static int32_t shader_model_normal_location;
 #endif
 public:
     float rotation_speed;
@@ -37,6 +38,7 @@ class VisualAsteroid : public SpaceObject
 #if FEATURE_3D_RENDERING
     static sf::Shader* shader;
     static int32_t shader_model_location;
+    static int32_t shader_model_normal_location;
 #endif
 public:
     float rotation_speed;

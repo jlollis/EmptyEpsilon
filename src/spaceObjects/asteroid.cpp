@@ -16,6 +16,7 @@
 #if FEATURE_3D_RENDERING
 sf::Shader* Asteroid::shader = nullptr;
 int32_t Asteroid::shader_model_location = -1;
+int32_t Asteroid::shader_model_normal_location = -1;
 #endif
 
 /// An asteroid in space. Which you can fly into and hit. Will do damage.
@@ -51,6 +52,7 @@ Asteroid::Asteroid()
     {
         shader = ShaderManager::getShader("shaders/objectShaderBS");
         shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
+        shader_model_normal_location = glGetUniformLocation(shader->getNativeHandle(), "model_normal");
     }
 #endif
 }
@@ -65,6 +67,7 @@ void Asteroid::draw3D()
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
     glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    glUniformMatrix4fv(shader_model_normal_location, 1, GL_TRUE, glm::value_ptr(glm::inverse(getModelMatrix())));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING
@@ -126,6 +129,7 @@ glm::mat4 Asteroid::getModelMatrix() const
 #if FEATURE_3D_RENDERING
 sf::Shader* VisualAsteroid::shader = nullptr;
 int32_t VisualAsteroid::shader_model_location = -1;
+int32_t VisualAsteroid::shader_model_normal_location = -1;
 #endif
 
 /// An asteroid in space. Outside of hit range, just for visuals.
@@ -160,6 +164,7 @@ VisualAsteroid::VisualAsteroid()
     {
         shader = ShaderManager::getShader("shaders/objectShaderBS");
         shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
+        shader_model_normal_location = glGetUniformLocation(shader->getNativeHandle(), "model_normal");
     }
 #endif
 }
@@ -174,6 +179,7 @@ void VisualAsteroid::draw3D()
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
     glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    glUniformMatrix4fv(shader_model_normal_location, 1, GL_TRUE, glm::value_ptr(getModelMatrix()));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING
