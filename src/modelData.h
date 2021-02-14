@@ -8,6 +8,8 @@
 
 #include "mesh.h"
 
+#include <glm/mat4x4.hpp>
+
 class SpaceObject;
 
 class EngineEmitterData
@@ -27,7 +29,7 @@ private:
 public:
     static P<ModelData> getModel(string name);
     static std::vector<string> getModelDataNames();
-
+    sf::Shader& getShader() const { return *shader; }
 private:
     string name;
     string mesh_name;
@@ -43,6 +45,8 @@ private:
     sf::Texture* specular_texture;
     sf::Texture* illumination_texture;
     sf::Shader* shader;
+    int32_t model_location = -1;
+    int32_t normal_location = -1;
     float scale;
 
     float radius;
@@ -121,7 +125,7 @@ public:
     float getRadius();
 
     void load();
-    void render();
+    void render(const glm::mat4& model_matrix);
 
     friend class ModelInfo;
     friend class GuiRotatingModelView;

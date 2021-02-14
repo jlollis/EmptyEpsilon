@@ -5,6 +5,10 @@
 
 class Asteroid : public SpaceObject
 {
+#if FEATURE_3D_RENDERING
+    static sf::Shader* shader;
+    static int32_t shader_model_location;
+#endif
 public:
     float rotation_speed;
     float z;
@@ -13,7 +17,7 @@ public:
 
     Asteroid();
 
-    virtual void draw3D() override;
+    virtual void draw3D(const glm::mat4& model_matrix) override;
 
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
 
@@ -27,6 +31,10 @@ public:
 
 class VisualAsteroid : public SpaceObject
 {
+#if FEATURE_3D_RENDERING
+    static sf::Shader* shader;
+    static int32_t shader_model_location;
+#endif
 public:
     float rotation_speed;
     float z;
@@ -35,7 +43,7 @@ public:
 
     VisualAsteroid();
 
-    virtual void draw3D() override;
+    virtual void draw3D(const glm::mat4& model_matrix) override;
 
     void setSize(float size);
     float getSize();

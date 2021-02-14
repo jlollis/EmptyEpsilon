@@ -5,10 +5,14 @@
 #include "mesh.h"
 #include "main.h"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #if FEATURE_3D_RENDERING
 sf::Shader* BeamEffect::shader = nullptr;
 uint32_t BeamEffect::shaderPositionAttribute = 0;
 uint32_t BeamEffect::shaderTexCoordsAttribute = 0;
+int32_t BeamEffect::shaderModelLocation = -1;
 
 struct VertexAndTexCoords
 {
@@ -62,6 +66,7 @@ BeamEffect::BeamEffect()
         shader = ShaderManager::getShader("shaders/basic");
         shaderPositionAttribute = glGetAttribLocation(shader->getNativeHandle(), "position");
         shaderTexCoordsAttribute = glGetAttribLocation(shader->getNativeHandle(), "texcoords");
+        shaderModelLocation = glGetUniformLocation(shader->getNativeHandle(), "model");
     }
 #endif
 }
@@ -72,9 +77,8 @@ BeamEffect::~BeamEffect()
 }
 
 #if FEATURE_3D_RENDERING
-void BeamEffect::draw3DTransparent()
+void BeamEffect::draw3DTransparent(const glm::mat4& model_matrix)
 {
-    glTranslatef(-getPosition().x, -getPosition().y, 0);
     sf::Vector3f startPoint(getPosition().x, getPosition().y, sourceOffset.z);
     sf::Vector3f endPoint(targetLocation.x, targetLocation.y, targetOffset.z);
     sf::Vector3f eyeNormal = sf::normalize(sf::cross(camera_position - startPoint, endPoint - startPoint));
@@ -83,7 +87,7 @@ void BeamEffect::draw3DTransparent()
     shader->setUniform("color", sf::Glsl::Vec4(lifetime, lifetime, lifetime, 1.f));
     shader->setUniform("textureMap", *textureManager.getTexture(beam_texture));
     sf::Shader::bind(shader);
-    
+    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(glm::translate(model_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f))));
     gl::ScopedVertexAttribArray positions(shaderPositionAttribute);
     gl::ScopedVertexAttribArray texcoords(shaderTexCoordsAttribute);
 

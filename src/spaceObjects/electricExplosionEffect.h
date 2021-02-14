@@ -14,16 +14,19 @@ class ElectricExplosionEffect : public SpaceObject, public Updatable
     bool on_radar;
 
 #if FEATURE_3D_RENDERING
+    static sf::Shader* basicShader;
     static sf::Shader* particlesShader;
     static uint32_t particlesShaderPositionAttribute;
     static uint32_t particlesShaderTexCoordsAttribute;
+    static int32_t basicShaderModelLocation;
+    static int32_t particlesShaderModelLocation;
 #endif
 public:
     ElectricExplosionEffect();
     virtual ~ElectricExplosionEffect();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent();
+    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
 #endif
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool longRange);
     virtual void update(float delta);

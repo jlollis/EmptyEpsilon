@@ -1,4 +1,5 @@
-#include <GL/glew.h> 
+#include <GL/glew.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "blackHole.h"
 #include "pathPlanner.h"
@@ -13,6 +14,7 @@
 sf::Shader* BlackHole::shader = nullptr;
 uint32_t BlackHole::shaderPositionAttribute = 0;
 uint32_t BlackHole::shaderTexCoordsAttribute = 0;
+int32_t BlackHole::shaderModelLocation = -1;
 
 struct VertexAndTexCoords
 {
@@ -42,6 +44,7 @@ BlackHole::BlackHole()
         shader = ShaderManager::getShader("shaders/billboard");
         shaderPositionAttribute = glGetAttribLocation(shader->getNativeHandle(), "position");
         shaderTexCoordsAttribute = glGetAttribLocation(shader->getNativeHandle(), "texcoords");
+        shaderModelLocation = glGetUniformLocation(shader->getNativeHandle(), "model");
     }
 #endif
 }
@@ -52,7 +55,7 @@ void BlackHole::update(float delta)
 }
 
 #if FEATURE_3D_RENDERING
-void BlackHole::draw3DTransparent()
+void BlackHole::draw3DTransparent(const glm::mat4& model_matrix)
 {
     static std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
@@ -68,6 +71,7 @@ void BlackHole::draw3DTransparent()
     shader->setUniform("textureMap", *textureManager.getTexture("blackHole3d.png"));
     shader->setUniform("color", sf::Glsl::Vec4(1.f, 1.f, 1.f, 5000.f));
     sf::Shader::bind(shader);
+    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
     glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
     glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));

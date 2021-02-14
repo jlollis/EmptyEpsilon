@@ -17,6 +17,7 @@ class BeamEffect : public SpaceObject, public Updatable
     static sf::Shader* shader;
     static uint32_t shaderPositionAttribute;
     static uint32_t shaderTexCoordsAttribute;
+    static int32_t shaderModelLocation;
 #endif
 public:
     bool fire_ring;
@@ -27,7 +28,7 @@ public:
     virtual ~BeamEffect();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent();
+    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
 #endif
     virtual void update(float delta);
 

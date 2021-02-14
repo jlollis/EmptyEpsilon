@@ -188,7 +188,7 @@ public:
     virtual ~SpaceShip();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent() override;
+    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
 #endif
     /*!
      * Get this ship's radar signature dynamically modified by the state of its

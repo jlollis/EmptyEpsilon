@@ -17,17 +17,19 @@ class ExplosionEffect : public SpaceObject, public Updatable
     static sf::Shader* basicShader;
     static uint32_t basicShaderPositionAttribute;
     static uint32_t basicShaderTexCoordsAttribute;
+    static int32_t basicShaderModelLocation;
 
     static sf::Shader* particlesShader;
     static uint32_t particlesShaderPositionAttribute;
     static uint32_t particlesShaderTexCoordsAttribute;
+    static int32_t particlesShaderModelLocation;
 #endif
 public:
     ExplosionEffect();
     virtual ~ExplosionEffect();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent();
+    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
 #endif
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool longRange);
     virtual void update(float delta);

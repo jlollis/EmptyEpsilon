@@ -22,13 +22,14 @@ class Nebula : public SpaceObject
     static sf::Shader* shader;
     static uint32_t shaderPositionAttribute;
     static uint32_t shaderTexCoordsAttribute;
+    static int32_t shaderModelLocation;
 #endif
 
 public:
     Nebula();
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent();
+    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
 #endif
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range);
     virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range);

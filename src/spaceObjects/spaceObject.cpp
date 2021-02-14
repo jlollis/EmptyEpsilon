@@ -304,10 +304,10 @@ SpaceObject::~SpaceObject()
 {
 }
 
-void SpaceObject::draw3D()
+void SpaceObject::draw3D(const glm::mat4& model_matrix)
 {
 #if FEATURE_3D_RENDERING
-    model_info.render(getPosition(), getRotation());
+    model_info.render(getPosition(), getRotation(), model_matrix);
 #endif//FEATURE_3D_RENDERING
 }
 

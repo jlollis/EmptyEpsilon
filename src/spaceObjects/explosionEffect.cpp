@@ -4,14 +4,18 @@
 #include "explosionEffect.h"
 #include "glObjects.h"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #if FEATURE_3D_RENDERING
 sf::Shader* ExplosionEffect::basicShader = nullptr;
 uint32_t ExplosionEffect::basicShaderPositionAttribute = 0;
 uint32_t ExplosionEffect::basicShaderTexCoordsAttribute = 0;
+int32_t ExplosionEffect::basicShaderModelLocation = -1;
 
 sf::Shader* ExplosionEffect::particlesShader = nullptr;
 uint32_t ExplosionEffect::particlesShaderPositionAttribute = 0;
 uint32_t ExplosionEffect::particlesShaderTexCoordsAttribute = 0;
+int32_t ExplosionEffect::particlesShaderModelLocation = -1;
 
 struct VertexAndTexCoords
 {
@@ -48,10 +52,12 @@ ExplosionEffect::ExplosionEffect()
         basicShader = ShaderManager::getShader("shaders/basic");
         basicShaderPositionAttribute = glGetAttribLocation(basicShader->getNativeHandle(), "position");
         basicShaderTexCoordsAttribute = glGetAttribLocation(basicShader->getNativeHandle(), "texcoords");
+        basicShaderModelLocation = glGetUniformLocation(basicShader->getNativeHandle(), "model");
 
         particlesShader = ShaderManager::getShader("shaders/billboard");
         particlesShaderPositionAttribute = glGetAttribLocation(particlesShader->getNativeHandle(), "position");
         particlesShaderTexCoordsAttribute = glGetAttribLocation(particlesShader->getNativeHandle(), "texcoords");
+        particlesShaderModelLocation = glGetUniformLocation(particlesShader->getNativeHandle(), "model");
     }
 #endif
 }
@@ -62,7 +68,7 @@ ExplosionEffect::~ExplosionEffect()
 }
 
 #if FEATURE_3D_RENDERING
-void ExplosionEffect::draw3DTransparent()
+void ExplosionEffect::draw3DTransparent(const glm::mat4& model_matrix)
 {
     float f = (1.0f - (lifetime / maxLifetime));
     float scale;
@@ -75,8 +81,8 @@ void ExplosionEffect::draw3DTransparent()
         alpha = Tween<float>::easeInQuad(f, 0.2, 1.0, 0.5f, 0.0f);
     }
 
-    glPushMatrix();
-    glScalef(scale * size, scale * size, scale * size);
+
+    auto explosion_matrix = glm::scale(model_matrix, glm::vec3(scale * size));
     glColor3f(alpha, alpha, alpha);
 
     sf::Vector3f v1 = sf::Vector3f(-1, -1, 0);
@@ -84,16 +90,18 @@ void ExplosionEffect::draw3DTransparent()
     sf::Vector3f v3 = sf::Vector3f( 1,  1, 0);
     sf::Vector3f v4 = sf::Vector3f(-1,  1, 0);
 
-    ShaderManager::getShader("shaders/basicShader")->setUniform("textureMap", *textureManager.getTexture("fire_sphere_texture.png"));
-    sf::Shader::bind(ShaderManager::getShader("shaders/basicShader"));
+    basicShader->setUniform("textureMap", *textureManager.getTexture("fire_sphere_texture.png"));
+    sf::Shader::bind(basicShader);
+    glUniformMatrix4fv(basicShaderModelLocation, 1, GL_FALSE, glm::value_ptr(explosion_matrix));
     Mesh* m = Mesh::getMesh("sphere.obj");
     m->render();
 
     basicShader->setUniform("textureMap", *textureManager.getTexture("fire_ring.png"));
     basicShader->setUniform("color", sf::Glsl::Vec4(alpha, alpha, alpha, 1.f));
     sf::Shader::bind(basicShader);
-    glScalef(1.5, 1.5, 1.5);
-
+    explosion_matrix = glm::scale(explosion_matrix, glm::vec3(1.5f));
+    glUniformMatrix4fv(basicShaderModelLocation, 1, GL_FALSE, glm::value_ptr(explosion_matrix));
+   
     constexpr size_t quad_count = 10;
     std::array<VertexAndTexCoords, 4*quad_count> quads;
     // Initialize texcoords per quad.
@@ -116,12 +124,11 @@ void ExplosionEffect::draw3DTransparent()
         glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quads.data() + sizeof(sf::Vector3f)));
         glDrawArrays(GL_QUADS, 0, 4);
     }
-    glPopMatrix();
-
 
     particlesShader->setUniform("textureMap", *textureManager.getTexture("particle.png"));
     
     sf::Shader::bind(particlesShader);
+    glUniformMatrix4fv(particlesShaderModelLocation, 1, GL_FALSE, glm::value_ptr(model_matrix));
     scale = Tween<float>::easeInCubic(f, 0.0, 1.0, 0.3f, 5.0f);
     float r = Tween<float>::easeInQuad(f, 0.0, 1.0, 1.0f, 0.0f);
     float g = Tween<float>::easeOutQuad(f, 0.0, 1.0, 1.0f, 0.0f);

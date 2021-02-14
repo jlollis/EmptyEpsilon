@@ -1,6 +1,8 @@
 #include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
 
+#include <glm/ext/matrix_transform.hpp>
+
 #include "featureDefs.h"
 #include "rotatingModelView.h"
 
@@ -8,18 +10,9 @@
 
 #include <array>
 
-#if FEATURE_3D_RENDERING
-static void _glPerspective(double fovY, double aspect, double zNear, double zFar )
-{
-    const double pi = 3.1415926535897932384626433832795;
-    double fW, fH;
-
-    fH = tan(fovY / 360 * pi) * zNear;
-    fW = fH * aspect;
-
-    glFrustum(-fW, fW, -fH, fH, zNear, zFar);
-}
-#endif//FEATURE_3D_RENDERING
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 GuiRotatingModelView::GuiRotatingModelView(GuiContainer* owner, string id, P<ModelData> model)
 : GuiElement(owner, id), model(model)
@@ -45,15 +38,21 @@ void GuiRotatingModelView::onDraw(sf::RenderTarget& window)
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    _glPerspective(camera_fov, rect.width/rect.height, 1.f, 25000.f);
+    auto& shader = model->getShader();
+    sf::Shader::bind(&shader);
+    auto projection = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f);
+    glUniformMatrix4fv(
+        glGetUniformLocation(shader.getNativeHandle(), "projection"), 1, GL_FALSE,
+        glm::value_ptr(projection)
+    );
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    auto view = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+    view = glm::scale(view, glm::vec3(1.f, 1.f, -1.f));
+    view = glm::translate(view, glm::vec3(0.f, -200.f, 0.f));
+    view = glm::rotate(view, glm::radians(-30.f), glm::vec3(1.f, 0.f, 0.f));
+    view = glm::rotate(view, glm::radians(engine->getElapsedTime() * 360.0f / 10.0f), glm::vec3(0.f, 0.f, 1.f));
 
-    glRotatef(90, 1, 0, 0);
-    glScalef(1,1,-1);
+    glUniformMatrix4fv(glGetUniformLocation(shader.getNativeHandle(), "view"), 1, GL_FALSE, glm::value_ptr(view));
 
     glColor4f(1,1,1,1);
     glDisable(GL_BLEND);
@@ -61,24 +60,18 @@ void GuiRotatingModelView::onDraw(sf::RenderTarget& window)
     glDepthMask(true);
     glEnable(GL_DEPTH_TEST);
 
-    glTranslatef(0, -200, 0);
-    glRotatef(-30, 1, 0, 0);
-    glRotatef(engine->getElapsedTime() * 360.0f / 10.0f, 0.0f, 0.0f, 1.0f);
     {
         float scale = 100.0f / model->getRadius();
-        glScalef(scale, scale, scale);
-        model->render();
+        auto model_matrix = glm::scale(glm::identity<glm::mat4>(), glm::vec3(scale));
+        model->render(model_matrix);
 #ifdef DEBUG
         auto debug_shader = ShaderManager::getShader("shaders/basicColor");
         sf::Shader::bind(debug_shader);
         {
             // Common state - matrices.
-            std::array<float, 16> matrix;
-            glGetFloatv(GL_PROJECTION_MATRIX, matrix.data());
-            glUniformMatrix4fv(glGetUniformLocation(debug_shader->getNativeHandle(), "projection"), 1, GL_FALSE, matrix.data());
-
-            glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
-            glUniformMatrix4fv(glGetUniformLocation(debug_shader->getNativeHandle(), "model_view"), 1, GL_FALSE, matrix.data());
+            glUniformMatrix4fv(glGetUniformLocation(debug_shader->getNativeHandle(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(glGetUniformLocation(debug_shader->getNativeHandle(), "view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(debug_shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
             // Vertex attrib
             gl::ScopedVertexAttribArray positions(glGetAttribLocation(debug_shader->getNativeHandle(), "position"));

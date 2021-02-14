@@ -11,6 +11,7 @@ class BlackHole : public SpaceObject, public Updatable
     static sf::Shader* shader;
     static uint32_t shaderPositionAttribute;
     static uint32_t shaderTexCoordsAttribute;
+    static int32_t shaderModelLocation;
 #endif
 
 public:
@@ -19,7 +20,7 @@ public:
     virtual void update(float delta) override;
 
 #if FEATURE_3D_RENDERING
-    virtual void draw3DTransparent() override;
+    virtual void draw3DTransparent(const glm::mat4& model_matrix) override;
 #endif
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
 

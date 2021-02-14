@@ -9,10 +9,14 @@
 
 #include "glObjects.h"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #if FEATURE_3D_RENDERING
 sf::Shader* Nebula::shader = nullptr;
 uint32_t Nebula::shaderPositionAttribute = 0;
 uint32_t Nebula::shaderTexCoordsAttribute = 0;
+int32_t Nebula::shaderModelLocation = -1;
 
 struct VertexAndTexCoords
 {
@@ -59,16 +63,19 @@ Nebula::Nebula()
         shader = ShaderManager::getShader("shaders/billboard");
         shaderPositionAttribute = glGetAttribLocation(shader->getNativeHandle(), "position");
         shaderTexCoordsAttribute = glGetAttribLocation(shader->getNativeHandle(), "texcoords");
+        shaderModelLocation = glGetUniformLocation(shader->getNativeHandle(), "model");
     }
 #endif
 }
 
 #if FEATURE_3D_RENDERING
-void Nebula::draw3DTransparent()
+void Nebula::draw3DTransparent(const glm::mat4& model_matrix)
 {
-    glRotatef(getRotation(), 0, 0, -1);
-    glTranslatef(-getPosition().x, -getPosition().y, 0);
+    auto nebula_matrix = glm::rotate(model_matrix, glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
+    nebula_matrix = glm::translate(nebula_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
 
+    sf::Shader::bind(shader);
+    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(nebula_matrix));
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
         sf::Vector3f(), {1.f, 0.f},

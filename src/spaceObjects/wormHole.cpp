@@ -1,5 +1,7 @@
 #include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "main.h"
 #include "wormHole.h"
@@ -71,10 +73,12 @@ WormHole::WormHole()
 }
 
 #if FEATURE_3D_RENDERING
-void WormHole::draw3DTransparent()
+void WormHole::draw3DTransparent(const glm::mat4& model_matrix)
 {
-    glRotatef(getRotation(), 0, 0, -1);
-    glTranslatef(-getPosition().x, -getPosition().y, 0);
+    auto worm_matrix = glm::rotate(model_matrix, glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
+    worm_matrix = glm::translate(worm_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
+    sf::Shader::bind(shader);
+    glUniformMatrix4fv(glGetUniformLocation(shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(worm_matrix));
 
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},

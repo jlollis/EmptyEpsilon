@@ -3,22 +3,28 @@
 
 #include "modelData.h"
 
+#include <glm/mat4x4.hpp>
+
 class ModelInfo : sf::NonCopyable
 {
 private:
     P<ModelData> data;
     float last_engine_particle_time;
     float last_warp_particle_time;
+#if FEATURE_3D_RENDERING
+    static sf::Shader* shader;
+    static int32_t shader_model_location;
+#endif
 public:
     ModelInfo();
 
     float engine_scale;
     float warp_scale;
 
-    void render(sf::Vector2f position, float rotation);
-    void renderOverlay(sf::Texture* texture, float alpha);
-    void renderShield(float alpha);
-    void renderShield(float alpha, float angle);
+    void render(sf::Vector2f position, float rotation, const glm::mat4& model_matrix);
+    void renderOverlay(sf::Texture* texture, float alpha, const glm::mat4& model_matrix);
+    void renderShield(float alpha, const glm::mat4& model_matrix);
+    void renderShield(float alpha, float angle, const glm::mat4& model_matrix);
 
     void setData(P<ModelData> data) { this->data = data; }
     void setData(string name);

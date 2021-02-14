@@ -4,10 +4,17 @@
 #include "electricExplosionEffect.h"
 #include "glObjects.h"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #if FEATURE_3D_RENDERING
+sf::Shader* ElectricExplosionEffect::basicShader = nullptr;
 sf::Shader* ElectricExplosionEffect::particlesShader = nullptr;
 uint32_t ElectricExplosionEffect::particlesShaderPositionAttribute = 0;
 uint32_t ElectricExplosionEffect::particlesShaderTexCoordsAttribute = 0;
+
+int32_t ElectricExplosionEffect::basicShaderModelLocation = -1;
+int32_t ElectricExplosionEffect::particlesShaderModelLocation = -1;
 
 struct VertexAndTexCoords
 {
@@ -43,8 +50,12 @@ ElectricExplosionEffect::ElectricExplosionEffect()
     if (!particlesShader && gl::isAvailable())
     {
         particlesShader = ShaderManager::getShader("shaders/billboard");
+        particlesShaderModelLocation = glGetUniformLocation(particlesShader->getNativeHandle(), "model");
         particlesShaderPositionAttribute = glGetAttribLocation(particlesShader->getNativeHandle(), "position");
         particlesShaderTexCoordsAttribute = glGetAttribLocation(particlesShader->getNativeHandle(), "texcoords");
+
+        basicShader = ShaderManager::getShader("shaders/basicShader");
+        basicShaderModelLocation = glGetUniformLocation(basicShader->getNativeHandle(), "model");
     }
 #endif
 }
@@ -55,7 +66,7 @@ ElectricExplosionEffect::~ElectricExplosionEffect()
 }
 
 #if FEATURE_3D_RENDERING
-void ElectricExplosionEffect::draw3DTransparent()
+void ElectricExplosionEffect::draw3DTransparent(const glm::mat4& model_matrix)
 {
     float f = (1.0f - (lifetime / maxLifetime));
     float scale;
@@ -68,17 +79,17 @@ void ElectricExplosionEffect::draw3DTransparent()
         alpha = Tween<float>::easeInQuad(f, 0.2, 1.0, 0.5f, 0.0f);
     }
 
-    glPushMatrix();
-    glScalef(scale * size, scale * size, scale * size);
+    auto explosion_matrix = glm::scale(model_matrix, glm::vec3(scale * size));
     glColor3f(alpha, alpha, alpha);
 
-    ShaderManager::getShader("shaders/basicShader")->setUniform("textureMap", *textureManager.getTexture("electric_sphere_texture.png"));
-    sf::Shader::bind(ShaderManager::getShader("shaders/basicShader"));
+    basicShader->setUniform("textureMap", *textureManager.getTexture("electric_sphere_texture.png"));
+    sf::Shader::bind(basicShader);
+    glUniformMatrix4fv(basicShaderModelLocation, 1, GL_FALSE, glm::value_ptr(explosion_matrix));
     Mesh* m = Mesh::getMesh("sphere.obj");
     m->render();
-    glScalef(0.5, 0.5, 0.5);
+
+    glUniformMatrix4fv(basicShaderModelLocation, 1, GL_FALSE, glm::value_ptr(glm::scale(explosion_matrix, glm::vec3(.5f))));
     m->render();
-    glPopMatrix();
 
     scale = Tween<float>::easeInCubic(f, 0.0, 1.0, 0.3f, 3.0f);
     float r = Tween<float>::easeOutQuad(f, 0.0, 1.0, 1.0f, 0.0f);
@@ -100,6 +111,7 @@ void ElectricExplosionEffect::draw3DTransparent()
     particlesShader->setUniform("textureMap", *textureManager.getTexture("particle.png"));
 
     sf::Shader::bind(particlesShader);
+    glUniformMatrix4fv(particlesShaderModelLocation, 1, GL_FALSE, glm::value_ptr(model_matrix));
     particlesShader->setUniform("color", sf::Glsl::Vec4(r, g, b, size / 32.0f));
     gl::ScopedVertexAttribArray positions(particlesShaderPositionAttribute);
     gl::ScopedVertexAttribArray texcoords(particlesShaderTexCoordsAttribute);

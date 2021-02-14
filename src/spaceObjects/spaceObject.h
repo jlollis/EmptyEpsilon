@@ -7,6 +7,8 @@
 #include "factionInfo.h"
 #include "shipTemplate.h"
 
+#include <glm/mat4x4.hpp>
+
 enum EDamageType
 {
     DT_Energy,
@@ -169,8 +171,8 @@ public:
         on_destroyed = callback;
     }
 
-    virtual void draw3D();
-    virtual void draw3DTransparent() {}
+    virtual void draw3D(const glm::mat4& model_matrix);
+    virtual void draw3DTransparent(const glm::mat4& model_matrix) {}
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool longRange);
     virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool longRange);
     virtual void destroy();

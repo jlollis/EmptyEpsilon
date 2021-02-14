@@ -1,10 +1,22 @@
+#include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
+
 #include "asteroid.h"
+
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "explosionEffect.h"
 #include "main.h"
 #include "pathPlanner.h"
 
 #include "scriptInterface.h"
+#include "glObjects.h"
+
+#if FEATURE_3D_RENDERING
+sf::Shader* Asteroid::shader = nullptr;
+int32_t Asteroid::shader_model_location = -1;
+#endif
 
 /// An asteroid in space. Which you can fly into and hit. Will do damage.
 REGISTER_SCRIPT_SUBCLASS(Asteroid, SpaceObject)
@@ -33,21 +45,29 @@ Asteroid::Asteroid()
     registerMemberReplication(&size);
 
     PathPlannerManager::getInstance()->addAvoidObject(this, 300);
+
+#if FEATURE_3D_RENDERING
+    if (!shader && gl::isAvailable())
+    {
+        shader = ShaderManager::getShader("shaders/objectShaderBS");
+        shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
+    }
+#endif
 }
 
-void Asteroid::draw3D()
+void Asteroid::draw3D(const glm::mat4& model_matrix)
 {
 #if FEATURE_3D_RENDERING
     if (size != getRadius())
         setRadius(size);
 
-    glTranslatef(0, 0, z);
-    glRotatef(engine->getElapsedTime() * rotation_speed, 0, 0, 1);
-    glScalef(getRadius(), getRadius(), getRadius());
-    sf::Shader* shader = ShaderManager::getShader("shaders/objectShaderBS");
+    auto asteroid_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, z));
+    asteroid_matrix = glm::rotate(asteroid_matrix, glm::radians(engine->getElapsedTime() * rotation_speed), glm::vec3(0.f, 0.f, 1.f));
+    asteroid_matrix = glm::scale(asteroid_matrix, glm::vec3(getRadius()));
     shader->setUniform("baseMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_d.png"));
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
+    glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(asteroid_matrix));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING
@@ -99,6 +119,11 @@ float Asteroid::getSize()
     return size;
 }
 
+#if FEATURE_3D_RENDERING
+sf::Shader* VisualAsteroid::shader = nullptr;
+int32_t VisualAsteroid::shader_model_location = -1;
+#endif
+
 /// An asteroid in space. Outside of hit range, just for visuals.
 REGISTER_SCRIPT_SUBCLASS(VisualAsteroid, SpaceObject)
 {
@@ -126,21 +151,28 @@ VisualAsteroid::VisualAsteroid()
 
     registerMemberReplication(&z);
     registerMemberReplication(&size);
+#if FEATURE_3D_RENDERING
+    if (!shader && gl::isAvailable())
+    {
+        shader = ShaderManager::getShader("shaders/objectShaderBS");
+        shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
+    }
+#endif
 }
 
-void VisualAsteroid::draw3D()
+void VisualAsteroid::draw3D(const glm::mat4& model_matrix)
 {
 #if FEATURE_3D_RENDERING
     if (size != getRadius())
         setRadius(size);
 
-    glTranslatef(0, 0, z);
-    glRotatef(engine->getElapsedTime() * rotation_speed, 0, 0, 1);
-    glScalef(getRadius(), getRadius(), getRadius());
-    sf::Shader* shader = ShaderManager::getShader("shaders/objectShaderBS");
+    auto asteroid_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, z));
+    asteroid_matrix = glm::rotate(asteroid_matrix, glm::radians(engine->getElapsedTime() * rotation_speed), glm::vec3(0.f, 0.f, 1.f));
+    asteroid_matrix = glm::scale(asteroid_matrix, glm::vec3(getRadius()));
     shader->setUniform("baseMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_d.png"));
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
+    glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(asteroid_matrix));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING

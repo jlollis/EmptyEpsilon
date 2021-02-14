@@ -17,7 +17,7 @@ const int max_instance_count = 60; // ! Sync up with code !
 
 // Program inputs
 uniform mat4 projection;
-uniform mat4 model_view;
+uniform mat4 view;
 
 uniform vec3 centers[max_instance_count];
 uniform vec4 color_and_sizes[max_instance_count]; // RGB color, alpha channel = size.
@@ -44,7 +44,7 @@ void main()
     vec4 color_and_size = color_and_sizes[instance_id];
     vec2 texcoords = resolve_texcoords(relative_vertex_id);
 
-    vec4 viewspace_center = model_view * vec4(center, 1.0);
+    vec4 viewspace_center = view * vec4(center, 1.0);
     vec4 viewspace_halfextents = vec4(texcoords.x - .5, texcoords.y - .5, 0., 0.) * color_and_size.w;
 
     // Outputs to fragment shader

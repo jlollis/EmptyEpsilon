@@ -4,6 +4,8 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
+#include <glm/mat4x4.hpp>
+
 #include "engine.h"
 
 #include "glObjects.h"
@@ -54,7 +56,7 @@ class ParticleEngine : public Updatable
 #endif
 
 public:
-    static void render();
+    static void render(const glm::mat4& projection, const glm::mat4& view);
     virtual void update(float delta);
 
     static void spawn(sf::Vector3f position, sf::Vector3f end_position, sf::Vector3f color, sf::Vector3f end_color, float size, float end_size, float life_time);
@@ -62,7 +64,7 @@ public:
 private:
 #if FEATURE_3D_RENDERING
     ParticleEngine();
-    void doRender();
+    void doRender(const glm::mat4& projection, const glm::mat4& view);
     void doSpawn(sf::Vector3f position, sf::Vector3f end_position, sf::Vector3f color, sf::Vector3f end_color, float size, float end_size, float life_time);
 
     std::array<uint32_t, static_cast<size_t>(Uniforms::Count)> uniforms;

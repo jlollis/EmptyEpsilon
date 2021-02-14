@@ -1,4 +1,8 @@
+#include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
+
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "engine.h"
 #include "main.h"
@@ -168,7 +172,8 @@ void ModelData::load()
             shader = ShaderManager::getShader("shaders/objectShaderBI");
         else
             shader = ShaderManager::getShader("shaders/objectShaderB");
-
+        model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
+        normal_location = glGetUniformLocation(shader->getNativeHandle(), "model_normal");
         loaded = true;
     }
 }
@@ -194,25 +199,23 @@ std::vector<string> ModelData::getModelDataNames()
     return ret;
 }
 
-void ModelData::render()
+void ModelData::render(const glm::mat4& model_matrix)
 {
 #if FEATURE_3D_RENDERING
     load();
     if (!mesh)
         return;
 
-    glPushMatrix();
-
-    glScalef(scale, scale, scale);
-    glTranslatef(mesh_offset.x, mesh_offset.y, mesh_offset.z);
+    auto modeldata_matrix = glm::scale(model_matrix, glm::vec3(scale));
+    modeldata_matrix = glm::translate(modeldata_matrix, glm::vec3(mesh_offset.x, mesh_offset.y, mesh_offset.z));
     shader->setUniform("baseMap", *texture);
     if (specular_texture)
         shader->setUniform("specularMap", *specular_texture);
     if (illumination_texture)
         shader->setUniform("illuminationMap", *illumination_texture);
     sf::Shader::bind(shader);
+    glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
+    glUniformMatrix4fv(normal_location, 1, GL_TRUE, glm::value_ptr(glm::inverse(modeldata_matrix)));
     mesh->render();
-
-    glPopMatrix();
 #endif//FEATURE_3D_RENDERING
 }

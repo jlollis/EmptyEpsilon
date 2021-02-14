@@ -1,6 +1,8 @@
 #include <GL/glew.h>
 #include "planet.h"
 #include <SFML/OpenGL.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "main.h"
 #include "pathPlanner.h"
 
@@ -256,7 +258,7 @@ void Planet::update(float delta)
 }
 
 #if FEATURE_3D_RENDERING
-void Planet::draw3D()
+void Planet::draw3D(const glm::mat4& model_matrix)
 {
     float distance = sf::length(camera_position - sf::Vector3f(getPosition().x, getPosition().y, distance_from_movement_plane));
 
@@ -270,8 +272,8 @@ void Planet::draw3D()
 
     if (planet_texture != "" && planet_size > 0)
     {
-        glTranslatef(0, 0, distance_from_movement_plane);
-        glScalef(planet_size, planet_size, planet_size);
+        auto planet_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, distance_from_movement_plane));
+        planet_matrix = glm::scale(planet_matrix, glm::vec3(planet_size));
         glColor3f(1, 1, 1);
 
         if (!planet_mesh[level_of_detail])
@@ -283,11 +285,12 @@ void Planet::draw3D()
         shader->setUniform("baseMap", *textureManager.getTexture(planet_texture));
         shader->setUniform("atmosphereColor", (sf::Glsl::Vec4)atmosphere_color);
         sf::Shader::bind(shader);
+        glUniformMatrix4fv(glGetUniformLocation(shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(planet_matrix));
         planet_mesh[level_of_detail]->render();
     }
 }
 
-void Planet::draw3DTransparent()
+void Planet::draw3DTransparent(const glm::mat4& model_matrix)
 {
     float distance = sf::length(camera_position - sf::Vector3f(getPosition().x, getPosition().y, distance_from_movement_plane));
 
@@ -299,12 +302,11 @@ void Planet::draw3DTransparent()
     if (view_scale < 0.1)
         level_of_detail = 3;
 
-    glTranslatef(0, 0, distance_from_movement_plane);
+    auto planet_matrix = glm::translate(model_matrix, glm::vec3(0.f, 0.f, distance_from_movement_plane));
     if (cloud_texture != "" && cloud_size > 0)
     {
-        glPushMatrix();
-        glScalef(cloud_size, cloud_size, cloud_size);
-        glRotatef(engine->getElapsedTime() * 1.0f, 0, 0, 1);
+        auto cloud_matrix = glm::scale(planet_matrix, glm::vec3(cloud_size));
+        cloud_matrix = glm::rotate(cloud_matrix, glm::radians(engine->getElapsedTime() * 1.0f), glm::vec3(0.f, 0.f, 1.f));
         glColor3f(1, 1, 1);
 
         if (!planet_mesh[level_of_detail])
@@ -316,8 +318,8 @@ void Planet::draw3DTransparent()
         shader->setUniform("baseMap", *textureManager.getTexture(cloud_texture));
         shader->setUniform("atmosphereColor", (sf::Glsl::Vec4)sf::Color(0,0,0));
         sf::Shader::bind(shader);
+        glUniformMatrix4fv(glGetUniformLocation(shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(cloud_matrix));
         planet_mesh[level_of_detail]->render();
-        glPopMatrix();
     }
     if (atmosphere_texture != "" && atmosphere_size > 0)
     {
@@ -334,7 +336,7 @@ void Planet::draw3DTransparent()
         billboardShader->setUniform("textureMap", *textureManager.getTexture(atmosphere_texture));
         billboardShader->setUniform("color", sf::Glsl::Vec4(atmosphere_color.r / 255.0f, atmosphere_color.g / 255.0f, atmosphere_color.b / 255.0f, atmosphere_size * 2.0f));
         sf::Shader::bind(billboardShader);
-        
+        glUniformMatrix4fv(glGetUniformLocation(billboardShader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(planet_matrix));
         glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
         glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));
 
