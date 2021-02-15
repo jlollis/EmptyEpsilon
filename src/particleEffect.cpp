@@ -23,7 +23,7 @@ void ParticleEngine::render(const glm::mat4& projection, const glm::mat4& view)
 #if FEATURE_3D_RENDERING
     if (particleEngine)
         particleEngine->doRender(projection, view);
-#endif
+#endif//FEATURE_3D_RENDERING
 }
 
 void ParticleEngine::update(float delta)
