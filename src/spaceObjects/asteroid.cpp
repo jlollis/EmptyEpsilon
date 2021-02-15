@@ -67,7 +67,7 @@ void Asteroid::draw3D()
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
     glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
-    glUniformMatrix4fv(shader_model_normal_location, 1, GL_TRUE, glm::value_ptr(glm::inverse(getModelMatrix())));
+    glUniformMatrix3fv(shader_model_normal_location, 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING
@@ -179,7 +179,7 @@ void VisualAsteroid::draw3D()
     shader->setUniform("specularMap", *textureManager.getTexture("Astroid_" + string(model_number) + "_s.png"));
     sf::Shader::bind(shader);
     glUniformMatrix4fv(shader_model_location, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
-    glUniformMatrix4fv(shader_model_normal_location, 1, GL_TRUE, glm::value_ptr(getModelMatrix()));
+    glUniformMatrix3fv(shader_model_normal_location, 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
     Mesh* m = Mesh::getMesh("Astroid_" + string(model_number) + ".model");
     m->render();
 #endif//FEATURE_3D_RENDERING

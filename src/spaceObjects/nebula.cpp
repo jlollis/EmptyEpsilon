@@ -71,7 +71,7 @@ Nebula::Nebula()
 #if FEATURE_3D_RENDERING
 void Nebula::draw3DTransparent()
 {
-    sf::Shader::bind(shader);
+    glUseProgram(shader->getNativeHandle());
     glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},

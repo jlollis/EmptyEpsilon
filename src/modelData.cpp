@@ -205,7 +205,6 @@ void ModelData::render(const glm::mat4& model_matrix)
     load();
     if (!mesh)
         return;
-
     auto modeldata_matrix = glm::scale(model_matrix, glm::vec3(scale));
     modeldata_matrix = glm::translate(modeldata_matrix, glm::vec3(mesh_offset.x, mesh_offset.y, mesh_offset.z));
     shader->setUniform("baseMap", *texture);
@@ -215,7 +214,7 @@ void ModelData::render(const glm::mat4& model_matrix)
         shader->setUniform("illuminationMap", *illumination_texture);
     sf::Shader::bind(shader);
     glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
-    glUniformMatrix4fv(normal_location, 1, GL_TRUE, glm::value_ptr(glm::inverse(modeldata_matrix)));
+    glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
     mesh->render();
 #endif//FEATURE_3D_RENDERING
 }
