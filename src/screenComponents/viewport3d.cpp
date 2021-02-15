@@ -276,9 +276,11 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
 
     for (const auto& shader : shaders_with_matrices)
     {
-        sf::Shader::bind(shader.shader);
         if (shader.view != -1)
+        {
+            glUseProgram(shader.shader->getNativeHandle());
             glUniformMatrix4fv(shader.view, 1, GL_FALSE, glm::value_ptr(view_matrix));
+    }
     }
 
     for(int n=render_lists.size() - 1; n >= 0; n--)
@@ -291,9 +293,11 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         // Update projection matrix in shaders.
         for (const auto& shader : shaders_with_matrices)
         {
-            sf::Shader::bind(shader.shader);
             if (shader.projection != -1)
+            {
+                glUseProgram(shader.shader->getNativeHandle());
                 glUniformMatrix4fv(shader.projection, 1, GL_FALSE, glm::value_ptr(projection));
+            }
         }
         sf::Shader::bind(nullptr);
 
@@ -314,7 +318,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         glBlendFunc(GL_ONE, GL_ONE);
         glDisable(GL_CULL_FACE);
         glDepthMask(false);
-        for(auto info : render_list)
+        for(const auto &info : render_list)
         {
             SpaceObject* obj = info.object;
             obj->draw3DTransparent();
@@ -453,9 +457,9 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
 
     window.pushGLStates();
 
-    if (show_callsigns && render_lists.size() > 0)
+    if (show_callsigns && !render_lists.empty())
     {
-        for(auto info : render_lists[0])
+        for(const auto& info : render_lists[0])
         {
             SpaceObject* obj = info.object;
             if (!obj->canBeTargetedBy(my_spaceship) || obj == *my_spaceship)
@@ -491,7 +495,8 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
 
 sf::Vector3f GuiViewport3D::worldToScreen(const sf::RenderTarget& window, const sf::Vector3f& world)
 {
-    auto pos = projection_matrix * view_matrix * glm::vec4(world.x, world.y, world.z, 1.f);
+    auto view_pos = view_matrix * glm::vec4(world.x, world.y, world.z, 1.f);
+    auto pos = projection_matrix * view_pos;
     
     // Perspective division
     pos /= pos.w;
@@ -499,12 +504,12 @@ sf::Vector3f GuiViewport3D::worldToScreen(const sf::RenderTarget& window, const 
     //Window coordinates
     //Map x, y to range 0-1
     sf::Vector3f ret;
-    ret.x = (pos.x * .5f + .5f) * viewport[2] + viewport[0];
-    ret.y = (pos.y * .5f + .5f) * viewport[3] + viewport[1];
+    ret.x = (pos.x * .5f + .5f) * viewport.z + viewport.x;
+    ret.y = (pos.y * .5f + .5f) * viewport.w + viewport.y;
     //This is only correct when glDepthRange(0.0, 1.0)
     //ret.z = (1.0+fTempo[6])*0.5;  //Between 0 and 1
     //Set Z to distance into the screen (negative is behind the screen)
-    ret.z = -pos.z;
+    ret.z = -view_pos.z;
 
     ret.x = ret.x * window.getView().getSize().x / window.getSize().x;
     ret.y = ret.y * window.getView().getSize().y / window.getSize().y;
