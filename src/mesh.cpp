@@ -45,7 +45,7 @@ void Mesh::render()
 #if FEATURE_3D_RENDERING
     if (!vertexCount)
         return;
-    if (glGenBuffers)
+    if (GLEW_VERSION_1_5)
     {
         if (vbo == NO_BUFFER)
         {
