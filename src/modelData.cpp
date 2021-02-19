@@ -205,11 +205,18 @@ void ModelData::render(const glm::mat4& model_matrix)
     load();
     if (!mesh)
         return;
+
+    ShaderRegistry::ScopedShader shader(shader_id);
+
     auto modeldata_matrix = glm::scale(model_matrix, glm::vec3(scale));
     modeldata_matrix = glm::translate(modeldata_matrix, glm::vec3(mesh_offset.x, mesh_offset.y, mesh_offset.z));
-    
-    auto& shader = ShaderRegistry::get(shader_id);
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniform::Model), 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniform::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
+
+
+    // Textures
     glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
+
     if (specular_texture)
     {
         glActiveTexture(GL_TEXTURE0 + ShaderRegistry::textureIndex(ShaderRegistry::Textures::SpecularMap));
@@ -222,20 +229,13 @@ void ModelData::render(const glm::mat4& model_matrix)
         glBindTexture(GL_TEXTURE_2D, illumination_texture->getNativeHandle());
     }
 
-    glUseProgram(shader.get()->getNativeHandle());
-
-    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniform::Model), 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
-    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniform::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
-
-    {
-        gl::ScopedVertexAttribArray positions(shader.attribute(ShaderRegistry::Attributes::Position));
-        gl::ScopedVertexAttribArray texcoords(shader.attribute(ShaderRegistry::Attributes::Texcoords));
-        gl::ScopedVertexAttribArray normals(shader.attribute(ShaderRegistry::Attributes::Normal));
-        mesh->render(positions.get(), texcoords.get(), normals.get());
-    }
+    // Draw
+    gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+    gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
+    gl::ScopedVertexAttribArray normals(shader.get().attribute(ShaderRegistry::Attributes::Normal));
+    mesh->render(positions.get(), texcoords.get(), normals.get());
 
     if (specular_texture || illumination_texture)
         glActiveTexture(GL_TEXTURE0);
-    glPopMatrix();
 #endif//FEATURE_3D_RENDERING
 }

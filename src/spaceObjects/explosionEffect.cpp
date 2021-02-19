@@ -98,14 +98,7 @@ void ExplosionEffect::draw3DTransparent()
 
     auto explosion_matrix = glm::scale(getModelMatrix(), glm::vec3(scale * size));
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Basic);
-
-    basicShader->setUniform("textureMap", *textureManager.getTexture("fire_ring.png"));
-    basicShader->setUniform("color", sf::Glsl::Vec4(alpha, alpha, alpha, 1.f));
-    sf::Shader::bind(basicShader);
     
-
-    gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
-    gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
 
     // Explosion sphere
     {
@@ -113,6 +106,9 @@ void ExplosionEffect::draw3DTransparent()
 
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), alpha, alpha, alpha, 1.f);
         glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(explosion_matrix));
+
+        gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+        gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
         gl::ScopedVertexAttribArray normals(shader.get().attribute(ShaderRegistry::Attributes::Normal));
 
         Mesh* m = Mesh::getMesh("sphere.obj");
@@ -133,6 +129,9 @@ void ExplosionEffect::draw3DTransparent()
         vertices[2] = sf::Vector3f(1, 1, 0);
         vertices[3] = sf::Vector3f(-1, 1, 0);
         {
+            gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+            gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
+
             glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(sf::Vector3f), (GLvoid*)0);
             glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(sf::Vector2f), (GLvoid*)(vertices.size() * sizeof(sf::Vector3f)));
 
@@ -145,6 +144,10 @@ void ExplosionEffect::draw3DTransparent()
 
     shader = ShaderRegistry::ScopedShader(ShaderRegistry::Shaders::Billboard);
     glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+
+    gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+    gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
+
     glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("particle.png")->getNativeHandle());
 
     scale = Tween<float>::easeInCubic(f, 0.0, 1.0, 0.3f, 5.0f);

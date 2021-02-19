@@ -98,22 +98,17 @@ void ElectricExplosionEffect::draw3DTransparent()
     auto model_matrix = getModelMatrix();
     auto explosion_matrix = glm::scale(model_matrix, glm::vec3(scale * size));
 
-    
-    Mesh* m = Mesh::getMesh("sphere.obj");
-    m->render();
-
-    
-
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Basic);
 
     glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(explosion_matrix));
-    gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
-    gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
 
     Mesh* m = Mesh::getMesh("sphere.obj");
     {
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), alpha, alpha, alpha, 1.f);
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("electric_sphere_texture.png")->getNativeHandle());
+
+        gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+        gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
         gl::ScopedVertexAttribArray normals(shader.get().attribute(ShaderRegistry::Attributes::Normal));
 
         m->render(positions.get(), texcoords.get(), normals.get());
@@ -133,7 +128,12 @@ void ElectricExplosionEffect::draw3DTransparent()
     glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("particle.png")->getNativeHandle());
 
     shader = ShaderRegistry::ScopedShader(ShaderRegistry::Shaders::Billboard);
+
     glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
+
+    gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+    gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
+
     glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), r, g, b, size / 32.0f);
 
     gl::ScopedBufferBinding vbo(GL_ARRAY_BUFFER, particlesBuffers[0]);
