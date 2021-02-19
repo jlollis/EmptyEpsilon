@@ -8,16 +8,12 @@
 #include "scriptInterface.h"
 
 #include "glObjects.h"
+#include "shaderRegistry.h"
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #if FEATURE_3D_RENDERING
-sf::Shader* Nebula::shader = nullptr;
-uint32_t Nebula::shaderPositionAttribute = 0;
-uint32_t Nebula::shaderTexCoordsAttribute = 0;
-int32_t Nebula::shaderModelLocation = -1;
-
 struct VertexAndTexCoords
 {
     sf::Vector3f vertex;
@@ -56,23 +52,14 @@ Nebula::Nebula()
     }
 
     nebula_list.push_back(this);
-
-#if FEATURE_3D_RENDERING
-    if (!shader && gl::isAvailable())
-    {
-        shader = ShaderManager::getShader("shaders/billboard");
-        shaderPositionAttribute = glGetAttribLocation(shader->getNativeHandle(), "position");
-        shaderTexCoordsAttribute = glGetAttribLocation(shader->getNativeHandle(), "texcoords");
-        shaderModelLocation = glGetUniformLocation(shader->getNativeHandle(), "model");
-    }
-#endif
 }
 
 #if FEATURE_3D_RENDERING
 void Nebula::draw3DTransparent()
 {
-    glUseProgram(shader->getNativeHandle());
-    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Billboard);
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
         sf::Vector3f(), {1.f, 0.f},
@@ -80,8 +67,8 @@ void Nebula::draw3DTransparent()
         sf::Vector3f(), {0.f, 1.f}
     };
 
-    gl::ScopedVertexAttribArray positions(shaderPositionAttribute);
-    gl::ScopedVertexAttribArray texcoords(shaderTexCoordsAttribute);
+    gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+    gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
 
     for(int n=0; n<cloud_count; n++)
     {
@@ -101,11 +88,8 @@ void Nebula::draw3DTransparent()
             point.vertex = position;
         }
 
-        
-        shader->setUniform("textureMap", *textureManager.getTexture("Nebula" + string(cloud.texture) + ".png"));
-        shader->setUniform("color", sf::Glsl::Vec4(alpha * 0.8f, alpha * 0.8f, alpha * 0.8f, size));
-
-        sf::Shader::bind(shader); // we need to rebind the shader (for the texture unit)
+        glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("Nebula" + string(cloud.texture) + ".png")->getNativeHandle());
+        glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), alpha * 0.8f, alpha * 0.8f, alpha * 0.8f, size);
 
         glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
         glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));

@@ -7,6 +7,7 @@
 #include "engine.h"
 
 #include "mesh.h"
+#include "shaderRegistry.h"
 
 #include <glm/mat4x4.hpp>
 
@@ -44,9 +45,7 @@ private:
     sf::Texture* texture;
     sf::Texture* specular_texture;
     sf::Texture* illumination_texture;
-    sf::Shader* shader;
-    int32_t model_location = -1;
-    int32_t normal_location = -1;
+    ShaderRegistry::Shaders shader_id;
     float scale;
 
     float radius;

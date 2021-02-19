@@ -9,6 +9,7 @@
 #include "scriptInterface.h"
 
 #include "glObjects.h"
+#include "shaderRegistry.h"
 
 #define FORCE_MULTIPLIER          50.0
 #define FORCE_MAX                 10000.0
@@ -18,10 +19,6 @@
 #define TARGET_SPREAD             500
 
 #if FEATURE_3D_RENDERING
-sf::Shader* WormHole::shader = nullptr;
-uint32_t WormHole::shaderPositionAttribute = 0;
-uint32_t WormHole::shaderTexCoordsAttribute = 0;
-
 struct VertexAndTexCoords
 {
     sf::Vector3f vertex;
@@ -61,22 +58,13 @@ WormHole::WormHole()
         clouds[n].texture = irandom(1, 3);
         clouds[n].offset = sf::Vector2f(0, 0);
     }
-
-#if FEATURE_3D_RENDERING
-    if (!shader && gl::isAvailable())
-    {
-        shader = ShaderManager::getShader("shaders/billboard");
-        shaderPositionAttribute = glGetAttribLocation(shader->getNativeHandle(), "position");
-        shaderTexCoordsAttribute = glGetAttribLocation(shader->getNativeHandle(), "texcoords");
-    }
-#endif
 }
 
 #if FEATURE_3D_RENDERING
 void WormHole::draw3DTransparent()
 {
-    sf::Shader::bind(shader);
-    glUniformMatrix4fv(glGetUniformLocation(shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Billboard);
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
 
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
@@ -85,8 +73,8 @@ void WormHole::draw3DTransparent()
         sf::Vector3f(), {0.f, 1.f}
     };
 
-    gl::ScopedVertexAttribArray positions(shaderPositionAttribute);
-    gl::ScopedVertexAttribArray texcoords(shaderTexCoordsAttribute);
+    gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
+    gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
 
     for(int n=0; n<cloud_count; n++)
     {
@@ -100,10 +88,8 @@ void WormHole::draw3DTransparent()
         if (alpha < 0.0)
             continue;
 
-        shader->setUniform("textureMap", *textureManager.getTexture("wormHole" + string(cloud.texture) + ".png"));
-        shader->setUniform("color", sf::Glsl::Vec4(alpha * 0.8f, alpha * 0.8f, alpha * 0.8f, size));
-
-        sf::Shader::bind(shader); // we need to rebind the shader (for the texture unit)
+        glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("wormHole" + string(cloud.texture) + ".png")->getNativeHandle());
+        glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), alpha * 0.8f, alpha * 0.8f, alpha * 0.8f, size);
 
         glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
         glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));

@@ -8,6 +8,7 @@
 
 #include "particleEffect.h"
 #include "glObjects.h"
+#include "shaderRegistry.h"
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -152,7 +153,8 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         soundManager->setListenerPosition(my_spaceship->getPosition(), my_spaceship->getRotation());
     else
         soundManager->setListenerPosition(sf::Vector2f(camera_position.x, camera_position.y), camera_yaw);
-    window.popGLStates();
+    
+    glActiveTexture(GL_TEXTURE0);
 
     float camera_fov = 60.0f;
     float sx = window.getSize().x * window.getView().getViewport().width / window.getView().getSize().x;
@@ -313,7 +315,6 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
             SpaceObject* obj = info.object;
             obj->draw3D();
         }
-        sf::Shader::bind(nullptr);
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
         glDisable(GL_CULL_FACE);
@@ -380,20 +381,19 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     
     if (my_spaceship && my_spaceship->getTarget())
     {
-        auto billboard_shader = ShaderManager::getShader("shaders/billboard");
+        ShaderRegistry::ScopedShader billboard(ShaderRegistry::Shaders::Billboard);
 
         P<SpaceObject> target = my_spaceship->getTarget();
         glDisable(GL_DEPTH_TEST);
 
         auto model_matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(target->getPosition().x, target->getPosition().y, 0.f));
 
-        billboard_shader->setUniform("textureMap", *textureManager.getTexture("redicule2.png"));
-        billboard_shader->setUniform("color", sf::Glsl::Vec4(.5f, .5f, .5f, target->getRadius() * 2.5f));
-        sf::Shader::bind(billboard_shader);
-        glUniformMatrix4fv(glGetUniformLocation(billboard_shader->getNativeHandle(), "model"), 1, GL_FALSE, glm::value_ptr(model_matrix));
+        glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("redicule2.png")->getNativeHandle());
+        glUniform4f(billboard.get().uniform(ShaderRegistry::Uniforms::Color), .5f, .5f, .5f, target->getRadius() * 2.5f);
+        glUniformMatrix4fv(billboard.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
         {
-            gl::ScopedVertexAttribArray positions(glGetAttribLocation(billboard_shader->getNativeHandle(), "position"));
-            gl::ScopedVertexAttribArray texcoords(glGetAttribLocation(billboard_shader->getNativeHandle(), "texcoords"));
+            gl::ScopedVertexAttribArray positions(billboard.get().attribute(ShaderRegistry::Attributes::Position));
+            gl::ScopedVertexAttribArray texcoords(billboard.get().attribute(ShaderRegistry::Attributes::Texcoords));
             auto vertices = {
                 uint8_t(0), uint8_t(0), uint8_t(0),
                 uint8_t(0), uint8_t(0), uint8_t(0),
@@ -419,25 +419,24 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
 
 #ifdef DEBUG
     glDisable(GL_DEPTH_TEST);
-    auto debug_shader = ShaderManager::getShader("shaders/basicColor");
-    // Store location of the model_view matrix which will change for each object.
-    auto view_location = glGetUniformLocation(debug_shader->getNativeHandle(), "view");
-    auto model_location = glGetUniformLocation(debug_shader->getNativeHandle(), "model");
-    sf::Shader::bind(debug_shader);
+    
     {
-        // Common state: color, projection matrix.    
-        debug_shader->setUniform("color", sf::Glsl::Vec4(sf::Color::White));
-        
-        glUniformMatrix4fv(glGetUniformLocation(debug_shader->getNativeHandle(), "projection"), 1, GL_FALSE, glm::value_ptr(projection_matrix));
-        glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));
+        ShaderRegistry::ScopedShader debug_shader(ShaderRegistry::Shaders::BasicColor);
+        // Common state: color, projection matrix.
+        glUniform4f(debug_shader.get().uniform(ShaderRegistry::Uniforms::Color), 1.f, 1.f, 1.f, 1.f);
+
+        glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::Projection), 1, GL_FALSE, glm::value_ptr(projection_matrix));
+        glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::View), 1, GL_FALSE, glm::value_ptr(view_matrix));
+
         std::vector<sf::Vector3f> points;
-        gl::ScopedVertexAttribArray positions(glGetAttribLocation(debug_shader->getNativeHandle(), "position"));
+        gl::ScopedVertexAttribArray positions(debug_shader.get().attribute(ShaderRegistry::Attributes::Position));
+
         foreach(SpaceObject, obj, space_object_list)
         {
             auto model_matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(obj->getPosition().x, obj->getPosition().y, 0.f));
             model_matrix = glm::rotate(model_matrix, glm::radians(obj->getRotation()), glm::vec3(0.f, 0.f, 1.f));
 
-            glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+            glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
             std::vector<sf::Vector2f> collisionShape = obj->getCollisionShape();
 
@@ -454,9 +453,8 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
     }
 #endif
-    sf::Shader::bind(nullptr);
 
-    window.pushGLStates();
+    window.resetGLStates();
 
     if (show_callsigns && !render_lists.empty())
     {

@@ -11,6 +11,7 @@
 #include "modelData.h"
 
 #include "scriptInterface.h"
+#include "glObjects.h"
 
 REGISTER_SCRIPT_CLASS(ModelData)
 {
@@ -33,7 +34,7 @@ REGISTER_SCRIPT_CLASS(ModelData)
 std::unordered_map<string, P<ModelData> > ModelData::data_map;
 
 ModelData::ModelData()
-: loaded(false), mesh(nullptr), texture(nullptr), specular_texture(nullptr), illumination_texture(nullptr), shader(nullptr), scale(1.0), radius(1.0)
+: loaded(false), mesh(nullptr), texture(nullptr), specular_texture(nullptr), illumination_texture(nullptr), shader_id(ShaderRegistry::Shaders::Count), scale(1.0), radius(1.0)
 {
 }
 
@@ -165,15 +166,14 @@ void ModelData::load()
             illumination_texture = textureManager.getTexture(illumination_texture_name);
 
         if (texture && specular_texture && illumination_texture)
-            shader = ShaderManager::getShader("shaders/objectShaderBSI");
+            shader_id = ShaderRegistry::Shaders::ObjectSpecularIllumination;
         else if (texture && specular_texture)
-            shader = ShaderManager::getShader("shaders/objectShaderBS");
+            shader_id = ShaderRegistry::Shaders::ObjectSpecular;
         else if (texture && illumination_texture)
-            shader = ShaderManager::getShader("shaders/objectShaderBI");
+            shader_id = ShaderRegistry::Shaders::ObjectIllumination;
         else
-            shader = ShaderManager::getShader("shaders/objectShaderB");
-        model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
-        normal_location = glGetUniformLocation(shader->getNativeHandle(), "model_normal");
+            shader_id = ShaderRegistry::Shaders::Object;
+
         loaded = true;
     }
 }
@@ -190,10 +190,10 @@ P<ModelData> ModelData::getModel(string name)
 
 std::vector<string> ModelData::getModelDataNames()
 {
-    std::vector<string> ret;
-    for(auto it : data_map)
+    std::vector<string> ret(data_map.size());
+    for(const auto &it : data_map)
     {
-        ret.push_back(it.first);
+        ret.emplace_back(it.first);
     }
     std::sort(ret.begin(), ret.end());
     return ret;
@@ -207,14 +207,35 @@ void ModelData::render(const glm::mat4& model_matrix)
         return;
     auto modeldata_matrix = glm::scale(model_matrix, glm::vec3(scale));
     modeldata_matrix = glm::translate(modeldata_matrix, glm::vec3(mesh_offset.x, mesh_offset.y, mesh_offset.z));
-    shader->setUniform("baseMap", *texture);
+    
+    auto& shader = ShaderRegistry::get(shader_id);
+    glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
     if (specular_texture)
-        shader->setUniform("specularMap", *specular_texture);
+    {
+        glActiveTexture(GL_TEXTURE0 + ShaderRegistry::textureIndex(ShaderRegistry::Textures::SpecularMap));
+        glBindTexture(GL_TEXTURE_2D, specular_texture->getNativeHandle());
+    }
+
     if (illumination_texture)
-        shader->setUniform("illuminationMap", *illumination_texture);
-    sf::Shader::bind(shader);
-    glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
-    glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
-    mesh->render();
+    {
+        glActiveTexture(GL_TEXTURE0 + ShaderRegistry::textureIndex(ShaderRegistry::Textures::IlluminationMap));
+        glBindTexture(GL_TEXTURE_2D, illumination_texture->getNativeHandle());
+    }
+
+    glUseProgram(shader.get()->getNativeHandle());
+
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniform::Model), 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniform::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
+
+    {
+        gl::ScopedVertexAttribArray positions(shader.attribute(ShaderRegistry::Attributes::Position));
+        gl::ScopedVertexAttribArray texcoords(shader.attribute(ShaderRegistry::Attributes::Texcoords));
+        gl::ScopedVertexAttribArray normals(shader.attribute(ShaderRegistry::Attributes::Normal));
+        mesh->render(positions.get(), texcoords.get(), normals.get());
+    }
+
+    if (specular_texture || illumination_texture)
+        glActiveTexture(GL_TEXTURE0);
+    glPopMatrix();
 #endif//FEATURE_3D_RENDERING
 }

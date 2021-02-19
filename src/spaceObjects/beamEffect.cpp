@@ -5,15 +5,9 @@
 #include "mesh.h"
 #include "main.h"
 
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "shaderRegistry.h"
 
 #if FEATURE_3D_RENDERING
-sf::Shader* BeamEffect::shader = nullptr;
-uint32_t BeamEffect::shaderPositionAttribute = 0;
-uint32_t BeamEffect::shaderTexCoordsAttribute = 0;
-int32_t BeamEffect::shaderModelLocation = -1;
-
 struct VertexAndTexCoords
 {
     sf::Vector3f vertex;
@@ -60,15 +54,6 @@ BeamEffect::BeamEffect()
     registerMemberReplication(&beam_fire_sound);
     registerMemberReplication(&beam_fire_sound_power);
     registerMemberReplication(&fire_ring);
-#if FEATURE_3D_RENDERING
-    if (!shader && gl::isAvailable())
-    {
-        shader = ShaderManager::getShader("shaders/basic");
-        shaderPositionAttribute = glGetAttribLocation(shader->getNativeHandle(), "position");
-        shaderTexCoordsAttribute = glGetAttribLocation(shader->getNativeHandle(), "texcoords");
-        shaderModelLocation = glGetUniformLocation(shader->getNativeHandle(), "model");
-    }
-#endif
 }
 
 //due to a suspected compiler bug this deconstructor needs to be explicitly defined
@@ -82,14 +67,13 @@ void BeamEffect::draw3DTransparent()
     sf::Vector3f startPoint(getPosition().x, getPosition().y, sourceOffset.z);
     sf::Vector3f endPoint(targetLocation.x, targetLocation.y, targetOffset.z);
     sf::Vector3f eyeNormal = sf::normalize(sf::cross(camera_position - startPoint, endPoint - startPoint));
-
-    // Setup shader
-    shader->setUniform("color", sf::Glsl::Vec4(lifetime, lifetime, lifetime, 1.f));
-    shader->setUniform("textureMap", *textureManager.getTexture(beam_texture));
-    sf::Shader::bind(shader);
-    glUniformMatrix4fv(shaderModelLocation, 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
-    gl::ScopedVertexAttribArray positions(shaderPositionAttribute);
-    gl::ScopedVertexAttribArray texcoords(shaderTexCoordsAttribute);
+    glBindTexture(GL_TEXTURE_2D, textureManager.getTexture(beam_texture)->getNativeHandle());
+    auto& beamShader = ShaderRegistry::get(ShaderRegistry::Shaders::Basic);
+    glUseProgram(beamShader.get()->getNativeHandle());
+    glUniform4f(beamShader.uniform(ShaderRegistry::Uniforms::Color), lifetime, lifetime, lifetime, 1.f);
+    glUniformMatrix4fv(beamShader.uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    gl::ScopedVertexAttribArray positions(beamShader.attribute(ShaderRegistry::Attributes::Position));
+    gl::ScopedVertexAttribArray texcoords(beamShader.attribute(ShaderRegistry::Attributes::Texcoords));
 
     std::array<VertexAndTexCoords, 4> quad;
     // Beam
@@ -138,8 +122,7 @@ void BeamEffect::draw3DTransparent()
         quad[3].vertex = v4;
         quad[3].texcoords = { 0.f, 1.f };
 
-        shader->setUniform("textureMap", *textureManager.getTexture("fire_ring.png"));
-        sf::Shader::bind(shader);
+        glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("fire_ring.png")->getNativeHandle());
         glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
         glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));
         std::initializer_list<uint8_t> indices = { 0, 1, 2, 2, 3, 0 };
