@@ -336,7 +336,7 @@ void Planet::draw3DTransparent()
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture(atmosphere_texture)->getNativeHandle());
         glm::vec4 color(glm::vec3(atmosphere_color.r, atmosphere_color.g, atmosphere_color.b) / 255.f, atmosphere_size * 2.0f);
         glUniform4fv(shader.get().uniform(ShaderRegistry::Uniforms::Color), 1, glm::value_ptr(color));
-         glUniformMatrix4fv(glGetUniformLocation(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(planet_matrix));
+        glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(planet_matrix));
         gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
         gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
         

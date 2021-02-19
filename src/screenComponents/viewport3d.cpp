@@ -246,43 +246,14 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         render_lists[render_list_index].emplace_back(*obj, depth);
     }
 
-    // Get a hold of all the shaders requiring matrices updates.
-    struct ShaderWithMatrices
+    for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
     {
-        sf::Shader* shader = nullptr;
-        int32_t projection = -1;
-        int32_t view = -1;
-        int32_t model = -1;
-        int32_t normal = -1;
-    };
-    static constexpr auto shader_list = {
-            "shaders/basic", "shaders/basicColor", "shaders/basicShader", "shaders/billboard",
-            "shaders/objectShaderB", "shaders/objectShaderBI", "shaders/objectShaderBS",  "shaders/objectShaderBSI",
-            "shaders/particles", "shaders/planetShader", "shaders/spacedust"
-    };
-
-    static std::array<ShaderWithMatrices, shader_list.size()> shaders_with_matrices{ nullptr };
-    if (!shaders_with_matrices[0].shader)
-    {
-        // Initialize
-        auto shader_name_iterator = std::begin(shader_list);
-        for (auto i = 0; i < shaders_with_matrices.size(); ++i)
+        const auto& shader = ShaderRegistry::get(ShaderRegistry::Shaders(i));
+        if (shader.uniform(ShaderRegistry::Uniforms::View) != -1)
         {
-            auto& shader = shaders_with_matrices[i];
-            shader.shader = ShaderManager::getShader(*shader_name_iterator++);
-            shader.projection = glGetUniformLocation(shader.shader->getNativeHandle(), "projection");
-            shader.view = glGetUniformLocation(shader.shader->getNativeHandle(), "view");
-            shader.model = glGetUniformLocation(shader.shader->getNativeHandle(), "model");
+            glUseProgram(shader.get()->getNativeHandle());
+            glUniformMatrix4fv(shader.uniform(ShaderRegistry::Uniforms::View), 1, GL_FALSE, glm::value_ptr(view_matrix));
         }
-    }
-
-    for (const auto& shader : shaders_with_matrices)
-    {
-        if (shader.view != -1)
-        {
-            glUseProgram(shader.shader->getNativeHandle());
-            glUniformMatrix4fv(shader.view, 1, GL_FALSE, glm::value_ptr(view_matrix));
-    }
     }
 
     for(int n=render_lists.size() - 1; n >= 0; n--)
@@ -291,17 +262,17 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         std::sort(render_list.begin(), render_list.end(), [](const RenderInfo& a, const RenderInfo& b) { return a.depth > b.depth; });
 
         auto projection = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f * (n + 1));
-
         // Update projection matrix in shaders.
-        for (const auto& shader : shaders_with_matrices)
+        for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
         {
-            if (shader.projection != -1)
+            const auto& shader = ShaderRegistry::get(ShaderRegistry::Shaders(i));
+            if (shader.uniform(ShaderRegistry::Uniforms::Projection) != -1)
             {
-                glUseProgram(shader.shader->getNativeHandle());
-                glUniformMatrix4fv(shader.projection, 1, GL_FALSE, glm::value_ptr(projection));
+                glUseProgram(shader.get()->getNativeHandle());
+                glUniformMatrix4fv(shader.uniform(ShaderRegistry::Uniforms::Projection), 1, GL_FALSE, glm::value_ptr(projection));
             }
         }
-        sf::Shader::bind(nullptr);
+        glUseProgram(GL_NONE);
 
         glDepthMask(true);
         glClear(GL_DEPTH_BUFFER_BIT);

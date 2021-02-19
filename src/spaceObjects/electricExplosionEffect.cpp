@@ -97,7 +97,6 @@ void ElectricExplosionEffect::draw3DTransparent()
 
     auto model_matrix = getModelMatrix();
     auto explosion_matrix = glm::scale(model_matrix, glm::vec3(scale * size));
-
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Basic);
 
     glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(explosion_matrix));

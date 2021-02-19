@@ -193,6 +193,8 @@ void WormHole::onTeleportation(ScriptSimpleCallback callback)
 
 glm::mat4 WormHole::getModelMatrix() const
 {
-    auto worm_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
-    return glm::translate(worm_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
+    auto position = const_cast<WormHole*>(this)->getPosition();
+    auto rotation = const_cast<WormHole*>(this)->getRotation();
+    auto worm_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(rotation), glm::vec3(0.f, 0.f, -1.f));
+    return glm::translate(worm_matrix, -glm::vec3(position.x, position.y, 0.f));
 }

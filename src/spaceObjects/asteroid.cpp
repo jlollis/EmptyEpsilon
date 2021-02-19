@@ -41,15 +41,6 @@ Asteroid::Asteroid()
     registerMemberReplication(&size);
 
     PathPlannerManager::getInstance()->addAvoidObject(this, 300);
-
-#if FEATURE_3D_RENDERING
-    if (!shader && gl::isAvailable())
-    {
-        shader = ShaderManager::getShader("shaders/objectShaderBS");
-        shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
-        shader_model_normal_location = glGetUniformLocation(shader->getNativeHandle(), "model_normal");
-    }
-#endif
 }
 
 void Asteroid::draw3D()
@@ -60,8 +51,8 @@ void Asteroid::draw3D()
 
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::ObjectSpecular);
 
-    glUniformMatrix4fv(shader.uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
-    glUniformMatrix3fv(shader.uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
     
 
     glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("Astroid_" + string(model_number) + "_d.png")->getNativeHandle());
@@ -134,12 +125,6 @@ glm::mat4 Asteroid::getModelMatrix() const
     return glm::scale(asteroid_matrix, glm::vec3(getRadius()));
 }
 
-#if FEATURE_3D_RENDERING
-sf::Shader* VisualAsteroid::shader = nullptr;
-int32_t VisualAsteroid::shader_model_location = -1;
-int32_t VisualAsteroid::shader_model_normal_location = -1;
-#endif
-
 /// An asteroid in space. Outside of hit range, just for visuals.
 REGISTER_SCRIPT_SUBCLASS(VisualAsteroid, SpaceObject)
 {
@@ -167,14 +152,6 @@ VisualAsteroid::VisualAsteroid()
 
     registerMemberReplication(&z);
     registerMemberReplication(&size);
-#if FEATURE_3D_RENDERING
-    if (!shader && gl::isAvailable())
-    {
-        shader = ShaderManager::getShader("shaders/objectShaderBS");
-        shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
-        shader_model_normal_location = glGetUniformLocation(shader->getNativeHandle(), "model_normal");
-    }
-#endif
 }
 
 void VisualAsteroid::draw3D()
@@ -185,8 +162,8 @@ void VisualAsteroid::draw3D()
 
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::ObjectSpecular);
 
-    glUniformMatrix4fv(shader.uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
-    glUniformMatrix3fv(shader.uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
 
     glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("Astroid_" + string(model_number) + "_d.png")->getNativeHandle());
 

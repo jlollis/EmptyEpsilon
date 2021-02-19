@@ -37,7 +37,9 @@ namespace ShaderRegistry
 		Color = 0,
 		ModelViewProjection,
 		Projection,
-		ModelView,
+		View,
+		Model,
+		ModelNormal,
 		CameraPosition,
 		AtmosphereColor,
 

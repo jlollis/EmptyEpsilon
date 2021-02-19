@@ -193,6 +193,8 @@ PVector<Nebula> Nebula::getNebulas()
 
 glm::mat4 Nebula::getModelMatrix() const
 {
-    auto nebula_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(getRotation()), glm::vec3(0.f, 0.f, -1.f));
-    return glm::translate(nebula_matrix, -glm::vec3(getPosition().x, getPosition().y, 0.f));
+    auto position = const_cast<Nebula*>(this)->getPosition();
+    auto rotation = const_cast<Nebula*>(this)->getRotation();
+    auto nebula_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(rotation), glm::vec3(0.f, 0.f, -1.f));
+    return glm::translate(nebula_matrix, -glm::vec3(position.x, position.y, 0.f));
 }

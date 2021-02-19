@@ -34,18 +34,7 @@ void GuiRotatingModelView::onDraw(sf::RenderTarget& window)
     float sy = window.getSize().y * window.getView().getViewport().height / window.getView().getSize().y;
     glViewport(rect.left * sx, (float(window.getView().getSize().y) - rect.height - rect.top) * sx, rect.width * sx, rect.height * sy);
 
-    glClearDepth(1.f);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_CULL_FACE);
-
-    auto& shader = model->getShader();
-    sf::Shader::bind(&shader);
     auto projection = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f);
-    glUniformMatrix4fv(
-        glGetUniformLocation(shader.getNativeHandle(), "projection"), 1, GL_FALSE,
-        glm::value_ptr(projection)
-    );
 
     auto view = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
     view = glm::scale(view, glm::vec3(1.f, 1.f, -1.f));
@@ -53,8 +42,28 @@ void GuiRotatingModelView::onDraw(sf::RenderTarget& window)
     view = glm::rotate(view, glm::radians(-30.f), glm::vec3(1.f, 0.f, 0.f));
     view = glm::rotate(view, glm::radians(engine->getElapsedTime() * 360.0f / 10.0f), glm::vec3(0.f, 0.f, 1.f));
 
-    glUniformMatrix4fv(glGetUniformLocation(shader.getNativeHandle(), "view"), 1, GL_FALSE, glm::value_ptr(view));
+    for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
+    {
+        auto& shader = ShaderRegistry::get(ShaderRegistry::Shaders(i));
+        auto projection_location = shader.uniform(ShaderRegistry::Uniforms::Projection);
+        auto view_location = shader.uniform(ShaderRegistry::Uniforms::View);
+        if (projection_location != -1 || view_location != -1)
+        {
+            auto handle = shader.get()->getNativeHandle();
+            glUseProgram(handle);
 
+            if (projection_location != -1)
+                glUniformMatrix4fv(projection_location, 1, GL_FALSE, glm::value_ptr(projection));
+            if (view_location != -1)
+                glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view));
+        }
+    }
+    glUseProgram(GL_NONE);
+
+    glClearDepth(1.f);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_CULL_FACE);
     glDisable(GL_BLEND);
     sf::Texture::bind(NULL);
     glDepthMask(true);

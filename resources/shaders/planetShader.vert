@@ -5,7 +5,7 @@
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform mat4 model_normal;
+uniform mat3 model_normal;
 
 // Per-vertex inputs
 attribute vec3 position;

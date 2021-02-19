@@ -30,7 +30,6 @@ private:
 public:
     static P<ModelData> getModel(string name);
     static std::vector<string> getModelDataNames();
-    sf::Shader& getShader() const { return *shader; }
 private:
     string name;
     string mesh_name;

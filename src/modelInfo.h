@@ -11,11 +11,6 @@ private:
     P<ModelData> data;
     float last_engine_particle_time;
     float last_warp_particle_time;
-#if FEATURE_3D_RENDERING
-    static sf::Shader* shader;
-    static int32_t shader_model_location;
-    static int32_t shader_color_location;
-#endif
 public:
     ModelInfo();
 

@@ -14,14 +14,6 @@
 ModelInfo::ModelInfo()
 : last_engine_particle_time(0), last_warp_particle_time(0), engine_scale(0), warp_scale(0.0f)
 {
-#if FEATURE_3D_RENDERING
-    if (!shader && gl::isAvailable())
-    {
-        shader = ShaderManager::getShader("shaders/basicShader");
-        shader_model_location = glGetUniformLocation(shader->getNativeHandle(), "model");
-        shader_color_location = glGetUniformLocation(shader->getNativeHandle(), "color");
-    }
-#endif
 }
 
 void ModelInfo::setData(string name)
@@ -88,7 +80,7 @@ void ModelInfo::renderOverlay(sf::Texture* texture, float alpha, const glm::mat4
     {
         ShaderRegistry::ScopedShader basicShader(ShaderRegistry::Shaders::Basic);
 
-        glUniformMatrix4fv(basicShader.uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(overlay_matrix));
+        glUniformMatrix4fv(basicShader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(overlay_matrix));
         glUniform4f(basicShader.get().uniform(ShaderRegistry::Uniforms::Color), alpha, alpha, alpha, 1.f);
         glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
 
@@ -112,7 +104,7 @@ void ModelInfo::renderShield(float alpha, const glm::mat4& model_matrix)
 
         auto shield_matrix = glm::rotate(model_matrix, glm::radians(engine->getElapsedTime() * 5), glm::vec3(0.f, 0.f, 1.f));
         shield_matrix = glm::scale(shield_matrix, 1.2f * glm::vec3(data->radius));
-        glUniformMatrix4fv(basicShader.uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(shield_matrix));
+        glUniformMatrix4fv(basicShader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(shield_matrix));
 
         glUniform4f(basicShader.get().uniform(ShaderRegistry::Uniforms::Color), alpha, alpha, alpha, 1.f);
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("shield_hit_effect.png")->getNativeHandle());
@@ -138,7 +130,7 @@ void ModelInfo::renderShield(float alpha, float angle, const glm::mat4& model_ma
         auto shield_matrix = glm::rotate(model_matrix, glm::radians(angle), glm::vec3(0.f, 0.f, 1.f));
         shield_matrix = glm::rotate(shield_matrix, glm::radians(engine->getElapsedTime() * 5), glm::vec3(0.f, 0.f, 1.f));
         shield_matrix = glm::scale(shield_matrix, 1.2f * glm::vec3(data->radius));
-        glUniformMatrix4fv(basicShader.uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(shield_matrix));
+        glUniformMatrix4fv(basicShader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(shield_matrix));
 
         glUniform4f(basicShader.get().uniform(ShaderRegistry::Uniforms::Color), alpha, alpha, alpha, 1.f);
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("shield_hit_effect.png")->getNativeHandle());

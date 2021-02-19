@@ -210,8 +210,8 @@ void ModelData::render(const glm::mat4& model_matrix)
 
     auto modeldata_matrix = glm::scale(model_matrix, glm::vec3(scale));
     modeldata_matrix = glm::translate(modeldata_matrix, glm::vec3(mesh_offset.x, mesh_offset.y, mesh_offset.z));
-    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniform::Model), 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
-    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniform::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
 
 
     // Textures

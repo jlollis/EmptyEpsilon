@@ -6,6 +6,8 @@
 #include "main.h"
 
 #include "shaderRegistry.h"
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 #if FEATURE_3D_RENDERING
 struct VertexAndTexCoords
@@ -73,7 +75,7 @@ void BeamEffect::draw3DTransparent()
     ShaderRegistry::ScopedShader beamShader(ShaderRegistry::Shaders::Basic);
 
     glUniform4f(beamShader.get().uniform(ShaderRegistry::Uniforms::Color), lifetime, lifetime, lifetime, 1.f);
-    glUniformMatrix4fv(beamShader.uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
+    glUniformMatrix4fv(beamShader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     
     gl::ScopedVertexAttribArray positions(beamShader.get().attribute(ShaderRegistry::Attributes::Position));
     gl::ScopedVertexAttribArray texcoords(beamShader.get().attribute(ShaderRegistry::Attributes::Texcoords));
@@ -190,5 +192,6 @@ void BeamEffect::setTarget(P<SpaceObject> target, sf::Vector2f hitLocation)
 
 glm::mat4 BeamEffect::getModelMatrix() const
 {
-    return glm::translate(SpaceObject::getModelMatrix(), -glm::vec3(getPosition().x, getPosition().y, 0.f));
+    auto position = const_cast<BeamEffect*>(this)->getPosition();
+    return glm::translate(SpaceObject::getModelMatrix(), -glm::vec3(position.x, position.y, 0.f));
 }
