@@ -1,4 +1,4 @@
 [submodule "SeriousProton"]
 	path = SeriousProton
 	url = https://github.com/gcask/SeriousProton
-	branch = sdl
+	branch = sdl-edge
