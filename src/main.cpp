@@ -41,6 +41,8 @@
 #include <libgen.h>
 #endif
 
+#include "shaderRegistry.h"
+
 sf::Vector3f camera_position;
 float camera_yaw;
 float camera_pitch;
@@ -237,6 +239,7 @@ int main(int argc, char** argv)
         engine->registerObject("windowManager", window_manager);
         
         textureManager.getTexture("Tokka_WalkingMan.png", sf::Vector2i(6, 1)); //Setup the sprite mapping.
+        ShaderRegistry::Shader::initialize();
     }
     if (PreferencesManager::get("touchscreen").toInt())
     {
