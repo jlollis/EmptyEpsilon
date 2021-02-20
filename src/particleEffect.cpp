@@ -4,6 +4,8 @@
 #include "featureDefs.h"
 #include "particleEffect.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 ParticleEngine* ParticleEngine::particleEngine = nullptr;
 
 #if FEATURE_3D_RENDERING
@@ -16,11 +18,11 @@ static constexpr typename std::underlying_type<Enum>::type as_index(Enum entry)
 #endif // FEATURE_3D_RENDERING
 
 
-void ParticleEngine::render()
+void ParticleEngine::render(const glm::mat4& projection, const glm::mat4& view)
 {
 #if FEATURE_3D_RENDERING
     if (particleEngine)
-        particleEngine->doRender();
+        particleEngine->doRender(projection, view);
 #endif//FEATURE_3D_RENDERING
 }
 
@@ -68,7 +70,7 @@ ParticleEngine::ParticleEngine()
         uniforms[as_index(Uniforms::Centers)] = glGetUniformLocation(shader->getNativeHandle(), "centers");
         uniforms[as_index(Uniforms::ColorAndSizes)] = glGetUniformLocation(shader->getNativeHandle(), "color_and_sizes");
         uniforms[as_index(Uniforms::Projection)] = glGetUniformLocation(shader->getNativeHandle(), "projection");
-        uniforms[as_index(Uniforms::ModelView)] = glGetUniformLocation(shader->getNativeHandle(), "model_view");
+        uniforms[as_index(Uniforms::ModelView)] = glGetUniformLocation(shader->getNativeHandle(), "view");
 
         std::array<uint8_t, instances_per_draw * elements_per_instance> elements;
 
@@ -107,7 +109,7 @@ ParticleEngine::ParticleEngine()
 }
 
 
-void ParticleEngine::doRender()
+void ParticleEngine::doRender(const glm::mat4& projection, const glm::mat4& view)
 {
     sf::Shader::bind(shader);
 
@@ -116,13 +118,8 @@ void ParticleEngine::doRender()
     gl::ScopedTexture particle_texture(GL_TEXTURE_2D, textureManager.getTexture("particle.png")->getNativeHandle());
 
     // - Matrices
-    std::array<float, 4*4> matrix;
-    
-    glGetFloatv(GL_PROJECTION_MATRIX, matrix.data());
-    glUniformMatrix4fv(uniforms[as_index(Uniforms::Projection)], 1, GL_FALSE, matrix.data());
-    
-    glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
-    glUniformMatrix4fv(uniforms[as_index(Uniforms::ModelView)], 1, GL_FALSE, matrix.data());
+    glUniformMatrix4fv(uniforms[as_index(Uniforms::Projection)], 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(uniforms[as_index(Uniforms::ModelView)], 1, GL_FALSE, glm::value_ptr(view));
     
     {
         std::array<sf::Glsl::Vec3, instances_per_draw> positions;

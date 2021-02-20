@@ -6,6 +6,8 @@
 #include "main.h"
 
 #include "shaderRegistry.h"
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 #if FEATURE_3D_RENDERING
 struct VertexAndTexCoords
@@ -64,7 +66,6 @@ BeamEffect::~BeamEffect()
 #if FEATURE_3D_RENDERING
 void BeamEffect::draw3DTransparent()
 {
-    glTranslatef(-getPosition().x, -getPosition().y, 0);
     sf::Vector3f startPoint(getPosition().x, getPosition().y, sourceOffset.z);
     sf::Vector3f endPoint(targetLocation.x, targetLocation.y, targetOffset.z);
     sf::Vector3f eyeNormal = sf::normalize(sf::cross(camera_position - startPoint, endPoint - startPoint));
@@ -74,6 +75,7 @@ void BeamEffect::draw3DTransparent()
     ShaderRegistry::ScopedShader beamShader(ShaderRegistry::Shaders::Basic);
 
     glUniform4f(beamShader.get().uniform(ShaderRegistry::Uniforms::Color), lifetime, lifetime, lifetime, 1.f);
+    glUniformMatrix4fv(beamShader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     
     gl::ScopedVertexAttribArray positions(beamShader.get().attribute(ShaderRegistry::Attributes::Position));
     gl::ScopedVertexAttribArray texcoords(beamShader.get().attribute(ShaderRegistry::Attributes::Texcoords));
@@ -186,4 +188,10 @@ void BeamEffect::setTarget(P<SpaceObject> target, sf::Vector2f hitLocation)
     sf::Vector3f hitPos(targetLocation.x, targetLocation.y, targetOffset.z);
     sf::Vector3f targetPos(target->getPosition().x, target->getPosition().y, 0);
     hitNormal = sf::normalize(targetPos - hitPos);
+}
+
+glm::mat4 BeamEffect::getModelMatrix() const
+{
+    auto position = const_cast<BeamEffect*>(this)->getPosition();
+    return glm::translate(SpaceObject::getModelMatrix(), -glm::vec3(position.x, position.y, 0.f));
 }

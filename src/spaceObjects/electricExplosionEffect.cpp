@@ -6,6 +6,9 @@
 #include "glObjects.h"
 #include "shaderRegistry.h"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #if FEATURE_3D_RENDERING
 gl::Buffers<2> ElectricExplosionEffect::particlesBuffers(gl::Unitialized{});
 #endif
@@ -93,9 +96,12 @@ void ElectricExplosionEffect::draw3DTransparent()
         alpha = Tween<float>::easeInQuad(f, 0.2, 1.0, 0.5f, 0.0f);
     }
 
+    auto model_matrix = getModelMatrix();
+    auto explosion_matrix = glm::scale(model_matrix, glm::vec3(scale * size));
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Basic);
 
-    glPushMatrix();
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(explosion_matrix));
+
     Mesh* m = Mesh::getMesh("sphere.obj");
     {
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), alpha, alpha, alpha, 1.f);
@@ -105,14 +111,12 @@ void ElectricExplosionEffect::draw3DTransparent()
         gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
         gl::ScopedVertexAttribArray normals(shader.get().attribute(ShaderRegistry::Attributes::Normal));
 
-        glScalef(scale * size, scale * size, scale * size);
         m->render(positions.get(), texcoords.get(), normals.get());
 
-        glScalef(0.5f, 0.5f, 0.5f);
+        glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(glm::scale(explosion_matrix, glm::vec3(.5f))));
         m->render(positions.get(), texcoords.get(), normals.get());
         
     }
-    glPopMatrix();
 
     scale = Tween<float>::easeInCubic(f, 0.0, 1.0, 0.3f, 3.0f);
     float r = Tween<float>::easeOutQuad(f, 0.0, 1.0, 1.0f, 0.0f);
@@ -124,6 +128,8 @@ void ElectricExplosionEffect::draw3DTransparent()
     glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("particle.png")->getNativeHandle());
 
     shader = ShaderRegistry::ScopedShader(ShaderRegistry::Shaders::Billboard);
+
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
     gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
     gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));

@@ -3,6 +3,9 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <GL/glew.h>
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "main.h"
 
 #include "spaceship.h"
@@ -64,8 +67,7 @@ WormHole::WormHole()
 void WormHole::draw3DTransparent()
 {
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Billboard);
-    glRotatef(getRotation(), 0, 0, -1);
-    glTranslatef(-getPosition().x, -getPosition().y, 0);
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
 
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
@@ -190,4 +192,12 @@ sf::Vector2f WormHole::getTargetPosition()
 void WormHole::onTeleportation(ScriptSimpleCallback callback)
 {
     this->on_teleportation = callback;
+}
+
+glm::mat4 WormHole::getModelMatrix() const
+{
+    auto position = const_cast<WormHole*>(this)->getPosition();
+    auto rotation = const_cast<WormHole*>(this)->getRotation();
+    auto worm_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(rotation), glm::vec3(0.f, 0.f, -1.f));
+    return glm::translate(worm_matrix, -glm::vec3(position.x, position.y, 0.f));
 }

@@ -5,6 +5,8 @@
 
 #include "glObjects.h"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #if FEATURE_3D_RENDERING
 gl::Buffers<2> ExplosionEffect::particlesBuffers(gl::Unitialized{});
 #endif
@@ -95,9 +97,8 @@ void ExplosionEffect::draw3DTransparent()
 
     std::array<sf::Vector3f, 4 * max_quad_count> vertices;
 
-    glPushMatrix();
+    auto explosion_matrix = glm::scale(getModelMatrix(), glm::vec3(scale * size));
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Basic);
-
     
 
     // Explosion sphere
@@ -105,13 +106,13 @@ void ExplosionEffect::draw3DTransparent()
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("fire_sphere_texture.png")->getNativeHandle());
 
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), alpha, alpha, alpha, 1.f);
+        glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(explosion_matrix));
 
         gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
         gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
         gl::ScopedVertexAttribArray normals(shader.get().attribute(ShaderRegistry::Attributes::Normal));
 
         Mesh* m = Mesh::getMesh("sphere.obj");
-        glScalef(scale * size, scale * size, scale * size);
         m->render(positions.get(), texcoords.get(), normals.get());
     }
 
@@ -121,7 +122,8 @@ void ExplosionEffect::draw3DTransparent()
     // Fire ring
     {
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("fire_ring.png")->getNativeHandle());
-        glScalef(1.5f, 1.5f, 1.5f);
+        explosion_matrix = glm::scale(explosion_matrix, glm::vec3(1.5f));
+        glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(explosion_matrix));
 
         vertices[0] = sf::Vector3f(-1, -1, 0);
         vertices[1] = sf::Vector3f(1, -1, 0);
@@ -140,9 +142,9 @@ void ExplosionEffect::draw3DTransparent()
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
         }
     }
-    glPopMatrix();
 
     shader = ShaderRegistry::ScopedShader(ShaderRegistry::Shaders::Billboard);
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
 
     gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
     gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));

@@ -22,8 +22,6 @@ public:
 
     virtual void update(float delta) override;
 
-    virtual void draw3D() override;
-
     virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
 
     virtual void collide(Collisionable* target, float force) override;
@@ -44,6 +42,8 @@ public:
     void onPlayerCollision(ScriptSimpleCallback callback);
 
     virtual string getExportLine() override;
+protected:
+    glm::mat4 getModelMatrix() const override;
 };
 
 #endif//ARTIFACT_H

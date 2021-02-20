@@ -3,6 +3,8 @@
 
 #include "modelData.h"
 
+#include <glm/mat4x4.hpp>
+
 class ModelInfo : sf::NonCopyable
 {
 private:
@@ -15,10 +17,10 @@ public:
     float engine_scale;
     float warp_scale;
 
-    void render(sf::Vector2f position, float rotation);
-    void renderOverlay(sf::Texture* texture, float alpha);
-    void renderShield(float alpha);
-    void renderShield(float alpha, float angle);
+    void render(sf::Vector2f position, float rotation, const glm::mat4& model_matrix);
+    void renderOverlay(sf::Texture* texture, float alpha, const glm::mat4& model_matrix);
+    void renderShield(float alpha, const glm::mat4& model_matrix);
+    void renderShield(float alpha, float angle, const glm::mat4& model_matrix);
 
     void setData(P<ModelData> data) { this->data = data; }
     void setData(string name);

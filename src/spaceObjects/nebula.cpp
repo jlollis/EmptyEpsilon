@@ -11,6 +11,9 @@
 #include "glObjects.h"
 #include "shaderRegistry.h"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #if FEATURE_3D_RENDERING
 struct VertexAndTexCoords
 {
@@ -56,8 +59,7 @@ Nebula::Nebula()
 void Nebula::draw3DTransparent()
 {
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Billboard);
-    glRotatef(getRotation(), 0, 0, -1);
-    glTranslatef(-getPosition().x, -getPosition().y, 0);
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
 
     std::array<VertexAndTexCoords, 4> quad{
         sf::Vector3f(), {0.f, 0.f},
@@ -188,4 +190,12 @@ sf::Vector2f Nebula::getFirstBlockedPosition(sf::Vector2f start, sf::Vector2f en
 PVector<Nebula> Nebula::getNebulas()
 {
     return nebula_list;
+}
+
+glm::mat4 Nebula::getModelMatrix() const
+{
+    auto position = const_cast<Nebula*>(this)->getPosition();
+    auto rotation = const_cast<Nebula*>(this)->getRotation();
+    auto nebula_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(rotation), glm::vec3(0.f, 0.f, -1.f));
+    return glm::translate(nebula_matrix, -glm::vec3(position.x, position.y, 0.f));
 }

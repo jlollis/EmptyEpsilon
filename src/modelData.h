@@ -9,6 +9,8 @@
 #include "mesh.h"
 #include "shaderRegistry.h"
 
+#include <glm/mat4x4.hpp>
+
 class SpaceObject;
 
 class EngineEmitterData
@@ -28,7 +30,6 @@ private:
 public:
     static P<ModelData> getModel(string name);
     static std::vector<string> getModelDataNames();
-
 private:
     string name;
     string mesh_name;
@@ -122,7 +123,7 @@ public:
     float getRadius();
 
     void load();
-    void render();
+    void render(const glm::mat4& model_matrix);
 
     friend class ModelInfo;
     friend class GuiRotatingModelView;

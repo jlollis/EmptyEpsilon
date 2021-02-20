@@ -1,8 +1,12 @@
 #version 120
-
 //Simple per-pixel light shader.
 
 // Program inputs
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
+uniform mat3 model_normal;
+
 
 // Per-vertex inputs
 attribute vec3 position;
@@ -16,10 +20,10 @@ varying vec2 fragtexcoords;
 
 void main()
 {
-	fragnormal = normalize(gl_NormalMatrix * normal);
-	vec4 modelview_position = gl_ModelViewMatrix * vec4(position, 1.);
+	fragnormal = normalize(model_normal * normal);
+	vec4 modelview_position = view * model * vec4(position, 1.);
 	viewspace_position = vec3(modelview_position);
 	
 	fragtexcoords = texcoords;
-	gl_Position = gl_ProjectionMatrix * modelview_position;
+	gl_Position = projection * modelview_position;
 }

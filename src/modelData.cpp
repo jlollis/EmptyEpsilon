@@ -1,6 +1,9 @@
 #include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "engine.h"
 #include "main.h"
 
@@ -196,19 +199,20 @@ std::vector<string> ModelData::getModelDataNames()
     return ret;
 }
 
-void ModelData::render()
+void ModelData::render(const glm::mat4& model_matrix)
 {
 #if FEATURE_3D_RENDERING
     load();
     if (!mesh)
         return;
 
-    glPushMatrix();
-
-    glScalef(scale, scale, scale);
-    glTranslatef(mesh_offset.x, mesh_offset.y, mesh_offset.z);
-
     ShaderRegistry::ScopedShader shader(shader_id);
+
+    auto modeldata_matrix = glm::scale(model_matrix, glm::vec3(scale));
+    modeldata_matrix = glm::translate(modeldata_matrix, glm::vec3(mesh_offset.x, mesh_offset.y, mesh_offset.z));
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(modeldata_matrix));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(modeldata_matrix)))));
+
 
     // Textures
     glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
@@ -233,6 +237,5 @@ void ModelData::render()
 
     if (specular_texture || illumination_texture)
         glActiveTexture(GL_TEXTURE0);
-    glPopMatrix();
 #endif//FEATURE_3D_RENDERING
 }

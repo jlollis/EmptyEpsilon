@@ -34,7 +34,9 @@ namespace ShaderRegistry
 			"color",
 			"model_view_projection",
 			"projection",
-			"model_view",
+			"view",
+			"model",
+			"model_normal",
 			"camera_position",
 			"atmosphereColor",
 			

@@ -211,15 +211,16 @@ void ShipTemplateBasedObject::draw3DTransparent()
 
     float angle = 0.0;
     float arc = 360.0f / shield_count;
+    auto model_matrix = getModelMatrix();
     for(int n = 0; n<shield_count; n++)
     {
         if (shield_hit_effect[n] > 0)
         {
             if (shield_count > 1)
             {
-                model_info.renderShield((shield_level[n] / shield_max[n]) * shield_hit_effect[n], angle);
+                model_info.renderShield((shield_level[n] / shield_max[n]) * shield_hit_effect[n], angle, model_matrix);
             }else{
-                model_info.renderShield((shield_level[n] / shield_max[n]) * shield_hit_effect[n]);
+                model_info.renderShield((shield_level[n] / shield_max[n]) * shield_hit_effect[n], model_matrix);
             }
         }
         angle += arc;

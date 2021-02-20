@@ -1,4 +1,5 @@
-#include <GL/glew.h> 
+#include <GL/glew.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "blackHole.h"
 #include "pathPlanner.h"
@@ -52,6 +53,7 @@ void BlackHole::draw3DTransparent()
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Billboard);
 
     glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), 1.f, 1.f, 1.f, 5000.f);
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
     gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
     gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
 

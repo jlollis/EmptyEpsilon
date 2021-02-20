@@ -10,18 +10,10 @@
 #include "glObjects.h"
 #include "shaderRegistry.h"
 
-#if FEATURE_3D_RENDERING
-static void _glPerspective(double fovY, double aspect, double zNear, double zFar )
-{
-    const double pi = 3.1415926535897932384626433832795;
-    double fW, fH;
-
-    fH = tan(fovY / 360 * pi) * zNear;
-    fW = fH * aspect;
-
-    glFrustum(-fW, fW, -fH, fH, zNear, zFar);
-}
-#endif//FEATURE_3D_RENDERING
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
 : GuiElement(owner, id)
@@ -37,7 +29,7 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
         // Setup shader.
         starbox_shader = ShaderManager::getShader("shaders/starbox");
         starbox_uniforms[static_cast<size_t>(Uniforms::Projection)] = glGetUniformLocation(starbox_shader->getNativeHandle(), "projection");
-        starbox_uniforms[static_cast<size_t>(Uniforms::ModelView)] = glGetUniformLocation(starbox_shader->getNativeHandle(), "model_view");
+        starbox_uniforms[static_cast<size_t>(Uniforms::ModelView)] = glGetUniformLocation(starbox_shader->getNativeHandle(), "view");
 
         starbox_vertex_attributes[static_cast<size_t>(VertexAttributes::Position)] = glGetAttribLocation(starbox_shader->getNativeHandle(), "position");
 
@@ -120,7 +112,7 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
         // Setup spacedust
         spacedust_shader = ShaderManager::getShader("shaders/spacedust");
         spacedust_uniforms[static_cast<size_t>(Uniforms::Projection)] = glGetUniformLocation(spacedust_shader->getNativeHandle(), "projection");
-        spacedust_uniforms[static_cast<size_t>(Uniforms::ModelView)] = glGetUniformLocation(spacedust_shader->getNativeHandle(), "model_view");
+        spacedust_uniforms[static_cast<size_t>(Uniforms::ModelView)] = glGetUniformLocation(spacedust_shader->getNativeHandle(), "view");
         spacedust_uniforms[static_cast<size_t>(Uniforms::Rotation)] = glGetUniformLocation(spacedust_shader->getNativeHandle(), "rotation");
 
         spacedust_vertex_attributes[static_cast<size_t>(VertexAttributes::Position)] = glGetAttribLocation(spacedust_shader->getNativeHandle(), "position");
@@ -173,20 +165,14 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    _glPerspective(camera_fov, rect.width/rect.height, 1.f, 25000.f);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glRotatef(90, 1, 0, 0);
-    glScalef(1,1,-1);
-    glRotatef(-camera_pitch, 1, 0, 0);
-    glRotatef(-camera_yaw - 90, 0, 0, 1);
-
-    glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
-    glGetDoublev(GL_MODELVIEW_MATRIX, model_matrix);
-    glGetDoublev(GL_VIEWPORT, viewport);
+    projection_matrix = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f);
+    view_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+    view_matrix = glm::scale(view_matrix, glm::vec3(1.f, 1.f, -1.f));
+    view_matrix = glm::rotate(view_matrix, glm::radians(-camera_pitch), glm::vec3(1.f, 0.f, 0.f));
+    view_matrix = glm::rotate(view_matrix, glm::radians(-camera_yaw - 90.f), glm::vec3(0.f, 0.f, 1.f));
+    view_matrix = glm::translate(view_matrix, -glm::vec3(camera_position.x, camera_position.y, camera_position.z));
+    
+    glGetFloatv(GL_VIEWPORT, glm::value_ptr(viewport));
 
     // Draw starbox.
     glDepthMask(GL_FALSE);
@@ -199,14 +185,9 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         glBindTexture(GL_TEXTURE_CUBE_MAP, starbox_texture[0]);
         
         // Uniform
-        // Upload matrices (only float 4x4 supported in es2)
-        std::array<float, 16> matrix;
-
-        glGetFloatv(GL_PROJECTION_MATRIX, matrix.data());
-        glUniformMatrix4fv(starbox_uniforms[static_cast<size_t>(Uniforms::Projection)], 1, GL_FALSE, matrix.data());
-
-        glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
-        glUniformMatrix4fv(starbox_uniforms[static_cast<size_t>(Uniforms::ModelView)], 1, GL_FALSE, matrix.data());
+        // Upload matrices
+        glUniformMatrix4fv(starbox_uniforms[static_cast<size_t>(Uniforms::Projection)], 1, GL_FALSE, glm::value_ptr(projection_matrix));
+        glUniformMatrix4fv(starbox_uniforms[static_cast<size_t>(Uniforms::ModelView)], 1, GL_FALSE, glm::value_ptr(view_matrix));
         
         // Bind our cube
         {
@@ -266,53 +247,58 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         render_lists[render_list_index].emplace_back(*obj, depth);
     }
 
+    for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
+    {
+        const auto& shader = ShaderRegistry::get(ShaderRegistry::Shaders(i));
+        if (shader.uniform(ShaderRegistry::Uniforms::View) != -1)
+        {
+            glUseProgram(shader.get()->getNativeHandle());
+            glUniformMatrix4fv(shader.uniform(ShaderRegistry::Uniforms::View), 1, GL_FALSE, glm::value_ptr(view_matrix));
+        }
+    }
+
     for(int n=render_lists.size() - 1; n >= 0; n--)
     {
         auto& render_list = render_lists[n];
         std::sort(render_list.begin(), render_list.end(), [](const RenderInfo& a, const RenderInfo& b) { return a.depth > b.depth; });
 
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        _glPerspective(camera_fov, rect.width/rect.height, 1.f, 25000.f * (n + 1));
-        glMatrixMode(GL_MODELVIEW);
+        auto projection = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f * (n + 1));
+        // Update projection matrix in shaders.
+        for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
+        {
+            const auto& shader = ShaderRegistry::get(ShaderRegistry::Shaders(i));
+            if (shader.uniform(ShaderRegistry::Uniforms::Projection) != -1)
+            {
+                glUseProgram(shader.get()->getNativeHandle());
+                glUniformMatrix4fv(shader.uniform(ShaderRegistry::Uniforms::Projection), 1, GL_FALSE, glm::value_ptr(projection));
+            }
+        }
+        glUseProgram(GL_NONE);
+
         glDepthMask(true);
         glClear(GL_DEPTH_BUFFER_BIT);
 
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
-        for(auto info : render_list)
+        
+        for(const auto &info : render_list)
         {
             SpaceObject* obj = info.object;
-
-            glPushMatrix();
-            glTranslatef(-camera_position.x,-camera_position.y, -camera_position.z);
-            glTranslatef(obj->getPosition().x, obj->getPosition().y, 0);
-            glRotatef(obj->getRotation(), 0, 0, 1);
             obj->draw3D();
-            glPopMatrix();
         }
-
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
         glDisable(GL_CULL_FACE);
         glDepthMask(false);
-        for(auto info : render_list)
+        for(const auto &info : render_list)
         {
             SpaceObject* obj = info.object;
-
-            glPushMatrix();
-            glTranslatef(-camera_position.x,-camera_position.y, -camera_position.z);
-            glTranslatef(obj->getPosition().x, obj->getPosition().y, 0);
-            glRotatef(obj->getRotation(), 0, 0, 1);
             obj->draw3DTransparent();
-            glPopMatrix();
         }
     }
-
-    glPushMatrix();
-    glTranslatef(-camera_position.x,-camera_position.y, -camera_position.z);
-    ParticleEngine::render();
+    
+    ParticleEngine::render(projection_matrix, view_matrix);
 
     if (show_spacedust && my_spaceship)
     {
@@ -341,13 +327,8 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         sf::Shader::bind(spacedust_shader);
 
         // Upload matrices (only float 4x4 supported in es2)
-        std::array<float, 16> matrix;
-
-        glGetFloatv(GL_PROJECTION_MATRIX, matrix.data());
-        glUniformMatrix4fv(spacedust_uniforms[static_cast<size_t>(Uniforms::Projection)], 1, GL_FALSE, matrix.data());
-
-        glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
-        glUniformMatrix4fv(spacedust_uniforms[static_cast<size_t>(Uniforms::ModelView)], 1, GL_FALSE, matrix.data());
+        glUniformMatrix4fv(spacedust_uniforms[static_cast<size_t>(Uniforms::Projection)], 1, GL_FALSE, glm::value_ptr(projection_matrix));
+        glUniformMatrix4fv(spacedust_uniforms[static_cast<size_t>(Uniforms::ModelView)], 1, GL_FALSE, glm::value_ptr(view_matrix));
 
         // Ship information for flying particles
         spacedust_shader->setUniform("velocity", dust_vector);
@@ -369,20 +350,19 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
         sf::Shader::bind(nullptr);
     }
-    glPopMatrix();
-
+    
     if (my_spaceship && my_spaceship->getTarget())
     {
         ShaderRegistry::ScopedShader billboard(ShaderRegistry::Shaders::Billboard);
 
         P<SpaceObject> target = my_spaceship->getTarget();
         glDisable(GL_DEPTH_TEST);
-        glPushMatrix();
-        glTranslatef(-camera_position.x, -camera_position.y, -camera_position.z);
-        glTranslatef(target->getPosition().x, target->getPosition().y, 0);
+
+        auto model_matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(target->getPosition().x, target->getPosition().y, 0.f));
 
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("redicule2.png")->getNativeHandle());
         glUniform4f(billboard.get().uniform(ShaderRegistry::Uniforms::Color), .5f, .5f, .5f, target->getRadius() * 2.5f);
+        glUniformMatrix4fv(billboard.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
         {
             gl::ScopedVertexAttribArray positions(billboard.get().attribute(ShaderRegistry::Attributes::Position));
             gl::ScopedVertexAttribArray texcoords(billboard.get().attribute(ShaderRegistry::Attributes::Texcoords));
@@ -403,7 +383,6 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
             std::initializer_list<uint8_t> indices{ 0, 1, 2, 2, 3, 0 };
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, std::begin(indices));
         }
-        glPopMatrix();
     }
 
     glDepthMask(true);
@@ -418,22 +397,18 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         // Common state: color, projection matrix.
         glUniform4f(debug_shader.get().uniform(ShaderRegistry::Uniforms::Color), 1.f, 1.f, 1.f, 1.f);
 
-        std::array<float, 16> matrix;
-        glGetFloatv(GL_PROJECTION_MATRIX, matrix.data());
-        glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::Projection), 1, GL_FALSE, matrix.data());
+        glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::Projection), 1, GL_FALSE, glm::value_ptr(projection_matrix));
+        glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::View), 1, GL_FALSE, glm::value_ptr(view_matrix));
 
         std::vector<sf::Vector3f> points;
         gl::ScopedVertexAttribArray positions(debug_shader.get().attribute(ShaderRegistry::Attributes::Position));
 
         foreach(SpaceObject, obj, space_object_list)
         {
-            glPushMatrix();
-            glTranslatef(-camera_position.x, -camera_position.y, -camera_position.z);
-            glTranslatef(obj->getPosition().x, obj->getPosition().y, 0);
-            glRotatef(obj->getRotation(), 0, 0, 1);
+            auto model_matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3(obj->getPosition().x, obj->getPosition().y, 0.f));
+            model_matrix = glm::rotate(model_matrix, glm::radians(obj->getRotation()), glm::vec3(0.f, 0.f, 1.f));
 
-            glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
-            glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::ModelView), 1, GL_FALSE, matrix.data());
+            glUniformMatrix4fv(debug_shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
             std::vector<sf::Vector2f> collisionShape = obj->getCollisionShape();
 
@@ -447,16 +422,15 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
                 points[n] = sf::Vector3f(collisionShape[n].x, collisionShape[n].y, 0.f);
             
             glDrawArrays(GL_LINE_LOOP, 0, collisionShape.size());
-            glPopMatrix();
         }
     }
 #endif
 
     window.resetGLStates();
 
-    if (show_callsigns && render_lists.size() > 0)
+    if (show_callsigns && !render_lists.empty())
     {
-        for(auto info : render_lists[0])
+        for(const auto& info : render_lists[0])
         {
             SpaceObject* obj = info.object;
             if (!obj->canBeTargetedBy(my_spaceship) || obj == *my_spaceship)
@@ -490,43 +464,26 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
 #endif//FEATURE_3D_RENDERING
 }
 
-sf::Vector3f GuiViewport3D::worldToScreen(sf::RenderTarget& window, sf::Vector3f world)
+sf::Vector3f GuiViewport3D::worldToScreen(const sf::RenderTarget& window, const sf::Vector3f& world)
 {
-    world -= camera_position;
+    auto view_pos = view_matrix * glm::vec4(world.x, world.y, world.z, 1.f);
+    auto pos = projection_matrix * view_pos;
+    
+    // Perspective division
+    pos /= pos.w;
 
-    //Transformation vectors
-    float fTempo[8];
-    //Modelview transform
-    fTempo[0] = model_matrix[0]*world.x+model_matrix[4]*world.y+model_matrix[8]*world.z+model_matrix[12];  //w is always 1
-    fTempo[1] = model_matrix[1]*world.x+model_matrix[5]*world.y+model_matrix[9]*world.z+model_matrix[13];
-    fTempo[2] = model_matrix[2]*world.x+model_matrix[6]*world.y+model_matrix[10]*world.z+model_matrix[14];
-    fTempo[3] = model_matrix[3]*world.x+model_matrix[7]*world.y+model_matrix[11]*world.z+model_matrix[15];
-    //Projection transform, the final row of projection matrix is always [0 0 -1 0]
-    //so we optimize for that.
-    fTempo[4] = projection_matrix[0]*fTempo[0]+projection_matrix[4]*fTempo[1]+projection_matrix[8]*fTempo[2]+projection_matrix[12]*fTempo[3];
-    fTempo[5] = projection_matrix[1]*fTempo[0]+projection_matrix[5]*fTempo[1]+projection_matrix[9]*fTempo[2]+projection_matrix[13]*fTempo[3];
-    fTempo[6] = projection_matrix[2]*fTempo[0]+projection_matrix[6]*fTempo[1]+projection_matrix[10]*fTempo[2]+projection_matrix[14]*fTempo[3];
-    fTempo[7] = -fTempo[2];
-    //The result normalizes between -1 and 1
-    if(fTempo[7]==0.0)  //The w value
-        return sf::Vector3f(0, 0, -1);
-    fTempo[7] = 1.0/fTempo[7];
-    //Perspective division
-    fTempo[4] *= fTempo[7];
-    fTempo[5] *= fTempo[7];
-    fTempo[6] *= fTempo[7];
     //Window coordinates
     //Map x, y to range 0-1
     sf::Vector3f ret;
-    ret.x = (fTempo[4]*0.5+0.5)*viewport[2]+viewport[0];
-    ret.y = (fTempo[5]*0.5+0.5)*viewport[3]+viewport[1];
+    ret.x = (pos.x * .5f + .5f) * viewport.z + viewport.x;
+    ret.y = (pos.y * .5f + .5f) * viewport.w + viewport.y;
     //This is only correct when glDepthRange(0.0, 1.0)
     //ret.z = (1.0+fTempo[6])*0.5;  //Between 0 and 1
     //Set Z to distance into the screen (negative is behind the screen)
-    ret.z = -fTempo[2];
+    ret.z = -view_pos.z;
 
     ret.x = ret.x * window.getView().getSize().x / window.getSize().x;
     ret.y = ret.y * window.getView().getSize().y / window.getSize().y;
     ret.y = window.getView().getSize().y - ret.y;
-    return ret;
+    return ret;  
 }

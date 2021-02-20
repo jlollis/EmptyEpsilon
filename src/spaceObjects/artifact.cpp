@@ -6,6 +6,8 @@
 
 #include "scriptInterface.h"
 
+#include <glm/ext/matrix_transform.hpp>
+
 /// An artifact.
 /// Can be used for mission scripting.
 REGISTER_SCRIPT_SUBCLASS(Artifact, SpaceObject)
@@ -80,16 +82,6 @@ void Artifact::update(float delta)
         current_model_data_name = model_data_name;
         model_info.setData(current_model_data_name);
     }
-}
-
-void Artifact::draw3D()
-{
-#if FEATURE_3D_RENDERING
-    if (artifact_spin != 0.0) {
-        glRotatef(engine->getElapsedTime() * artifact_spin, 0, 0, 1);
-    }
-    SpaceObject::draw3D();
-#endif//FEATURE_3D_RENDERING
 }
 
 void Artifact::drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range)
@@ -216,4 +208,13 @@ string Artifact::getExportLine()
     if (allow_pickup)
         ret += ":allowPickup(true)";
     return ret;
+}
+
+glm::mat4 Artifact::getModelMatrix() const
+{
+    auto matrix = SpaceObject::getModelMatrix();
+    
+    if (artifact_spin != 0.f)
+        matrix = glm::rotate(matrix, glm::radians(engine->getElapsedTime() * artifact_spin), glm::vec3(0.f, 0.f, 1.f));
+    return matrix;
 }

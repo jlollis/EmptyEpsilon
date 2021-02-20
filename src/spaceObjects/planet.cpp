@@ -2,6 +2,8 @@
 #include "planet.h"
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/OpenGL.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "main.h"
 #include "pathPlanner.h"
 
@@ -262,9 +264,6 @@ void Planet::draw3D()
 
     if (planet_texture != "" && planet_size > 0)
     {
-        glTranslatef(0, 0, distance_from_movement_plane);
-        glScalef(planet_size, planet_size, planet_size);
-
         if (!planet_mesh[level_of_detail])
         {
             PlanetMeshGenerator planet_mesh_generator(level_of_detail);
@@ -272,7 +271,8 @@ void Planet::draw3D()
         }
 
         ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Planet);
-
+        auto planet_matrix = glm::scale(getModelMatrix(), glm::vec3(planet_size));
+        glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(planet_matrix));
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), 1.f, 1.f, 1.f, 1.f);
         glUniform4fv(shader.get().uniform(ShaderRegistry::Uniforms::AtmosphereColor), 1, glm::value_ptr(glm::vec4(atmosphere_color.r, atmosphere_color.g, atmosphere_color.b, atmosphere_color.a) / 255.f));
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture(planet_texture)->getNativeHandle());
@@ -298,13 +298,9 @@ void Planet::draw3DTransparent()
     if (view_scale < 0.1)
         level_of_detail = 3;
 
-    glTranslatef(0, 0, distance_from_movement_plane);
+    auto planet_matrix = getModelMatrix();
     if (cloud_texture != "" && cloud_size > 0)
     {
-        glPushMatrix();
-        glScalef(cloud_size, cloud_size, cloud_size);
-        glRotatef(engine->getElapsedTime() * 1.0f, 0, 0, 1);
-
         if (!planet_mesh[level_of_detail])
         {
             PlanetMeshGenerator planet_mesh_generator(level_of_detail);
@@ -312,7 +308,9 @@ void Planet::draw3DTransparent()
         }
 
         ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Planet);
-
+        auto cloud_matrix = glm::scale(planet_matrix, glm::vec3(cloud_size));
+        cloud_matrix = glm::rotate(cloud_matrix, glm::radians(engine->getElapsedTime() * 1.0f), glm::vec3(0.f, 0.f, 1.f));
+        glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(cloud_matrix));
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), 1.f, 1.f, 1.f, 1.f);
         glUniform4fv(shader.get().uniform(ShaderRegistry::Uniforms::AtmosphereColor), 1, glm::value_ptr(glm::vec4(0.f)));
 
@@ -324,7 +322,6 @@ void Planet::draw3DTransparent()
 
             planet_mesh[level_of_detail]->render(positions.get(), texcoords.get(), normals.get());
         }
-        glPopMatrix();
     }
     if (atmosphere_texture != "" && atmosphere_size > 0)
     {
@@ -340,6 +337,7 @@ void Planet::draw3DTransparent()
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture(atmosphere_texture)->getNativeHandle());
         glm::vec4 color(glm::vec3(atmosphere_color.r, atmosphere_color.g, atmosphere_color.b) / 255.f, atmosphere_size * 2.0f);
         glUniform4fv(shader.get().uniform(ShaderRegistry::Uniforms::Color), 1, glm::value_ptr(color));
+        glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(planet_matrix));
         gl::ScopedVertexAttribArray positions(shader.get().attribute(ShaderRegistry::Attributes::Position));
         gl::ScopedVertexAttribArray texcoords(shader.get().attribute(ShaderRegistry::Attributes::Texcoords));
         
@@ -414,4 +412,9 @@ string Planet::getExportLine()
     //TODO setAxialRotationTime
     //TODO setOrbit
     return ret;
+}
+
+glm::mat4 Planet::getModelMatrix() const
+{
+    return glm::translate(SpaceObject::getModelMatrix(), glm::vec3(0.f, 0.f, distance_from_movement_plane));
 }
