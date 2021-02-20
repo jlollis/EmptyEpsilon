@@ -4,6 +4,8 @@
 #include "featureDefs.h"
 #include "particleEffect.h"
 
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 ParticleEngine* ParticleEngine::particleEngine = nullptr;
@@ -122,8 +124,8 @@ void ParticleEngine::doRender(const glm::mat4& projection, const glm::mat4& view
     glUniformMatrix4fv(uniforms[as_index(Uniforms::ModelView)], 1, GL_FALSE, glm::value_ptr(view));
     
     {
-        std::array<sf::Glsl::Vec3, instances_per_draw> positions;
-        std::array<sf::Glsl::Vec4, instances_per_draw> color_and_sizes;
+        std::array<glm::vec3, instances_per_draw> positions;
+        std::array<glm::vec4, instances_per_draw> color_and_sizes;
 
         gl::ScopedVertexAttribArray ids(shaderVertexIDAttribute);
         gl::ScopedBufferBinding element_buffer(GL_ELEMENT_ARRAY_BUFFER, particleEngine->buffers[as_index(Buffers::Element)]);
@@ -146,8 +148,8 @@ void ParticleEngine::doRender(const glm::mat4& projection, const glm::mat4& view
                 auto color = Tween<sf::Vector3f>::easeOutQuad(p.life_time, 0, p.max_life_time, p.start.color, p.end.color);
                 auto size = Tween<float>::easeOutQuad(p.life_time, 0, p.max_life_time, p.start.size, p.end.size);
 
-                positions[instance] = sf::Glsl::Vec3(position);
-                color_and_sizes[instance] = sf::Glsl::Vec4(color.x, color.y, color.z, size);
+                positions[instance] = glm::vec3(position.x, position.y, position.z);
+                color_and_sizes[instance] = glm::vec4(color.x, color.y, color.z, size);
             }
 
             // Send instances to shader.

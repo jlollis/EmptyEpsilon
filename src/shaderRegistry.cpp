@@ -5,6 +5,7 @@
 #include <cassert>
 #include <tuple>
 
+#include <SFML/Graphics/Shader.hpp>
 #include <GL/glew.h>
 
 #include "logging.h"
