@@ -1,6 +1,6 @@
-#version 120
+#version 100
 //Simple per-pixel light shader.
-
+precision mediump float;
 const vec4 light_position = vec4(20000., 20000., 20000., 1.0);
 
 // Program inputs

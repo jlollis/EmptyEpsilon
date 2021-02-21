@@ -1,5 +1,5 @@
-#include <GL/glew.h>
-#include <SFML/OpenGL.hpp>
+#include <GL/glad.h>
+
 
 #include "main.h"
 #include "playerInfo.h"
@@ -63,7 +63,7 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-        for (auto wrap_axis : { GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T , GL_TEXTURE_WRAP_R })
+        for (auto wrap_axis : { GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T })
             glTexParameteri(GL_TEXTURE_CUBE_MAP, wrap_axis, GL_CLAMP_TO_EDGE);
 
         glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
@@ -161,7 +161,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     float sy = window.getSize().y * window.getView().getViewport().height / window.getView().getSize().y;
     glViewport(rect.left * sx, (float(window.getView().getSize().y) - rect.height - rect.top) * sx, rect.width * sx, rect.height * sy);
 
-    glClearDepth(1.f);
+    glClearDepthf(1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
 

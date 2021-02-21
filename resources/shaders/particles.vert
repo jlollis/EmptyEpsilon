@@ -1,4 +1,4 @@
-#version 120
+#version 100
 
 // Constants
 // ES2 does not support constant arrays

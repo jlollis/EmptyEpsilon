@@ -1,5 +1,5 @@
-#version 120
-
+#version 100
+precision mediump float;
 uniform sampler2D textureMap;
 
 varying vec4 fragcolor;

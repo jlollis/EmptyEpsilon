@@ -1,5 +1,5 @@
-#include <GL/glew.h>
-#include <SFML/OpenGL.hpp>
+#include <GL/glad.h>
+
 
 #include <glm/ext/matrix_transform.hpp>
 
@@ -60,7 +60,7 @@ void GuiRotatingModelView::onDraw(sf::RenderTarget& window)
     }
     glUseProgram(GL_NONE);
 
-    glClearDepth(1.f);
+    glClearDepthf(1.f);
     glClear(GL_DEPTH_BUFFER_BIT);
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);

@@ -6,7 +6,7 @@
 #include <tuple>
 
 #include <SFML/Graphics/Shader.hpp>
-#include <GL/glew.h>
+#include <GL/glad.h>
 
 #include "logging.h"
 #include "shaderManager.h"

@@ -1,5 +1,5 @@
-#version 120
-
+#version 100
+precision mediump float;
 uniform vec4 color;
 uniform sampler2D textureMap;
 

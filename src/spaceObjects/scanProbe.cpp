@@ -1,6 +1,6 @@
 #include "scanProbe.h"
 #include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/OpenGL.hpp>
+
 
 #include "explosionEffect.h"
 #include "main.h"
