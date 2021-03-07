@@ -1,5 +1,4 @@
-#include <GL/glew.h>
-#include <SFML/OpenGL.hpp>
+#include <GL/glad.h>
 #include "main.h"
 #include "explosionEffect.h"
 #include "glObjects.h"
