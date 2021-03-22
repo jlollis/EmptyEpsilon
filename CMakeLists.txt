@@ -587,9 +587,10 @@ endif()
 
 if(APPLE)
 	# Copy SFML and its extlibs to binary dir.
+	# SFML_ROOT *should* be the Frameworks folder!
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/Frameworks/" "${CMAKE_BINARY_DIR}/Frameworks/"
-		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/extlibs/" "${CMAKE_BINARY_DIR}/Frameworks/")
+		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/" "${CMAKE_BINARY_DIR}/Frameworks/"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/../extlibs/" "${CMAKE_BINARY_DIR}/Frameworks/")
 	install(CODE "
   		include(BundleUtilities)
   		fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"${CMAKE_BINARY_DIR};${CMAKE_BINARY_DIR}/Frameworks\")
