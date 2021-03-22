@@ -5,7 +5,7 @@ on:
     branches:
       - EE-*.*.*-hotfixes
     tags:
-      - [0-9][0-9][0-9][0-9].[0-1][0-9].[0-3][0-9]
+      - EE-*.*.*.*
     
 jobs:
   package:
@@ -19,9 +19,9 @@ jobs:
         shell: bash
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          echo "cpack_package_version_major=$(echo ${GITHUB_REF#refs/*/} | cut -d. -f1)" >> $GITHUB_ENV
-          echo "cpack_package_version_minor=$(echo ${GITHUB_REF#refs/*/} | cut -d. -f2)" >> $GITHUB_ENV
-          echo "cpack_package_version_patch=$(echo ${GITHUB_REF#refs/*/} | cut -d. -f3)" >> $GITHUB_ENV
+          echo "cpack_package_version_major=$(echo ${GITHUB_REF#refs/*/EE-} | cut -d. -f1)" >> $GITHUB_ENV
+          echo "cpack_package_version_minor=$(echo ${GITHUB_REF#refs/*/EE-} | cut -d. -f2)" >> $GITHUB_ENV
+          echo "cpack_package_version_patch=$(echo ${GITHUB_REF#refs/*/EE-} | cut -d. -f3)" >> $GITHUB_ENV
       - name: Auto CPack
         shell: bash
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
