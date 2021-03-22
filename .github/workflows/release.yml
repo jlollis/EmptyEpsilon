@@ -5,7 +5,7 @@ on:
     branches:
       - EE-*.*.*-hotfixes
     tags:
-      - *.*.*.*
+      - [0-9][0-9][0-9][0-9].[0-1][0-9].[0-3][0-9]
     
 jobs:
   package:
