@@ -1,3 +1,8 @@
+# Set minimum target macOS version
+# Follow whatever SFML is at.
+# Must be first!
+set(MACOSX_DEPLOYMENT_TARGET "10.9")
+
 project(EmptyEpsilon)
 cmake_minimum_required(VERSION 2.8.12)
 
@@ -61,17 +66,9 @@ else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror=return-type")
 endif()
 
-# install resources, scripts, and packs to app bundle instead of system dir.
-if(APPLE)
-    set(CMAKE_INSTALL_PREFIX "./")
-elseif(UNIX)
+if(UNIX)
     # Set RESOURCE_BASE_DIR on Unix so the built binary is able to find resources
     add_definitions(-DRESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/")
-endif()
-
-# Set minimum target macOS version
-if(APPLE)
-	set(MACOSX_DEPLOYMENT_TARGET "10.10")
 endif()
 
 if(CONFIG_DIR)
@@ -521,19 +518,18 @@ if(WIN32)
   install(DIRECTORY packs DESTINATION .)
   install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION .)
 elseif(APPLE)
-  install(FILES logo.icns DESTINATION "EmptyEpsilon.app/Contents/Resources" RENAME "${EXECUTABLE_NAME}.icns")
+  install(FILES logo.icns DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${EXECUTABLE_NAME}>/Resources" RENAME "${EXECUTABLE_NAME}.icns")
 
-  install(DIRECTORY resources DESTINATION "EmptyEpsilon.app/Contents/Resources")
-  install(DIRECTORY scripts DESTINATION "EmptyEpsilon.app/Contents/Resources")
-  install(DIRECTORY packs DESTINATION "EmptyEpsilon.app/Contents/Resources")
+  install(DIRECTORY resources scripts packs DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${EXECUTABLE_NAME}>/Resources")
+  install(TARGETS ${EXECUTABLE_NAME} BUNDLE DESTINATION . RUNTIME DESTINATION bin)
 elseif(ANDROID)
   android_apk(EmptyEpsilon)
 else()
   include(GNUInstallDirs)
-  install(DIRECTORY resources DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
-  install(DIRECTORY scripts DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
-  install(DIRECTORY packs DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
-  install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+  install(DIRECTORY resources DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
+  install(DIRECTORY scripts DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
+  install(DIRECTORY packs DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
+  install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 find_package(PythonInterp)
@@ -547,12 +543,12 @@ if(PYTHONINTERP_FOUND)
   
   # Matches install logic above.
   if(WIN32)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION .)
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION . OPTIONAL)
   elseif(APPLE)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "EmptyEpsilon.app/Contents/Resources")
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${EXECUTABLE_NAME}>/Resources" OPTIONAL)
   elseif(NOT ANDROID)
 	# DOCDIR already has PROJECT_NAME (EmptyEpsilon) appended (from CMake docs)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_FULL_DOCDIR}")
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_DOCDIR}" OPTIONAL)
   endif()
 endif()
 
@@ -574,5 +570,12 @@ if(NOT DEFINED CPACK_GENERATOR)
     set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfml-dev")
   endif()
+endif()
+
+if(APPLE)
+	install(CODE "
+  		include(BundleUtilities)
+  		fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"${CMAKE_BINARY_DIR};${CMAKE_BINARY_DIR}/Frameworks\")
+	")
 endif()
 include(CPack)

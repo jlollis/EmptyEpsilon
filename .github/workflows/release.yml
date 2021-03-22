@@ -1,0 +1,106 @@
+---
+name: macOS Package
+on:
+  push:
+    branches:
+      - EE-*.*.*-hotfixes
+    tags:
+      - *.*.*.*
+    
+jobs:
+  package:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: Package ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Tag CPack
+        shell: bash
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "cpack_package_version_major=$(echo ${GITHUB_REF#refs/*/} | cut -d. -f1)" >> $GITHUB_ENV
+          echo "cpack_package_version_minor=$(echo ${GITHUB_REF#refs/*/} | cut -d. -f2)" >> $GITHUB_ENV
+          echo "cpack_package_version_patch=$(echo ${GITHUB_REF#refs/*/} | cut -d. -f3)" >> $GITHUB_ENV
+      - name: Auto CPack
+        shell: bash
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          echo "cpack_package_version_major=$(date +'%Y')" >> $GITHUB_ENV
+          echo "cpack_package_version_minor=$(date +'%m')" >> $GITHUB_ENV
+          echo "cpack_package_version_patch=$(date +'%d')" >> $GITHUB_ENV
+      - name: macOS Setup
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install cmake ninja
+          curl -sSL https://www.sfml-dev.org/files/SFML-2.5.1-macOS-clang.tar.gz | tar xzf -
+          echo "package_extension=dmg" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
+          echo "cmake_generator=Ninja" >> $GITHUB_ENV
+          echo "cpack_generator=DragNDrop" >> $GITHUB_ENV
+          echo "cmake_platform_args=-DSFML_ROOT=../SFML-2.5.1-macos-clang/Frameworks" >> $GITHUB_ENV
+      - name: Linux Setup
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq ninja-build libsfml-dev
+          echo "package_extension=deb" >> $GITHUB_ENV
+          echo "cmake_generator=Ninja" >> $GITHUB_ENV
+          echo "cpack_generator=DEB" >> $GITHUB_ENV
+          echo "cmake_platform_args=" >> $GITHUB_ENV
+      - name: Windows Setup
+        if: matrix.os == 'windows-latest'
+        run: |
+          $sfml_link = “https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-32-bit.zip”
+          $sfml_zip = "${{github.workspace}}/sfml-dev.zip"
+          (new-object System.Net.WebClient).DownloadFile($sfml_link, $sfml_zip)
+          Expand-Archive -LiteralPath $sfml_zip -DestinationPath "${{github.workspace}}/externals"
+          echo "package_extension=zip" >> $Env:GITHUB_ENV
+          echo "cmake_generator=Visual Studio 16 2019" >> $Env:GITHUB_ENV
+          echo "cpack_generator=ZIP" >> $Env:GITHUB_ENV
+          echo "cmake_platform_args=-A Win32 -DSFML_ROOT=../externals/SFML-2.5.1" >> $Env:GITHUB_ENV
+      - name: SeriousProton Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: daid/SeriousProton
+          path: SeriousProton
+          ref: EE-2021.03.16
+      - name: EmptyEpsilon Checkout
+        uses: actions/checkout@v2
+        with:
+          path: EmptyEpsilon
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+      - name: Configure CMake
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: >
+          cmake ../EmptyEpsilon
+          -G "${{ env.cmake_generator }}"
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DSERIOUS_PROTON_DIR=../SeriousProton
+          -DCPACK_GENERATOR=${{ env.cpack_generator }}
+          -DCPACK_PACKAGE_VERSION_MAJOR=${{ env.cpack_package_version_major }}
+          -DCPACK_PACKAGE_VERSION_MINOR=${{ env.cpack_package_version_minor }}
+          -DCPACK_PACKAGE_VERSION_PATCH=${{ env.cpack_package_version_patch }}
+          ${{ env.cmake_platform_args }}
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
+      - name: macOS Copy SFML
+        if: matrix.os == 'macos-latest'
+        run: |
+          cp -r SFML-2.5.1-macos-clang/Frameworks build/
+          cp -r SFML-2.5.1-macos-clang/extlibs/ build/Frameworks/
+      - name: Package
+        working-directory: ${{github.workspace}}/build
+        run: cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
+      - name: Upload Package
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: build/EmptyEpsilon.${{ env.package_extension }}
+          draft: true
+          prerelease: true
