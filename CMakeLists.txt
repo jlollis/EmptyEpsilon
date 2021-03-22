@@ -4,7 +4,7 @@
 set(MACOSX_DEPLOYMENT_TARGET "10.9")
 
 project(EmptyEpsilon)
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.7)
 
 if(${CMAKE_VERSION} VERSION_LESS 3.2)
 	# `MINGW` exists starting 3.2.
@@ -560,12 +560,25 @@ add_custom_target(update_locale
 	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/tutorial.en scripts/tutorial_*.lua
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
-set(CPACK_PACKAGE_EXECUTABLES ${EXECUTABLE_NAME})
-set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}")
+# Generic settings
+set(CPACK_PACKAGE_NAME "${CMAKE_PROJECT_NAME}")
 set(CPACK_PACKAGE_CONTACT "https://github.com/daid/")
+set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/logo.png")
+set(CPACK_PACKAGE_CHECKSUM SHA256)
+
+# WIX (win installer)
+# Setup the upgrade GUID to have one per version.
+# https://tools.ietf.org/html/rfc4122#appendix-C
+set(GUID_NAMESPACE_URL 6ba7b810-9dad-11d1-80b4-00c04fd430c8)
+string(UUID EMPTYEPSILON_GUID NAMESPACE ${GUID_NAMESPACE_URL} NAME "https://github.com/daid/EmptyEpsilon" TYPE SHA1)
+string(UUID CPACK_WIX_UPGRADE_GUID NAMESPACE ${EMPTYEPSILON_GUID} NAME "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}" TYPE SHA1)
+set(CPACK_PACKAGE_EXECUTABLES "${EXECUTABLE_NAME};Empty Epsilon (${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})")
+set(CPACK_WIX_UI_BANNER "${CMAKE_CURRENT_SOURCE_DIR}/resources/logo_full.png")
+set(CPACK_WIX_UI_DIALOG "${CMAKE_CURRENT_SOURCE_DIR}/resources/logo_white.png")
+
 if(NOT DEFINED CPACK_GENERATOR)
   if(WIN32)
-    set(CPACK_GENERATOR "ZIP")
+    set(CPACK_GENERATOR "ZIP;WIX")
   elseif(UNIX)
     set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfml-dev")
@@ -573,9 +586,19 @@ if(NOT DEFINED CPACK_GENERATOR)
 endif()
 
 if(APPLE)
+	# Copy SFML and its extlibs to binary dir.
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/Frameworks/" "${CMAKE_BINARY_DIR}/Frameworks/"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/extlibs/" "${CMAKE_BINARY_DIR}/Frameworks/")
 	install(CODE "
   		include(BundleUtilities)
   		fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"${CMAKE_BINARY_DIR};${CMAKE_BINARY_DIR}/Frameworks\")
 	")
+endif()
+
+if ("WIX" IN_LIST CPACK_GENERATOR AND CPACK_PACKAGE_VERSION_MAJOR GREATER 100)
+	# WIX does not like major version number > 256.
+	# So if we're above 100, assume it's a year-like format and strip out century/millenium.
+	math(EXPR CPACK_PACKAGE_VERSION_MAJOR "${CPACK_PACKAGE_VERSION_MAJOR} % 100")
 endif()
 include(CPack)

@@ -82,21 +82,16 @@ jobs:
       - name: Build
         working-directory: ${{github.workspace}}/build
         run: cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
-      - name: macOS Copy SFML
-        if: matrix.os == 'macos'
-        run: |
-          cp -r SFML-2.5.1-macos-clang/Frameworks build/
-          cp -r SFML-2.5.1-macos-clang/extlibs/ build/Frameworks/
       - name: Package
         working-directory: ${{github.workspace}}/build
-        run: |
-          cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
-          cmake -E rename EmptyEpsilon.${{ env.package_extension }} EmptyEpsilon-${{ env.ee_version }}.${{ env.package_extension }}
+        run: cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: EmptyEpsilon-${{ env.ee_version }}
-          path: build/EmptyEpsilon-${{ env.ee_version }}.${{ env.package_extension }}
+          path: |
+            build/EmptyEpsilon-*-*.*
+            build/EmptyEpsilon-*-*.*.sha256
 
   upload:
       runs-on: ubuntu-latest
