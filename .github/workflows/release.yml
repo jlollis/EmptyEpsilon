@@ -1,5 +1,5 @@
 ---
-name: macOS Package
+name: Ship it
 on:
   push:
     branches:
@@ -11,9 +11,9 @@ jobs:
   package:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu, windows, macos]
     name: Package ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Fetch version
         shell: bash
@@ -25,7 +25,7 @@ jobs:
           echo "version_minor=$(echo $VERSION | cut -d. -f2)" >> $GITHUB_ENV
           echo "version_patch=$(echo $VERSION | cut -d. -f3)" >> $GITHUB_ENV
       - name: macOS Setup
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos'
         run: |
           brew install cmake ninja
           curl -sSL https://www.sfml-dev.org/files/SFML-2.5.1-macOS-clang.tar.gz | tar xzf -
@@ -35,7 +35,7 @@ jobs:
           echo "cpack_generator=DragNDrop" >> $GITHUB_ENV
           echo "cmake_platform_args=-DSFML_ROOT=../SFML-2.5.1-macos-clang/Frameworks" >> $GITHUB_ENV
       - name: Linux Setup
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -qq ninja-build libsfml-dev
@@ -44,7 +44,7 @@ jobs:
           echo "cpack_generator=DEB" >> $GITHUB_ENV
           echo "cmake_platform_args=" >> $GITHUB_ENV
       - name: Windows Setup
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows'
         run: |
           $sfml_link = “https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-32-bit.zip”
           $sfml_zip = "${{github.workspace}}/sfml-dev.zip"
@@ -83,18 +83,20 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
       - name: macOS Copy SFML
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos'
         run: |
           cp -r SFML-2.5.1-macos-clang/Frameworks build/
           cp -r SFML-2.5.1-macos-clang/extlibs/ build/Frameworks/
       - name: Package
         working-directory: ${{github.workspace}}/build
-        run: cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
+        run: |
+          cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
+          cmake -E rename EmptyEpsilon.${{ env.package_extension }} EmptyEpsilon-${{ env.ee_version }}.${{ env.package_extension }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: EmptyEpsilon-${{ env.ee_version }}.${{ env.package_extension }}
-          path: build/EmptyEpsilon.${{ env.package_extension }}
+          name: EmptyEpsilon-${{ env.ee_version }}
+          path: build/EmptyEpsilon-${{ env.ee_version }}.${{ env.package_extension }}
 
   upload:
       runs-on: ubuntu-latest
@@ -110,9 +112,6 @@ jobs:
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-            files: |
-              EmptyEpsilon-*.dmg
-              EmptyEpsilon-*.zip
-              EmptyEpsilon-*.deb
+            files: EmptyEpsilon-*/*
             draft: true
             prerelease: true
