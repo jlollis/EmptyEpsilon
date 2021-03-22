@@ -15,20 +15,14 @@ jobs:
     name: Package ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Tag CPack
+      - name: Fetch version
         shell: bash
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          echo "cpack_package_version_major=$(echo ${GITHUB_REF#refs/*/EE-} | cut -d. -f1)" >> $GITHUB_ENV
-          echo "cpack_package_version_minor=$(echo ${GITHUB_REF#refs/*/EE-} | cut -d. -f2)" >> $GITHUB_ENV
-          echo "cpack_package_version_patch=$(echo ${GITHUB_REF#refs/*/EE-} | cut -d. -f3)" >> $GITHUB_ENV
-      - name: Auto CPack
-        shell: bash
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        run: |
-          echo "cpack_package_version_major=$(date +'%Y')" >> $GITHUB_ENV
-          echo "cpack_package_version_minor=$(date +'%m')" >> $GITHUB_ENV
-          echo "cpack_package_version_patch=$(date +'%d')" >> $GITHUB_ENV
+          VERSION=${GITHUB_REF#*EE-}
+          VERSION=${VERSION%-hotfixes}
+          echo "version_major=$(echo $VERSION | cut -d. -f1)" >> $GITHUB_ENV
+          echo "version_minor=$(echo $VERSION | cut -d. -f2)" >> $GITHUB_ENV
+          echo "version_patch=$(echo $VERSION | cut -d. -f3)" >> $GITHUB_ENV
       - name: macOS Setup
         if: matrix.os == 'macos-latest'
         run: |
@@ -64,7 +58,7 @@ jobs:
         with:
           repository: daid/SeriousProton
           path: SeriousProton
-          ref: EE-2021.03.16
+          ref: EE-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}
       - name: EmptyEpsilon Checkout
         uses: actions/checkout@v2
         with:
@@ -80,9 +74,9 @@ jobs:
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DSERIOUS_PROTON_DIR=../SeriousProton
           -DCPACK_GENERATOR=${{ env.cpack_generator }}
-          -DCPACK_PACKAGE_VERSION_MAJOR=${{ env.cpack_package_version_major }}
-          -DCPACK_PACKAGE_VERSION_MINOR=${{ env.cpack_package_version_minor }}
-          -DCPACK_PACKAGE_VERSION_PATCH=${{ env.cpack_package_version_patch }}
+          -DCPACK_PACKAGE_VERSION_MAJOR=${{ env.version_major }}
+          -DCPACK_PACKAGE_VERSION_MINOR=${{ env.version_minor }}
+          -DCPACK_PACKAGE_VERSION_PATCH=${{ env.version_patch }}
           ${{ env.cmake_platform_args }}
       - name: Build
         working-directory: ${{github.workspace}}/build
