@@ -33,7 +33,6 @@ jobs:
           brew install cmake ninja
           curl -sSL https://www.sfml-dev.org/files/SFML-2.5.1-macOS-clang.tar.gz | tar xzf -
           cat >> $GITHUB_ENV <<EOF
-          MACOSX_DEPLOYMENT_TARGET=10.9
           cmake_generator=Ninja
           cpack_generator=DragNDrop
           cmake_platform_args=-DSFML_ROOT:PATH=../SFML-2.5.1-macos-clang/Frameworks
