@@ -147,6 +147,12 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
 
         // Update sign parts.
         glBufferSubData(GL_ARRAY_BUFFER, 2 * spacedust_particle_count * sizeof(sf::Vector3f), signs.size() * sizeof(int8_t), signs.data());
+
+        {
+            // Make sure the positions are zero-initialized.
+            const std::vector<sf::Vector3f> zeroed_positions(2 * spacedust_particle_count);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, zeroed_positions.size() * sizeof(sf::Vector3f), zeroed_positions.data());
+        }
         glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
         
     }
@@ -404,7 +410,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
                 uint8_t(0), uint8_t(1)
             };
             glVertexAttribPointer(texcoords.get(), 2, GL_UNSIGNED_BYTE, GL_FALSE, 0, (GLvoid*)coords.begin());
-            std::initializer_list<uint8_t> indices{ 0, 1, 2, 2, 3, 0 };
+            std::initializer_list<uint8_t> indices{ 0, 3, 2, 0, 2, 1 };
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, std::begin(indices));
         }
         glPopMatrix();

@@ -65,11 +65,11 @@ ElectricExplosionEffect::ElectricExplosionEffect()
             texcoords[quad_offset + 3] = { 0.f, 1.f };
 
             indices[6 * i + 0] = quad_offset + 0;
-            indices[6 * i + 1] = quad_offset + 1;
+            indices[6 * i + 1] = quad_offset + 3;
             indices[6 * i + 2] = quad_offset + 2;
-            indices[6 * i + 3] = quad_offset + 2;
-            indices[6 * i + 4] = quad_offset + 3;
-            indices[6 * i + 5] = quad_offset + 0;
+            indices[6 * i + 3] = quad_offset + 0;
+            indices[6 * i + 4] = quad_offset + 2;
+            indices[6 * i + 5] = quad_offset + 1;
         }
 
         // Update texcoords
