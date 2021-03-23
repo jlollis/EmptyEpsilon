@@ -492,30 +492,32 @@ if(WIN32)
 	execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libwinpthread-1.dll OUTPUT_VARIABLE MINGW_PTHREAD_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
 	install(FILES ${MINGW_STDCPP_DLL} ${MINGW_LIBGCC_DLL} ${MINGW_PTHREAD_DLL} DESTINATION .)
   endif()
-  install(FILES ${SFML_ROOT}/bin/OpenAL32.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libFLAC-8.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libjpeg-62.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libogg-0.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbis-0.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbisenc-2.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbisfile-3.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-audio-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-graphics-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-network-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-system-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-window-2.dll DESTINATION .)
+  install(FILES
+  	${SFML_ROOT}/bin/OpenAL32.dll DESTINATION .)
+  	#${SFML_ROOT}/bin/libFLAC-8.dll
+  	#${SFML_ROOT}/bin/libjpeg-62.dll
+  	#${SFML_ROOT}/bin/libogg-0.dll
+  	#${SFML_ROOT}/bin/libvorbis-0.dll
+  	#${SFML_ROOT}/bin/libvorbisenc-2.dll
+  	#${SFML_ROOT}/bin/libvorbisfile-3.dll
+  	${SFML_ROOT}/bin/sfml-audio-2.dll
+  	${SFML_ROOT}/bin/sfml-graphics-2.dll
+  	${SFML_ROOT}/bin/sfml-network-2.dll
+  	${SFML_ROOT}/bin/sfml-system-2.dll
+  	${SFML_ROOT}/bin/sfml-window-2.dll
+	DESTINATION .)
   if(ENABLE_CRASH_LOGGER AND MINGW)
-    install(FILES ${DRMINGW_ROOT}/bin/dbghelp.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/exchndl.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/mgwhelp.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/symsrv.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/symsrv.yes DESTINATION .)
+    install(FILES
+		${DRMINGW_ROOT}/bin/dbghelp.dll
+    	${DRMINGW_ROOT}/bin/exchndl.dll
+    	${DRMINGW_ROOT}/bin/mgwhelp.dll
+    	${DRMINGW_ROOT}/bin/symsrv.dll
+    	${DRMINGW_ROOT}/bin/symsrv.yes
+		DESTINATION .)
   endif()
   install(FILES "${DISCORD_LIB_PATH}/discord_game_sdk.dll" DESTINATION .)
 
-  install(DIRECTORY resources DESTINATION .)
-  install(DIRECTORY scripts DESTINATION .)
-  install(DIRECTORY packs DESTINATION .)
+  install(DIRECTORY resources scripts packs DESTINATION .)
   install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION .)
 elseif(APPLE)
   install(FILES logo.icns DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${EXECUTABLE_NAME}>/Resources" RENAME "${EXECUTABLE_NAME}.icns")
@@ -526,9 +528,7 @@ elseif(ANDROID)
   android_apk(EmptyEpsilon)
 else()
   include(GNUInstallDirs)
-  install(DIRECTORY resources DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
-  install(DIRECTORY scripts DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
-  install(DIRECTORY packs DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
+  install(DIRECTORY resources scripts packs DESTINATION "${CMAKE_INSTALL_DATADIR}/emptyepsilon/")
   install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
