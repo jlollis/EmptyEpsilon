@@ -20,7 +20,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#*EE-}
           echo "ee_version=$VERSION" >> $GITHUB_ENV
-          VERSION=${VERSION%-hotfixes}
+          VERSION=${VERSION%-hotfixes}.${{ github.run_number }}
           cat >> $GITHUB_ENV <<EOF
           version_major=$(echo $VERSION | cut -d. -f1)
           version_minor=$(echo $VERSION | cut -d. -f2)
