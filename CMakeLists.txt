@@ -493,7 +493,7 @@ if(WIN32)
 	install(FILES ${MINGW_STDCPP_DLL} ${MINGW_LIBGCC_DLL} ${MINGW_PTHREAD_DLL} DESTINATION .)
   endif()
   install(FILES
-  	${SFML_ROOT}/bin/OpenAL32.dll DESTINATION .)
+  	${SFML_ROOT}/bin/OpenAL32.dll
   	#${SFML_ROOT}/bin/libFLAC-8.dll
   	#${SFML_ROOT}/bin/libjpeg-62.dll
   	#${SFML_ROOT}/bin/libogg-0.dll
