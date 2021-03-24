@@ -50,11 +50,11 @@ jobs:
           -DCMAKE_MAKE_PROGRAM:FILEPATH=$(which make)
           -DCMAKE_BUILD_TYPE:STRING=Release
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
-          -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/android.toolchain
           -DANDROID_SDK_PATH:PATH=$ANDROID_SDK_ROOT
           -DANDROID_API_TARGET:STRING=27
           -DANDROID_SIGN_KEY_NAME:STRING=androiddebugkey
           -DANDROID_SIGN_KEY_PASSWORD:STRING=android
+          -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/android.toolchain
       - name: Build
         working-directory: ${{github.workspace}}/build
         run: cmake --build . --parallel --target EmptyEpsilon --verbose   
