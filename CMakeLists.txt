@@ -5,7 +5,7 @@ string(TIMESTAMP MINOR "%m")
 string(TIMESTAMP PATCH "%d")
 
 project(EmptyEpsilon VERSION ${MAJOR}.${MINOR}.${PATCH})
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)
@@ -69,6 +69,13 @@ if(WIN32)
   	IMPORTED_IMPLIB "${DISCORD_LIB_PATH}/discord_game_sdk.dll.lib"
 	INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/discord/c/"
   )
+endif()
+
+set(GLM_BASE_PATH "${CMAKE_CURRENT_BINARY_DIR}/glm")
+set(GLM_ZIP "${GLM_BASE_PATH}/glm.zip")
+if(NOT EXISTS "${GLM_ZIP}")
+  file(DOWNLOAD "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip" "${GLM_ZIP}" TIMEOUT 60 TLS_VERIFY ON)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${GLM_ZIP}" WORKING_DIRECTORY "${GLM_BASE_PATH}")
 endif()
 
 set(SOURCES
@@ -273,6 +280,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${OPENGL_INCLUDE_DIR}
 	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
 )
+
+target_include_directories(${PROJECT_NAME} PUBLIC "${GLM_BASE_PATH}/glm")
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
 	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
