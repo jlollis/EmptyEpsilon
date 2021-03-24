@@ -54,7 +54,7 @@ jobs:
           sed -i 's!ANDROID_SIGN_KEY_PASSWORD "password"!ANDROID_SIGN_KEY_PASSWORD "android"!' EmptyEpsilon/cmake/android.toolchain
           sed -i 's!set(SFML_ROOT "${SFML_INSTALL_PATH}")!!' EmptyEpsilon/cmake/android.toolchain
           sed -i 's!file(COPY "${SFML_INSTALL_PATH}/!file(COPY "${SFML_ROOT}/!g' EmptyEpsilon/cmake/android.toolchain
-          sed -i 's!-sigalg SHA1withRSA!-sigalg SHA1withRSA -keystore debug.keystore!' EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!-sigalg SHA1withRSA!-sigalg SHA1withRSA -keystore "${{github.workspace}}/debug.keystore"!' EmptyEpsilon/cmake/android.toolchain
           sed -i 's!--whole-archive ${SFML_INSTALL_PATH}!--whole-archive ${SFML_ROOT}!' EmptyEpsilon/CMakeLists.txt
           cat EmptyEpsilon/cmake/android.toolchain
       - name: Create Build Environment
