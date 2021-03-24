@@ -61,6 +61,7 @@ jobs:
         run: >
           cmake ../EmptyEpsilon
           -G Ninja
+          -DSFML_ROOT:PATH=/usr/local/lib/android/sdk/ndk-bundle/sources/third_party/sfml/
           -DCMAKE_MAKE_PROGRAM:FILEPATH=$(which ninja)
           -DCMAKE_BUILD_TYPE:STRING=Release
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
