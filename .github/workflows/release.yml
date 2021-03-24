@@ -24,10 +24,6 @@ jobs:
           version_patch=$(echo $VERSION | cut -d. -f3)
           version_tweak=$(echo $VERSION | cut -d. -f4)
           EOF
-      - name: Setup
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -qq ninja-build
       - name: Android Keystore
         run: >
           keytool -genkey -v -keystore debug.keystore
@@ -51,7 +47,6 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: >
           cmake ../EmptyEpsilon
-          -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
           -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/android.toolchain
