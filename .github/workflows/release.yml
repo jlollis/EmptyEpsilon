@@ -47,6 +47,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: >
           cmake ../EmptyEpsilon
+          -DCMAKE_MAKE_PROGRAM=$(which make)
           -DCMAKE_BUILD_TYPE=Release
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
           -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/android.toolchain
