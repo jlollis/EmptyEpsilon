@@ -280,7 +280,7 @@ void Planet::draw3D()
             PlanetMeshGenerator planet_mesh_generator(level_of_detail);
             planet_mesh[level_of_detail] = new Mesh(planet_mesh_generator.vertices);
         }
-        sf::Shader* shader = ShaderManager::getShader("planetShader");
+        sf::Shader* shader = ShaderManager::getShader("shaders/planetShader");
         shader->setUniform("baseMap", *textureManager.getTexture(planet_texture));
         shader->setUniform("atmosphereColor", (sf::Glsl::Vec4)atmosphere_color);
         sf::Shader::bind(shader);
@@ -313,7 +313,7 @@ void Planet::draw3DTransparent()
             PlanetMeshGenerator planet_mesh_generator(level_of_detail);
             planet_mesh[level_of_detail] = new Mesh(planet_mesh_generator.vertices);
         }
-        sf::Shader* shader = ShaderManager::getShader("planetShader");
+        sf::Shader* shader = ShaderManager::getShader("shaders/planetShader");
         shader->setUniform("baseMap", *textureManager.getTexture(cloud_texture));
         shader->setUniform("atmosphereColor", (sf::Glsl::Vec4)sf::Color(0,0,0));
         sf::Shader::bind(shader);
@@ -339,7 +339,8 @@ void Planet::draw3DTransparent()
         glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)quad.data());
         glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, sizeof(VertexAndTexCoords), (GLvoid*)((char*)quad.data() + sizeof(sf::Vector3f)));
 
-        glDrawArrays(GL_QUADS, 0, quad.size());
+        std::initializer_list<uint8_t> indices = { 0, 1, 2, 2, 3, 0 };
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, std::begin(indices));
     }
 }
 #endif

@@ -104,7 +104,7 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
             2, 6, 4, 4, 0, 2, // Back
             3, 2, 0, 0, 1, 3, // Left
             6, 7, 5, 5, 4, 6, // Right
-            7, 3, 1, 3, 1, 5, // Front
+            7, 3, 1, 1, 5, 7, // Front
             6, 2, 3, 3, 7, 6, // Top
             0, 4, 5, 5, 1, 0, // Bottom
         };
@@ -115,9 +115,40 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
 
         glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(sf::Vector3f), positions.data(), GL_STATIC_DRAW);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(uint8_t), elements.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_NONE);
+        // Setup spacedust
+        spacedust_shader = ShaderManager::getShader("shaders/spacedust");
+        spacedust_uniforms[static_cast<size_t>(Uniforms::Projection)] = glGetUniformLocation(spacedust_shader->getNativeHandle(), "projection");
+        spacedust_uniforms[static_cast<size_t>(Uniforms::ModelView)] = glGetUniformLocation(spacedust_shader->getNativeHandle(), "model_view");
+        spacedust_uniforms[static_cast<size_t>(Uniforms::Rotation)] = glGetUniformLocation(spacedust_shader->getNativeHandle(), "rotation");
+
+        spacedust_vertex_attributes[static_cast<size_t>(VertexAttributes::Position)] = glGetAttribLocation(spacedust_shader->getNativeHandle(), "position");
+        spacedust_vertex_attributes[static_cast<size_t>(VertexAttributes::Sign)] = glGetAttribLocation(spacedust_shader->getNativeHandle(), "sign_value");
+
+        // Reserve our GPU buffer.
+        // Each dust particle consist of:
+        // - a worldpace position (Vector3f)
+        // - a sign value (single byte).
+        // Both "arrays" are maintained separate:
+        // the signs are stable (they just tell us which "end" of the line we're on)
+        // The positions will get updated more frequently.
+        // It means each particle occupies 2*13B (assuming tight packing)
+        glBindBuffer(GL_ARRAY_BUFFER, spacedust_buffer[0]);
+        glBufferData(GL_ARRAY_BUFFER, 2 * spacedust_particle_count * (sizeof(sf::Vector3f) + sizeof(int8_t)), nullptr, GL_DYNAMIC_DRAW);
+
+        // Generate and update the alternating vertices signs.
+        std::array<int8_t, 2 * spacedust_particle_count> signs;
+        
+        for (auto n = 0; n < signs.size(); n += 2)
+        {
+            signs[n] = -1;
+            signs[n + 1] = 1;
+        }
+
+        // Update sign parts.
+        glBufferSubData(GL_ARRAY_BUFFER, 2 * spacedust_particle_count * sizeof(sf::Vector3f), signs.size() * sizeof(int8_t), signs.data());
+        glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+        
     }
 #endif // FEATURE_3D_RENDERING
 }
@@ -131,7 +162,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         soundManager->setListenerPosition(sf::Vector2f(camera_position.x, camera_position.y), camera_yaw);
     window.popGLStates();
 
-    ShaderManager::getShader("billboardShader")->setUniform("camera_position", camera_position);
+    ShaderManager::getShader("shaders/billboardShader")->setUniform("camera_position", camera_position);
 
     float camera_fov = 60.0f;
     float sx = window.getSize().x * window.getView().getViewport().width / window.getView().getSize().x;
@@ -201,13 +232,6 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     glDepthMask(GL_TRUE);
 
     sf::Texture::bind(NULL);
-    {
-        float lightpos1[4] = {0, 0, 0, 1.0};
-        glLightfv(GL_LIGHT1, GL_POSITION, lightpos1);
-
-        float lightpos0[4] = {20000, 20000, 20000, 1.0};
-        glLightfv(GL_LIGHT0, GL_POSITION, lightpos0);
-    }
 
     class RenderInfo
     {
@@ -296,29 +320,58 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
 
     if (show_spacedust && my_spaceship)
     {
-        static std::vector<sf::Vector3f> space_dust;
+        static std::vector<sf::Vector3f> space_dust(2 * spacedust_particle_count);
+        
+        sf::Vector2f dust_vector = my_spaceship->getVelocity() / 100.f;
+        sf::Vector3f dust_center = sf::Vector3f(my_spaceship->getPosition().x, my_spaceship->getPosition().y, 0.f); 
 
-        while(space_dust.size() < 1000)
-            space_dust.push_back(sf::Vector3f());
+        constexpr float maxDustDist = 500.f;
+        constexpr float minDustDist = 100.f;
+        
+        bool update_required = false; // Do we need to update the GPU buffer?
 
-        sf::Vector2f dust_vector = my_spaceship->getVelocity() / 100.0f;
-        sf::Vector3f dust_center = sf::Vector3f(my_spaceship->getPosition().x, my_spaceship->getPosition().y, 0.0);
-        glColor4f(0.7, 0.5, 0.35, 0.07);
-
-        for(unsigned int n=0; n<space_dust.size(); n++)
+        for (auto n = 0; n < space_dust.size(); n += 2)
         {
-            const float maxDustDist = 500.0f;
-            const float minDustDist = 100.0f;
-            glPushMatrix();
-            if ((space_dust[n] - dust_center) > maxDustDist || (space_dust[n] - dust_center) < minDustDist)
+            //
+            auto delta = space_dust[n] - dust_center;
+            if (delta > maxDustDist || delta < minDustDist)
+            {
+                update_required = true;
                 space_dust[n] = dust_center + sf::Vector3f(random(-maxDustDist, maxDustDist), random(-maxDustDist, maxDustDist), random(-maxDustDist, maxDustDist));
-            glTranslatef(space_dust[n].x, space_dust[n].y, space_dust[n].z);
-            glBegin(GL_LINES);
-            glVertex3f(-dust_vector.x, -dust_vector.y, 0);
-            glVertex3f( dust_vector.x,  dust_vector.y, 0);
-            glEnd();
-            glPopMatrix();
+                space_dust[n + 1] = space_dust[n];
+            }
         }
+
+        sf::Shader::bind(spacedust_shader);
+
+        // Upload matrices (only float 4x4 supported in es2)
+        std::array<float, 16> matrix;
+
+        glGetFloatv(GL_PROJECTION_MATRIX, matrix.data());
+        glUniformMatrix4fv(spacedust_uniforms[static_cast<size_t>(Uniforms::Projection)], 1, GL_FALSE, matrix.data());
+
+        glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
+        glUniformMatrix4fv(spacedust_uniforms[static_cast<size_t>(Uniforms::ModelView)], 1, GL_FALSE, matrix.data());
+
+        // Ship information for flying particles
+        spacedust_shader->setUniform("velocity", dust_vector);
+        
+        {
+            gl::ScopedVertexAttribArray positions(spacedust_vertex_attributes[static_cast<size_t>(VertexAttributes::Position)]);
+            gl::ScopedVertexAttribArray signs(spacedust_vertex_attributes[static_cast<size_t>(VertexAttributes::Sign)]);
+            glBindBuffer(GL_ARRAY_BUFFER, spacedust_buffer[0]);
+            
+            if (update_required)
+            {
+                glBufferSubData(GL_ARRAY_BUFFER, 0, space_dust.size() * sizeof(sf::Vector3f), space_dust.data());
+            }
+            glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(sf::Vector3f), (GLvoid*)0);
+            glVertexAttribPointer(signs.get(), 1, GL_BYTE, GL_FALSE, 0, (GLvoid*)(2 * spacedust_particle_count * sizeof(sf::Vector3f)));
+            
+            glDrawArrays(GL_LINES, 0, 2 * spacedust_particle_count);
+            glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+        }
+        sf::Shader::bind(nullptr);
     }
     glPopMatrix();
 
@@ -352,7 +405,8 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
                 uint8_t(0), uint8_t(1)
             };
             glVertexAttribPointer(texcoords.get(), 2, GL_UNSIGNED_BYTE, GL_FALSE, 0, (GLvoid*)coords.begin());
-            glDrawArrays(GL_QUADS, 0, 4);
+            std::initializer_list<uint8_t> indices{ 0, 1, 2, 2, 3, 0 };
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, std::begin(indices));
         }
         glPopMatrix();
     }
@@ -360,26 +414,51 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     glDepthMask(true);
     glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);
-    sf::Shader::bind(NULL);
-    glColor3f(1, 1, 1);
 
 #ifdef DEBUG
     glDisable(GL_DEPTH_TEST);
-    foreach(SpaceObject, obj, space_object_list)
+    auto debug_shader = ShaderManager::getShader("shaders/basicColor");
+    // Store location of the model_view matrix which will change for each object.
+    auto model_view_location = glGetUniformLocation(debug_shader->getNativeHandle(), "model_view");
+    sf::Shader::bind(debug_shader);
     {
-        glPushMatrix();
-        glTranslatef(-camera_position.x,-camera_position.y, -camera_position.z);
-        glTranslatef(obj->getPosition().x, obj->getPosition().y, 0);
-        glRotatef(obj->getRotation(), 0, 0, 1);
+        // Common state: color, projection matrix.    
+        debug_shader->setUniform("color", sf::Glsl::Vec4(sf::Color::White));
+        
+        std::array<float, 16> matrix;
+        glGetFloatv(GL_PROJECTION_MATRIX, matrix.data());
 
-        std::vector<sf::Vector2f> collisionShape = obj->getCollisionShape();
-        glBegin(GL_LINE_LOOP);
-        for(unsigned int n=0; n<collisionShape.size(); n++)
-            glVertex3f(collisionShape[n].x, collisionShape[n].y, 0);
-        glEnd();
-        glPopMatrix();
+        glUniformMatrix4fv(glGetUniformLocation(debug_shader->getNativeHandle(), "projection"), 1, GL_FALSE, matrix.data());
+
+        std::vector<sf::Vector3f> points;
+        gl::ScopedVertexAttribArray positions(glGetAttribLocation(debug_shader->getNativeHandle(), "position"));
+        foreach(SpaceObject, obj, space_object_list)
+        {
+            glPushMatrix();
+            glTranslatef(-camera_position.x, -camera_position.y, -camera_position.z);
+            glTranslatef(obj->getPosition().x, obj->getPosition().y, 0);
+            glRotatef(obj->getRotation(), 0, 0, 1);
+
+            glGetFloatv(GL_MODELVIEW_MATRIX, matrix.data());
+            glUniformMatrix4fv(model_view_location, 1, GL_FALSE, matrix.data());
+
+            std::vector<sf::Vector2f> collisionShape = obj->getCollisionShape();
+
+            if (collisionShape.size() > points.size())
+            {
+                points.resize(collisionShape.size());
+                glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(sf::Vector3f), points.data());
+            }
+
+            for (unsigned int n = 0; n < collisionShape.size(); n++)
+                points[n] = sf::Vector3f(collisionShape[n].x, collisionShape[n].y, 0.f);
+            
+            glDrawArrays(GL_LINE_LOOP, 0, collisionShape.size());
+            glPopMatrix();
+        }
     }
 #endif
+    sf::Shader::bind(nullptr);
 
     window.pushGLStates();
 
