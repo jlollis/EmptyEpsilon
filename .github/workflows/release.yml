@@ -51,7 +51,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
           -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/android.toolchain
-          -DANDROID_SDK_PATH:PATH=/usr/local/lib/android/sdk
+          -DANDROID_SDK_PATH:PATH=$ANDROID_SDK_ROOT
           -DANDROID_API_TARGET=27
           -DANDROID_SIGN_KEY_NAME=androiddebugkey
           -DANDROID_SIGN_KEY_PASSWORD=android
