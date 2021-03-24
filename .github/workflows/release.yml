@@ -41,6 +41,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: EmptyEpsilon
+      - name: Android SDK Injection
+        run: |
+          sed -i "s/ANDROID_SDK_PATH \"\"/ANDROID_SDK_PATH \"$ANDROID_SDK_ROOT\"/' EmptyEpsilon/CMakeLists.txt
+          sed -i "s/ANDROID_API_TARGET \"26\"/ANDROID_API_TARGET \"27\"/' EmptyEpsilon/CMakeLists.txt
+          sed -i "s/ANDROID_SIGN_KEY_NAME \"Android\"/ANDROID_SIGN_KEY_NAME \"androiddebugkey\"/' EmptyEpsilon/CMakeLists.txt
+          sed -i "s/ANDROID_SIGN_KEY_PASSWORD \"password\"/ANDROID_SIGN_KEY_PASSWORD \"android\"/' EmptyEpsilon/CMakeLists.txt
+          head -n 30 EmptyEpsilon/CMakeLists.txt
       - name: Create Build Environment
         run: cmake -E make_directory ${{github.workspace}}/build
       - name: Configure CMake
