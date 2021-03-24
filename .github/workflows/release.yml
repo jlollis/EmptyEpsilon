@@ -53,7 +53,8 @@ jobs:
           sed -i 's!ANDROID_SIGN_KEY_NAME "Android"!ANDROID_SIGN_KEY_NAME "androiddebugkey"!' EmptyEpsilon/cmake/android.toolchain
           sed -i 's!ANDROID_SIGN_KEY_PASSWORD "password"!ANDROID_SIGN_KEY_PASSWORD "android"!' EmptyEpsilon/cmake/android.toolchain
           sed -i 's!set(SFML_ROOT "${SFML_INSTALL_PATH}")!!' EmptyEpsilon/cmake/android.toolchain
-          head -n 30 EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!file(COPY "${SFML_INSTALL_PATH}/!file(COPY "${SFML_ROOT}/!g' EmptyEpsilon/cmake/android.toolchain
+          cat EmptyEpsilon/cmake/android.toolchain
       - name: Create Build Environment
         run: cmake -E make_directory ${{github.workspace}}/build
       - name: Configure CMake
