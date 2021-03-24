@@ -52,7 +52,7 @@ jobs:
           sed -i 's!ANDROID_API_TARGET "26"!ANDROID_API_TARGET "27"!' EmptyEpsilon/cmake/android.toolchain
           sed -i 's!ANDROID_SIGN_KEY_NAME "Android"!ANDROID_SIGN_KEY_NAME "androiddebugkey"!' EmptyEpsilon/cmake/android.toolchain
           sed -i 's!ANDROID_SIGN_KEY_PASSWORD "password"!ANDROID_SIGN_KEY_PASSWORD "android"!' EmptyEpsilon/cmake/android.toolchain
-          sed -i 's!set(SFML_ROOT "${SFML_INSTALL_PATH}")!set(SFML_ROOT "${SFML_INSTALL_PATH}" CACHE PATH "" FORCE)!' EmptyEpsilon/cmake/android.toolchain
+          sed -i '!set(SFML_ROOT "${SFML_INSTALL_PATH}")!d' EmptyEpsilon/cmake/android.toolchain
           head -n 30 EmptyEpsilon/cmake/android.toolchain
       - name: Create Build Environment
         run: cmake -E make_directory ${{github.workspace}}/build
