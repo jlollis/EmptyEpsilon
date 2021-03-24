@@ -8,7 +8,70 @@ on:
       - EE-*.*.*.*
     
 jobs:
-  package:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch version
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#*EE-}
+          echo "ee_version=$VERSION" >> $GITHUB_ENV
+          VERSION=${VERSION%-hotfixes}.${{ github.run_number }}
+          cat >> $GITHUB_ENV <<EOF
+          version_major=$(echo $VERSION | cut -d. -f1)
+          version_minor=$(echo $VERSION | cut -d. -f2)
+          version_patch=$(echo $VERSION | cut -d. -f3)
+          version_tweak=$(echo $VERSION | cut -d. -f4)
+          EOF
+      - name: Setup
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq ninja-build
+      - name: Android Keystore
+        run: >
+          keytool -genkey -v -keystore debug.keystore
+          -storepass android
+          -alias androiddebugkey -keypass android
+          -keyalg RSA -keysize 2048 -validity 10000
+          -dname "C=US, O=Android, CN=Android Debug"
+      - name: SeriousProton Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: daid/SeriousProton
+          path: SeriousProton
+          ref: EE-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}
+      - name: EmptyEpsilon Checkout
+        uses: actions/checkout@v2
+        with:
+          path: EmptyEpsilon
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}/build
+        run: >
+          cmake ../EmptyEpsilon
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
+          -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/android.toolchain
+          -DANDROID_SDK_PATH:PATH=${{ env.ANDROID_SDK_ROOT }}
+          -DANDROID_API_TARGET=27
+          -DANDROID_SIGN_KEY_NAME=androiddebugkey
+          -DANDROID_SIGN_KEY_PASSWORD=android
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . --parallel --target EmptyEpsilon --verbose   
+      - name: Package
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . --parallel --target apk --verbose
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: EmptyEpsilon-${{ env.ee_version }}
+          path: |
+            build/*.apk
+  desktops:
     strategy:
       matrix:
         os: [ubuntu, windows, macos]
@@ -99,7 +162,7 @@ jobs:
 
   upload:
       runs-on: ubuntu-latest
-      needs: package
+      needs: desktops
       steps:
         - name: Get Packages
           uses: actions/download-artifact@v2
