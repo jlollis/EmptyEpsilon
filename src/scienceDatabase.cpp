@@ -1,4 +1,7 @@
 #include "scienceDatabase.h"
+
+#include <set>
+
 #include "factionInfo.h"
 #include "shipTemplate.h"
 #include "spaceObjects/spaceship.h"
