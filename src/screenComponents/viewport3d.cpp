@@ -129,25 +129,30 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
         // Reserve our GPU buffer.
         // Each dust particle consist of:
         // - a worldpace position (Vector3f)
-        // - a sign value (single byte).
+        // - a sign value (single byte, passed as float).
         // Both "arrays" are maintained separate:
         // the signs are stable (they just tell us which "end" of the line we're on)
         // The positions will get updated more frequently.
-        // It means each particle occupies 2*13B (assuming tight packing)
+        // It means each particle occupies 2*16B (assuming tight packing)
         glBindBuffer(GL_ARRAY_BUFFER, spacedust_buffer[0]);
-        glBufferData(GL_ARRAY_BUFFER, 2 * spacedust_particle_count * (sizeof(sf::Vector3f) + sizeof(int8_t)), nullptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, 2 * spacedust_particle_count * (sizeof(sf::Vector3f) + sizeof(float)), nullptr, GL_DYNAMIC_DRAW);
 
         // Generate and update the alternating vertices signs.
-        std::array<int8_t, 2 * spacedust_particle_count> signs;
+        std::array<float, 2 * spacedust_particle_count> signs;
         
         for (auto n = 0; n < signs.size(); n += 2)
         {
-            signs[n] = -1;
-            signs[n + 1] = 1;
+            signs[n] = -1.f;
+            signs[n + 1] = 1.f;
         }
 
         // Update sign parts.
-        glBufferSubData(GL_ARRAY_BUFFER, 2 * spacedust_particle_count * sizeof(sf::Vector3f), signs.size() * sizeof(int8_t), signs.data());
+        glBufferSubData(GL_ARRAY_BUFFER, 2 * spacedust_particle_count * sizeof(sf::Vector3f), signs.size() * sizeof(float), signs.data());
+        {
+            // zero out positions.
+            const std::vector<sf::Vector3f> zeroed_positions(2 * spacedust_particle_count);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, 2 * spacedust_particle_count * sizeof(sf::Vector3f), zeroed_positions.data());
+        }
         glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
         
     }
@@ -165,10 +170,35 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     glActiveTexture(GL_TEXTURE0);
 
     float camera_fov = 60.0f;
-    float sx = window.getSize().x * window.getView().getViewport().width / window.getView().getSize().x;
-    float sy = window.getSize().y * window.getView().getViewport().height / window.getView().getSize().y;
-    glViewport(rect.left * sx, (float(window.getView().getSize().y) - rect.height - rect.top) * sx, rect.width * sx, rect.height * sy);
+    {
+        // Translate our rect from view coordinates to window.
+        const auto& view = window.getView();
+        const auto& view_size = view.getSize();
 
+        const auto& relative_viewport = view.getViewport();
+
+        // View's viewport in target coordinate system (= pixels)
+        const auto& window_viewport = window.getViewport(view);
+
+        // Get the scaling factor - from logical size to pixels.
+        const sf::Vector2f view_to_window{ window_viewport.width / view_size.x, window_viewport.height / view_size.y };
+        
+        // Compute rect, applying logical -> pixel scaling.
+        const sf::IntRect window_rect{
+            static_cast<int32_t>(.5f + rect.left * view_to_window.x),
+            static_cast<int32_t>(.5f + rect.top * view_to_window.y),
+            static_cast<int32_t>(.5f + rect.width * view_to_window.x),
+            static_cast<int32_t>(.5f + rect.height * view_to_window.y)
+        };
+
+        // Apply current viewport translation.
+        // (top / bottom is flipped around)
+        auto left = view_size.x * relative_viewport.left + window_rect.left;
+        auto top = view_size.y * (view_to_window.y + relative_viewport.top) - (window_rect.top + window_rect.height);
+
+        // Setup 3D viewport.
+        glViewport(left, top, window_rect.width, window_rect.height);
+    }
     glClearDepth(1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
@@ -361,7 +391,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
                 glBufferSubData(GL_ARRAY_BUFFER, 0, space_dust.size() * sizeof(sf::Vector3f), space_dust.data());
             }
             glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, sizeof(sf::Vector3f), (GLvoid*)0);
-            glVertexAttribPointer(signs.get(), 1, GL_BYTE, GL_FALSE, 0, (GLvoid*)(2 * spacedust_particle_count * sizeof(sf::Vector3f)));
+            glVertexAttribPointer(signs.get(), 1, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(2 * spacedust_particle_count * sizeof(sf::Vector3f)));
             
             glDrawArrays(GL_LINES, 0, 2 * spacedust_particle_count);
             glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
@@ -386,19 +416,19 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
             gl::ScopedVertexAttribArray positions(billboard.get().attribute(ShaderRegistry::Attributes::Position));
             gl::ScopedVertexAttribArray texcoords(billboard.get().attribute(ShaderRegistry::Attributes::Texcoords));
             auto vertices = {
-                uint8_t(0), uint8_t(0), uint8_t(0),
-                uint8_t(0), uint8_t(0), uint8_t(0),
-                uint8_t(0), uint8_t(0), uint8_t(0),
-                uint8_t(0), uint8_t(0), uint8_t(0)
+                0.f, 0.f, 0.f,
+                0.f, 0.f, 0.f,
+                0.f, 0.f, 0.f,
+                0.f, 0.f, 0.f
             };
-            glVertexAttribPointer(positions.get(), 3, GL_UNSIGNED_BYTE, GL_FALSE, 0, (GLvoid*)vertices.begin());
+            glVertexAttribPointer(positions.get(), 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)vertices.begin());
             auto coords = {
-                uint8_t(0), uint8_t(0),
-                uint8_t(1), uint8_t(0),
-                uint8_t(1), uint8_t(1),
-                uint8_t(0), uint8_t(1)
+                0.f, 0.f,
+                1.f, 0.f,
+                1.f, 1.f,
+                0.f, 1.f
             };
-            glVertexAttribPointer(texcoords.get(), 2, GL_UNSIGNED_BYTE, GL_FALSE, 0, (GLvoid*)coords.begin());
+            glVertexAttribPointer(texcoords.get(), 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)coords.begin());
             std::initializer_list<uint8_t> indices{ 0, 1, 2, 2, 3, 0 };
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, std::begin(indices));
         }
