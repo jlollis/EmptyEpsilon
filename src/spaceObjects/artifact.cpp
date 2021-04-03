@@ -1,3 +1,4 @@
+#include <SFML/OpenGL.hpp>
 #include "artifact.h"
 #include "explosionEffect.h"
 #include "playerSpaceship.h"

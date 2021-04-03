@@ -1,4 +1,5 @@
-#include <GL/glad.h>
+#include <GL/glew.h>
+#include <SFML/OpenGL.hpp>
 
 #include "asteroid.h"
 
