@@ -1,6 +1,6 @@
-#include <GL/glew.h>
+#include <GL/glad.h>
 #include "planet.h"
-#include <SFML/OpenGL.hpp>
+
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "main.h"
