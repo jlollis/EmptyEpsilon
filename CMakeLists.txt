@@ -1,5 +1,10 @@
+# Set minimum target macOS version: https://cmake.org/cmake/help/v3.8/variable/CMAKE_OSX_DEPLOYMENT_TARGET.html#variable:CMAKE_OSX_DEPLOYMENT_TARGET
+# SFML targets 10.7, recent XCode version complains about anything below 10.9 (Mavericks, Oct. 2013).
+# Must be first!
+set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.9")
+
 project(EmptyEpsilon)
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.7)
 
 if(${CMAKE_VERSION} VERSION_LESS 3.2)
 	# `MINGW` exists starting 3.2.
@@ -61,17 +66,9 @@ else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror=return-type")
 endif()
 
-# install resources, scripts, and packs to app bundle instead of system dir.
-if(APPLE)
-    set(CMAKE_INSTALL_PREFIX "./")
-elseif(UNIX)
+if(UNIX)
     # Set RESOURCE_BASE_DIR on Unix so the built binary is able to find resources
     add_definitions(-DRESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/")
-endif()
-
-# Set minimum target macOS version
-if(APPLE)
-	set(MACOSX_DEPLOYMENT_TARGET "10.10")
 endif()
 
 if(CONFIG_DIR)
@@ -495,45 +492,44 @@ if(WIN32)
 	execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libwinpthread-1.dll OUTPUT_VARIABLE MINGW_PTHREAD_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
 	install(FILES ${MINGW_STDCPP_DLL} ${MINGW_LIBGCC_DLL} ${MINGW_PTHREAD_DLL} DESTINATION .)
   endif()
-  install(FILES ${SFML_ROOT}/bin/OpenAL32.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libFLAC-8.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libjpeg-62.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libogg-0.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbis-0.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbisenc-2.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbisfile-3.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-audio-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-graphics-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-network-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-system-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-window-2.dll DESTINATION .)
+  install(FILES
+  	${SFML_ROOT}/bin/OpenAL32.dll
+  	#${SFML_ROOT}/bin/libFLAC-8.dll
+  	#${SFML_ROOT}/bin/libjpeg-62.dll
+  	#${SFML_ROOT}/bin/libogg-0.dll
+  	#${SFML_ROOT}/bin/libvorbis-0.dll
+  	#${SFML_ROOT}/bin/libvorbisenc-2.dll
+  	#${SFML_ROOT}/bin/libvorbisfile-3.dll
+  	${SFML_ROOT}/bin/sfml-audio-2.dll
+  	${SFML_ROOT}/bin/sfml-graphics-2.dll
+  	${SFML_ROOT}/bin/sfml-network-2.dll
+  	${SFML_ROOT}/bin/sfml-system-2.dll
+  	${SFML_ROOT}/bin/sfml-window-2.dll
+	DESTINATION .)
   if(ENABLE_CRASH_LOGGER AND MINGW)
-    install(FILES ${DRMINGW_ROOT}/bin/dbghelp.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/exchndl.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/mgwhelp.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/symsrv.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/symsrv.yes DESTINATION .)
+    install(FILES
+		${DRMINGW_ROOT}/bin/dbghelp.dll
+    	${DRMINGW_ROOT}/bin/exchndl.dll
+    	${DRMINGW_ROOT}/bin/mgwhelp.dll
+    	${DRMINGW_ROOT}/bin/symsrv.dll
+    	${DRMINGW_ROOT}/bin/symsrv.yes
+		DESTINATION .)
   endif()
   install(FILES "${DISCORD_LIB_PATH}/discord_game_sdk.dll" DESTINATION .)
 
-  install(DIRECTORY resources DESTINATION .)
-  install(DIRECTORY scripts DESTINATION .)
-  install(DIRECTORY packs DESTINATION .)
+  install(DIRECTORY resources scripts packs DESTINATION .)
   install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION .)
 elseif(APPLE)
-  install(FILES logo.icns DESTINATION "EmptyEpsilon.app/Contents/Resources" RENAME "${EXECUTABLE_NAME}.icns")
+  install(FILES logo.icns DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${EXECUTABLE_NAME}>/Resources" RENAME "${EXECUTABLE_NAME}.icns")
 
-  install(DIRECTORY resources DESTINATION "EmptyEpsilon.app/Contents/Resources")
-  install(DIRECTORY scripts DESTINATION "EmptyEpsilon.app/Contents/Resources")
-  install(DIRECTORY packs DESTINATION "EmptyEpsilon.app/Contents/Resources")
+  install(DIRECTORY resources scripts packs DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${EXECUTABLE_NAME}>/Resources")
+  install(TARGETS ${EXECUTABLE_NAME} BUNDLE DESTINATION . RUNTIME DESTINATION bin)
 elseif(ANDROID)
   android_apk(EmptyEpsilon)
 else()
   include(GNUInstallDirs)
-  install(DIRECTORY resources DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
-  install(DIRECTORY scripts DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
-  install(DIRECTORY packs DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/emptyepsilon/")
-  install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+  install(DIRECTORY resources scripts packs DESTINATION "${CMAKE_INSTALL_DATADIR}/emptyepsilon/")
+  install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 find_package(PythonInterp)
@@ -547,12 +543,12 @@ if(PYTHONINTERP_FOUND)
   
   # Matches install logic above.
   if(WIN32)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION .)
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION . OPTIONAL)
   elseif(APPLE)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "EmptyEpsilon.app/Contents/Resources")
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${EXECUTABLE_NAME}>/Resources" OPTIONAL)
   elseif(NOT ANDROID)
 	# DOCDIR already has PROJECT_NAME (EmptyEpsilon) appended (from CMake docs)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_FULL_DOCDIR}")
+  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_DOCDIR}" OPTIONAL)
   endif()
 endif()
 
@@ -564,15 +560,53 @@ add_custom_target(update_locale
 	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/tutorial.en scripts/tutorial_*.lua
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
-set(CPACK_PACKAGE_EXECUTABLES ${EXECUTABLE_NAME})
-set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}")
+# Generic settings
+set(CPACK_PACKAGE_NAME "${CMAKE_PROJECT_NAME}")
 set(CPACK_PACKAGE_CONTACT "https://github.com/daid/")
+set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/logo.png")
+set(CPACK_PACKAGE_CHECKSUM SHA256)
+
+# WIX (win installer)
+# Setup the upgrade GUID to have one per version.
+# https://tools.ietf.org/html/rfc4122#appendix-C
+set(GUID_NAMESPACE_URL 6ba7b810-9dad-11d1-80b4-00c04fd430c8)
+string(UUID EMPTYEPSILON_GUID NAMESPACE ${GUID_NAMESPACE_URL} NAME "https://github.com/daid/EmptyEpsilon" TYPE SHA1)
+string(UUID CPACK_WIX_UPGRADE_GUID NAMESPACE ${EMPTYEPSILON_GUID} NAME "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}" TYPE SHA1)
+set(CPACK_PACKAGE_EXECUTABLES "${EXECUTABLE_NAME};Empty Epsilon (${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})")
+set(CPACK_WIX_UI_BANNER "${CMAKE_CURRENT_SOURCE_DIR}/resources/logo_full.png")
+set(CPACK_WIX_UI_DIALOG "${CMAKE_CURRENT_SOURCE_DIR}/resources/logo_white.png")
+
 if(NOT DEFINED CPACK_GENERATOR)
   if(WIN32)
-    set(CPACK_GENERATOR "ZIP")
+    set(CPACK_GENERATOR "ZIP;WIX")
   elseif(UNIX)
     set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfml-dev")
   endif()
 endif()
+
+if(APPLE)
+	# Copy SFML and its extlibs to binary dir.
+	# SFML_ROOT *should* be the Frameworks folder!
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/" "${CMAKE_BINARY_DIR}/Frameworks/"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory "${SFML_ROOT}/../extlibs/" "${CMAKE_BINARY_DIR}/Frameworks/")
+	install(CODE "
+  		include(BundleUtilities)
+  		fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"${CMAKE_BINARY_DIR};${CMAKE_BINARY_DIR}/Frameworks\")
+	")
+endif()
+
+if ("WIX" IN_LIST CPACK_GENERATOR AND CPACK_PACKAGE_VERSION_MAJOR GREATER 100)
+	# WIX does not like major version number > 256.
+	# So if we're above 100, assume it's a year-like format and strip out century/millenium.
+	math(EXPR CPACK_PACKAGE_VERSION_MAJOR "${CPACK_PACKAGE_VERSION_MAJOR} % 100")
+endif()
+
+set(CPACK_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})
+
+if(DEFINED CPACK_PACKAGE_VERSION_TWEAK)  
+	set(CPACK_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION}.${CPACK_PACKAGE_VERSION_TWEAK})
+endif()
+
 include(CPack)

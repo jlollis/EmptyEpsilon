@@ -1,0 +1,193 @@
+---
+name: Ship it
+on:
+  push:
+    branches:
+      - EE-*.*.*-hotfixes
+    tags:
+      - EE-*.*.*.*
+    
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch version
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#*EE-}
+          echo "ee_version=$VERSION" >> $GITHUB_ENV
+          VERSION=${VERSION%-hotfixes}.${{ github.run_number }}
+          cat >> $GITHUB_ENV <<EOF
+          version_major=$(echo $VERSION | cut -d. -f1)
+          version_minor=$(echo $VERSION | cut -d. -f2)
+          version_patch=$(echo $VERSION | cut -d. -f3)
+          version_tweak=$(echo $VERSION | cut -d. -f4)
+          EOF
+      - name: Setup
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq ninja-build
+      - name: Android Keystore
+        run: >
+          keytool -genkey -v -keystore debug.keystore
+          -storepass android
+          -alias androiddebugkey -keypass android
+          -keyalg RSA -keysize 2048 -validity 10000
+          -dname "C=US, O=Android, CN=Android Debug"
+      - name: SeriousProton Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: daid/SeriousProton
+          path: SeriousProton
+          ref: EE-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}
+      - name: EmptyEpsilon Checkout
+        uses: actions/checkout@v2
+        with:
+          path: EmptyEpsilon
+      - name: Android SDK Injection
+        run: |
+          head -n 30 EmptyEpsilon/cmake/android.toolchain
+          sed -i "s!ANDROID_SDK_PATH \"\"!ANDROID_SDK_PATH \"$ANDROID_SDK_ROOT\"!" EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!ANDROID_API_TARGET "26"!ANDROID_API_TARGET "27"!' EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!ANDROID_SIGN_KEY_NAME "Android"!ANDROID_SIGN_KEY_NAME "androiddebugkey"!' EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!ANDROID_SIGN_KEY_PASSWORD "password"!ANDROID_SIGN_KEY_PASSWORD "android"!' EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!set(SFML_ROOT "${SFML_INSTALL_PATH}")!!' EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!file(COPY "${SFML_INSTALL_PATH}/!file(COPY "${SFML_ROOT}/!g' EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!-sigalg SHA1withRSA!-sigalg SHA1withRSA -keystore "${{github.workspace}}/debug.keystore"!' EmptyEpsilon/cmake/android.toolchain
+          sed -i 's!--whole-archive ${SFML_INSTALL_PATH}!--whole-archive ${SFML_ROOT}!' EmptyEpsilon/CMakeLists.txt
+          cat EmptyEpsilon/cmake/android.toolchain
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}/build
+        run: >
+          cmake ../EmptyEpsilon
+          -G Ninja
+          -DSFML_ROOT:PATH=/usr/local/lib/android/sdk/ndk-bundle/sources/third_party/sfml/
+          -DCMAKE_MAKE_PROGRAM:FILEPATH=$(which ninja)
+          -DCMAKE_BUILD_TYPE:STRING=Release
+          -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
+          -DANDROID_SDK_PATH:PATH=$ANDROID_SDK_ROOT
+          -DANDROID_API_TARGET:STRING=27
+          -DANDROID_SIGN_KEY_NAME:STRING=androiddebugkey
+          -DANDROID_SIGN_KEY_PASSWORD:STRING=android
+          -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/android.toolchain
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . --parallel --target EmptyEpsilon --verbose   
+      - name: Package
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . --parallel --target apk --verbose
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: EmptyEpsilon-${{ env.ee_version }}
+          path: |
+            build/*.apk
+  desktops:
+    strategy:
+      matrix:
+        os: [ubuntu, windows, macos]
+    name: Package ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - name: Fetch version
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#*EE-}
+          echo "ee_version=$VERSION" >> $GITHUB_ENV
+          VERSION=${VERSION%-hotfixes}.${{ github.run_number }}
+          cat >> $GITHUB_ENV <<EOF
+          version_major=$(echo $VERSION | cut -d. -f1)
+          version_minor=$(echo $VERSION | cut -d. -f2)
+          version_patch=$(echo $VERSION | cut -d. -f3)
+          version_tweak=$(echo $VERSION | cut -d. -f4)
+          EOF
+      - name: macOS Setup
+        if: matrix.os == 'macos'
+        run: |
+          brew install cmake ninja
+          curl -sSL https://www.sfml-dev.org/files/SFML-2.5.1-macOS-clang.tar.gz | tar xzf -
+          cat >> $GITHUB_ENV <<EOF
+          cmake_generator=Ninja
+          cpack_generator=DragNDrop
+          cmake_platform_args=-DSFML_ROOT:PATH=../SFML-2.5.1-macos-clang/Frameworks
+          EOF
+      - name: Linux Setup
+        if: matrix.os == 'ubuntu'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq ninja-build libsfml-dev
+          cat >> $GITHUB_ENV <<EOF
+          cmake_generator=Ninja
+          cpack_generator="DEB;ZIP"
+          cmake_platform_args=
+          EOF
+      - name: Windows Setup
+        if: matrix.os == 'windows'
+        run: |
+          $sfml_link = “https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-32-bit.zip”
+          $sfml_zip = "${{github.workspace}}/sfml-dev.zip"
+          (new-object System.Net.WebClient).DownloadFile($sfml_link, $sfml_zip)
+          Expand-Archive -LiteralPath $sfml_zip -DestinationPath "${{github.workspace}}/externals"
+          echo @"
+          cmake_generator="Visual Studio 16 2019"
+          cpack_generator="ZIP;WIX"
+          cmake_platform_args=-A Win32 -DSFML_ROOT:PATH=../externals/SFML-2.5.1
+          "@ >> $Env:GITHUB_ENV
+      - name: SeriousProton Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: daid/SeriousProton
+          path: SeriousProton
+          ref: EE-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}
+      - name: EmptyEpsilon Checkout
+        uses: actions/checkout@v2
+        with:
+          path: EmptyEpsilon
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}/build
+        run: >
+          cmake ../EmptyEpsilon
+          -G ${{ env.cmake_generator }}
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
+          -DCPACK_GENERATOR=${{ env.cpack_generator }}
+          -DCPACK_PACKAGE_VERSION_MAJOR=${{ env.version_major }}
+          -DCPACK_PACKAGE_VERSION_MINOR=${{ env.version_minor }}
+          -DCPACK_PACKAGE_VERSION_PATCH=${{ env.version_patch }}
+          -DCPACK_PACKAGE_VERSION_TWEAK=${{ env.version_tweak }}
+          ${{ env.cmake_platform_args }}
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
+      - name: Package
+        working-directory: ${{github.workspace}}/build
+        run: cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: EmptyEpsilon-${{ env.ee_version }}
+          path: |
+            build/EmptyEpsilon-*-*.*
+
+  upload:
+      runs-on: ubuntu-latest
+      needs: desktops
+      steps:
+        - name: Get Packages
+          uses: actions/download-artifact@v2
+        - name: List
+          run: ls -R
+        - name: Update release
+          if: startsWith(github.ref, 'refs/tags/')
+          uses: softprops/action-gh-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            files: EmptyEpsilon-*/*
+            draft: true
+            prerelease: true
