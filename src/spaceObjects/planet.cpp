@@ -272,6 +272,8 @@ void Planet::draw3D()
         ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Planet);
         auto planet_matrix = glm::scale(getModelMatrix(), glm::vec3(planet_size));
         glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(planet_matrix));
+        glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(planet_matrix)))));
+
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), 1.f, 1.f, 1.f, 1.f);
         glUniform4fv(shader.get().uniform(ShaderRegistry::Uniforms::AtmosphereColor), 1, glm::value_ptr(glm::vec4(atmosphere_color.r, atmosphere_color.g, atmosphere_color.b, atmosphere_color.a) / 255.f));
         glBindTexture(GL_TEXTURE_2D, textureManager.getTexture(planet_texture)->getNativeHandle());
@@ -310,6 +312,8 @@ void Planet::draw3DTransparent()
         auto cloud_matrix = glm::scale(planet_matrix, glm::vec3(cloud_size));
         cloud_matrix = glm::rotate(cloud_matrix, glm::radians(engine->getElapsedTime() * 1.0f), glm::vec3(0.f, 0.f, 1.f));
         glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(cloud_matrix));
+        glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(cloud_matrix)))));
+
         glUniform4f(shader.get().uniform(ShaderRegistry::Uniforms::Color), 1.f, 1.f, 1.f, 1.f);
         glUniform4fv(shader.get().uniform(ShaderRegistry::Uniforms::AtmosphereColor), 1, glm::value_ptr(glm::vec4(0.f)));
 
