@@ -433,10 +433,18 @@ add_definitions(-DSFML_NO_DEPRECATED_WARNINGS) # SFML 2.5 gives deprication warn
 # Setup OpenGl
 if(ANDROID)
   target_link_libraries(${EXECUTABLE_NAME} GLESv1_CM)
-else()
+elseif(NOT SFML_OPENGL_ES)
   find_package(OpenGL REQUIRED)
   include_directories(${OPENGL_INCLUDE_DIR})
   target_link_libraries(${EXECUTABLE_NAME} ${OPENGL_LIBRARIES})
+else()
+	find_path(EGL_INCLUDE_DIR EGL/egl.h)
+	find_library(EGL_LIBRARY NAMES EGL)
+	find_path(GLES_INCLUDE_DIR GLES2/gl2.h)
+	find_library(GLES_LIBRARY NAMES GLESv2)
+	add_definitions(-DSFML_OPENGL_ES=1)
+  include_directories(${GLES_INCLUDE_DIR} ${EGL_INCLUDE_DIR})
+  target_link_libraries(${EXECUTABLE_NAME} ${GLESv2_LIBRARY} ${EGL_LIBRARY})
 endif()
 
 # Opus for voice chat
