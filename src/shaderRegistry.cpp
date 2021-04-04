@@ -5,7 +5,7 @@
 #include <cassert>
 #include <tuple>
 
-#include <GL/glew.h>
+#include <GL/glad.h>
 
 #include "logging.h"
 #include "shaderManager.h"

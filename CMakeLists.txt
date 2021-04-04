@@ -359,7 +359,7 @@ foreach(SP_SOURCE
 	src/engine.cpp
 	src/windowManager.cpp
 	src/shaderManager.cpp
-	src/GL/glew.c
+	src/GL/glad.c
 	src/lua/lundump.c
 	src/lua/lmem.c
 	src/lua/lctype.c

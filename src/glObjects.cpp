@@ -2,7 +2,7 @@
 
 #if FEATURE_3D_RENDERING
 
-#include <GL/glew.h>
+#include <GL/glad.h>
 #include <type_traits>
 #include <cassert>
 
@@ -107,7 +107,7 @@ namespace gl
     bool isAvailable()
     {
         // Works in "greater or equal than" fashion..
-        return GLEW_VERSION_2_0;
+        return GLAD_GL_VERSION_2_0;
     }
 } // namespace gl
 

@@ -1,5 +1,4 @@
-#include <GL/glew.h>
-#include <SFML/OpenGL.hpp>
+#include <GL/glad.h>
 #include "main.h"
 #include "featureDefs.h"
 #include "particleEffect.h"
