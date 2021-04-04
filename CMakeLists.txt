@@ -5,7 +5,7 @@ string(TIMESTAMP MINOR "%m")
 string(TIMESTAMP PATCH "%d")
 
 project(EmptyEpsilon VERSION ${MAJOR}.${MINOR}.${PATCH})
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)

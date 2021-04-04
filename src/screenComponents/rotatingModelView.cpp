@@ -1,6 +1,5 @@
 #include <GL/glad.h>
 
-
 #include <glm/ext/matrix_transform.hpp>
 
 #include "featureDefs.h"

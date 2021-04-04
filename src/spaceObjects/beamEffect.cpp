@@ -1,5 +1,4 @@
 #include <GL/glad.h>
-
 #include "beamEffect.h"
 #include "spaceship.h"
 #include "mesh.h"
