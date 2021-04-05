@@ -19,8 +19,6 @@ if(ENABLE_CRASH_LOGGER)
  endif(MINGW)
 endif(ENABLE_CRASH_LOGGER)
 
-set(OpenGL_GL_PREFERENCE LEGACY)
-
 message(STATUS "EmptyEpsilon Version = ${PROJECT_VERSION}")
 
 # Globals
@@ -32,12 +30,20 @@ if(APPLE)
 endif()
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# Dependencies
+add_compile_definitions(
+	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
+	WINDOW_TITLE="${PROJECT_NAME}"
+	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
 
-# Setup OpenGl
-if(NOT ANDROID)
-	find_package(OpenGL REQUIRED)
-endif()
+	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
+	# Platform-specific
+	$<$<BOOL:${WIN32}>:NOMINMAX>
+	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+	$<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
+	$<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+)
+
+# Dependencies
 
 # SeriousProton
 set(SERIOUSPROTON_WITH_JSON ON CACHE BOOL "" FORCE)
@@ -269,21 +275,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	"${PROJECT_SOURCE_DIR}/src"
 	${SFML_INCLUDE_DIR}
 	${SDL2_INCLUDE_DIRS}
-	${OPENGL_INCLUDE_DIR}
 	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
-)
-
-add_compile_definitions(
-	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
-	WINDOW_TITLE="${PROJECT_NAME}"
-	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
-
-	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
-	# Platform-specific
-	$<$<BOOL:${WIN32}>:NOMINMAX>
-	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
-	$<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
-	$<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
 )
 
 target_compile_options(${PROJECT_NAME} PUBLIC
@@ -303,7 +295,6 @@ if(ANDROID)
 else()
 	target_link_libraries(${PROJECT_NAME} PUBLIC
 	seriousproton
-	${OPENGL_LIBRARIES}
 	${SDL2_LIBRARIES}
 	$<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
 	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/lib/exchndl>
