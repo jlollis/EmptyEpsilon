@@ -190,7 +190,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         // Setup 3D viewport.
         glViewport(left, top, window_rect.width, window_rect.height);
     }
-    glClearDepth(1.f);
+    glClearDepthf(1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
 

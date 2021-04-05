@@ -40,10 +40,8 @@ if(NOT ANDROID)
 endif()
 
 # SeriousProton
+set(SERIOUSPROTON_WITH_JSON ON CACHE BOOL "" FORCE)
 add_subdirectory(SeriousProton)
-
-# Opus for voice chat
-add_subdirectory("SeriousProton/src/libopus/" "${PROJECT_BINARY_DIR}/libopus")
 
 # Discord
 # Some magical Win 32 stuff
@@ -275,20 +273,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
 )
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC
-	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
-	WINDOW_TITLE="${PROJECT_NAME}"
-	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
-
-	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
-	# Platform-specific
-	$<$<BOOL:${WIN32}>:NOMINMAX>
-	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
-	$<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
-	$<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
-)
-
-target_compile_definitions(SeriousProton PUBLIC
+add_compile_definitions(
 	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
 	WINDOW_TITLE="${PROJECT_NAME}"
 	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
@@ -317,8 +302,7 @@ if(ANDROID)
 	  "-Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
 else()
 	target_link_libraries(${PROJECT_NAME} PUBLIC
-	SeriousProton
-	opus
+	seriousproton
 	${OPENGL_LIBRARIES}
 	${SDL2_LIBRARIES}
 	$<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
