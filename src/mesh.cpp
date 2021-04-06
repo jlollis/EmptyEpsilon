@@ -21,7 +21,7 @@ namespace
     constexpr uint32_t NO_BUFFER = 0;
     std::unordered_map<string, Mesh*> meshMap;
 }
-Mesh::Mesh(const std::vector<MeshVertex>& unindexed_vertices)
+Mesh::Mesh(std::vector<MeshVertex>&& unindexed_vertices)
     :vbo{NO_BUFFER}, ibo{NO_BUFFER}, face_count{static_cast<uint32_t>(unindexed_vertices.size() / 3)}
 {
     if (!unindexed_vertices.empty() && GLAD_GL_ES_VERSION_2_0)
@@ -33,6 +33,7 @@ Mesh::Mesh(const std::vector<MeshVertex>& unindexed_vertices)
         std::vector<uint32_t> indices(index_count);
         meshopt_remapIndexBuffer(indices.data(), nullptr, index_count, remap.data());
         meshopt_remapVertexBuffer(vertices.data(), unindexed_vertices.data(), index_count, sizeof(MeshVertex), remap.data());
+        unindexed_vertices.clear();
 
         std::array<uint32_t, 2> buffers{};
         glGenBuffers(buffers.size(), buffers.data());
@@ -216,6 +217,8 @@ Mesh* Mesh::getMesh(const string& filename)
     }else{
         LOG(ERROR) << "Unknown mesh format: " << filename;
     }
+
+    stream = P<ResourceStream>();
 
     ret = new Mesh(std::move(mesh_vertices));
     meshMap[filename] = ret;
