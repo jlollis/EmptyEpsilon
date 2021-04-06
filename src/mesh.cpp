@@ -4,6 +4,8 @@
 #include "mesh.h"
 #include "featureDefs.h"
 
+#include "meshoptimizer.h"
+
 namespace
 {
     inline int32_t readInt(const P<ResourceStream>& stream)
@@ -19,32 +21,73 @@ namespace
     constexpr uint32_t NO_BUFFER = 0;
     std::unordered_map<string, Mesh*> meshMap;
 }
-Mesh::Mesh(std::vector<MeshVertex>&& vertices)
-    :vertices{vertices}, vbo{NO_BUFFER}
+Mesh::Mesh(const std::vector<MeshVertex>& unindexed_vertices)
+    :vbo{NO_BUFFER}, ibo{NO_BUFFER}, face_count{static_cast<uint32_t>(unindexed_vertices.size() / 3)}
 {
-    if (!vertices.empty() && GLAD_GL_ES_VERSION_2_0)
+    if (!unindexed_vertices.empty() && GLAD_GL_ES_VERSION_2_0)
     {
-        glGenBuffers(1, &vbo);
+        size_t index_count = 3 * face_count;
+        std::vector<uint32_t> remap(index_count); // allocate temporary memory for the remap table
+        vertices.resize(meshopt_generateVertexRemap(remap.data(), nullptr, index_count, unindexed_vertices.data(), index_count, sizeof(MeshVertex)));
+
+        std::vector<uint32_t> indices(index_count);
+        meshopt_remapIndexBuffer(indices.data(), nullptr, index_count, remap.data());
+        meshopt_remapVertexBuffer(vertices.data(), unindexed_vertices.data(), index_count, sizeof(MeshVertex), remap.data());
+
+        std::array<uint32_t, 2> buffers{};
+        glGenBuffers(buffers.size(), buffers.data());
+        vbo = buffers[0];
+        ibo = buffers[1];
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(MeshVertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        {
+            size_t element_size = sizeof(uint32_t);
+            void* indices_ptr = vertices.size() <= 65536 ? remap.data() : indices.data();
+
+            if (vertices.size() <= 256)
+            {
+                element_size = sizeof(uint8_t);
+                element_type = GL_UNSIGNED_BYTE;
+                auto dst = static_cast<uint8_t*>(indices_ptr);
+
+                for (auto idx : indices)
+                    *dst++ = static_cast<uint8_t>(idx);
+            }
+            else if (vertices.size() <= 65536)
+            {
+                element_size = sizeof(uint16_t);
+                element_type = GL_UNSIGNED_SHORT;
+                auto dst = static_cast<uint16_t*>(indices_ptr);
+
+                for (auto idx : indices)
+                    *dst++ = static_cast<uint16_t>(idx);
+            }
+
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * element_size, indices_ptr, GL_STATIC_DRAW);
+        }
     }
 }
 
 Mesh::~Mesh()
 {
     if (vbo != NO_BUFFER)
-        glDeleteBuffers(1, &vbo);
+    {
+        std::array buffers{ vbo, ibo };
+        glDeleteBuffers(buffers.size(), buffers.data());
+    }
+        
 }
 
 void Mesh::render(int32_t position_attrib, int32_t texcoords_attrib, int32_t normal_attrib)
 {
 #if FEATURE_3D_RENDERING
-    if (vertices.empty())
+    if (vertices.empty() || vbo == NO_BUFFER)
         return;
 
-    if (vbo != NO_BUFFER)
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
     if (position_attrib != -1)
         glVertexAttribPointer(position_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, position));
@@ -55,10 +98,10 @@ void Mesh::render(int32_t position_attrib, int32_t texcoords_attrib, int32_t nor
     if (texcoords_attrib != -1)
         glVertexAttribPointer(texcoords_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, uv));
 
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glDrawElements(GL_TRIANGLES, face_count * 3, element_type, nullptr);
 
-    if (vbo != NO_BUFFER)
-        glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_NONE);
+    glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
 #endif//FEATURE_3D_RENDERING
 }
 

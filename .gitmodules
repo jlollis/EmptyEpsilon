@@ -2,3 +2,6 @@
 	path = SeriousProton
 	url = https://github.com/gcask/SeriousProton
 	branch = sdl-edge
+[submodule "meshoptimizer"]
+	path = meshoptimizer
+	url = https://github.com/zeux/meshoptimizer

@@ -48,6 +48,7 @@ add_compile_definitions(
 # SeriousProton
 set(SERIOUSPROTON_WITH_JSON ON CACHE BOOL "" FORCE)
 add_subdirectory(SeriousProton)
+add_subdirectory(meshoptimizer)
 
 # Discord
 # Some magical Win 32 stuff
@@ -294,7 +295,7 @@ if(ANDROID)
 	  "-Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
 else()
 	target_link_libraries(${PROJECT_NAME} PUBLIC
-	seriousproton
+	seriousproton meshoptimizer
 	${SDL2_LIBRARIES}
 	$<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
 	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/lib/exchndl>
