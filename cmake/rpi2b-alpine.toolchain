@@ -1,0 +1,40 @@
+# Compiling setup for Alpine.
+# See: https://github.com/daid/EmptyEpsilon/wiki/Build%5CRPi%5CAlpine
+
+# Pi-specific. Adapt to yours!
+# https://en.wikipedia.org/wiki/Raspberry_Pi#Specifications
+# Pi 2B: armv7
+# Pi 2B 1.2, 3*, 4: aarch64
+set(CMAKE_SYSTEM_PROCESSOR armv7)
+
+# Pi 2B: Cortex-a7
+# Pi 2B 1.2: Cortex-a53
+# Pi 3B(+): cortex-a53
+set(pi_cpu "cortex-a7")
+
+# Pi 2B and up: neon-vfpv4
+set(pi_fpu "neon-vfpv4")
+
+# Common for all RPi versions.
+set(CMAKE_SYSROOT /sysroot)
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_CROSSCOMPILING ON)
+
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
+
+set(pi_flags "-mcpu=${pi_cpu} -mfpu=${pi_fpu} -mfloat-abi=hard")
+
+set(triple ${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musleabihf)
+set(CMAKE_C_COMPILER_TARGET ${triple})
+set(CMAKE_CXX_COMPILER_TARGET ${triple})
+
+set(CMAKE_C_FLAGS "${pi_flags}" CACHE STRING "")
+set(CMAKE_CXX_FLAGS "${pi_flags}" CACHE STRING "")
+set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld" CACHE STRING "")
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
