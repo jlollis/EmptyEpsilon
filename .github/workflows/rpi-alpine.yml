@@ -9,6 +9,7 @@ on:
 jobs:
   rpi2b:
     name: Alpine RPi2
+    runs-on: ubuntu-latest
     container: alpine:3.10
     steps:
     #### Setup #######
