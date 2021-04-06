@@ -47,8 +47,8 @@ add_compile_definitions(
 
 # SeriousProton
 set(SERIOUSPROTON_WITH_JSON ON CACHE BOOL "" FORCE)
-add_subdirectory(SeriousProton)
-add_subdirectory(meshoptimizer)
+add_subdirectory(SeriousProton EXCLUDE_FROM_ALL)
+add_subdirectory(meshoptimizer EXCLUDE_FROM_ALL)
 
 # Discord
 # Some magical Win 32 stuff
