@@ -8,8 +8,13 @@
     //#include <termios.h>
 #ifndef ANDROID
     extern "C" {
+#ifndef __clang__
     extern int ioctl (int __fd, unsigned long int __request, ...) __THROW;
     extern int tcsendbreak (int __fd, int __duration) __THROW;
+#else
+    extern int ioctl(int __fd, unsigned long int __request, ...);
+    extern int tcsendbreak(int __fd, int __duration);
+#endif
     }
 #endif
     #include <asm/termios.h>
