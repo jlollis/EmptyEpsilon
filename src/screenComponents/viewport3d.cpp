@@ -54,14 +54,14 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
             P<ResourceStream> stream;
             const string basename{ std::get<0>(face) };
             // Attempt to load compressed textures first.
-            if (GLAD_GL_EXT_texture_compression_s3tc || GLAD_GL_OES_compressed_ETC1_RGB8_texture)
+            if (GLAD_GL_EXT_texture_compression_s3tc || GLAD_GL_KHR_texture_compression_astc_ldr)
             {
                 if (GLAD_GL_EXT_texture_compression_s3tc)
                 {
                     stream = getResourceStream(basename + "dds");
                 }
 
-                if (!stream && GLAD_GL_OES_compressed_ETC1_RGB8_texture)
+                if (!stream && GLAD_GL_KHR_texture_compression_astc_ldr)
                 {
                     stream = getResourceStream(basename + "ktx");
                 }
@@ -79,11 +79,11 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
                                 return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
                             case DDSKTX_FORMAT_BC3:
                                 return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-                            case DDSKTX_FORMAT_ETC1:
-                                return GL_ETC1_RGB8_OES;
+                            case DDSKTX_FORMAT_ASTC8x6:
+                                return GL_COMPRESSED_RGBA_ASTC_8x6_KHR;
                             }
 
-                            return GL_NONE;
+                            return GL_RGBA;
                         }();
 
                         ddsktx_sub_data sub_data{};
