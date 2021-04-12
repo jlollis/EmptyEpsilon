@@ -58,12 +58,12 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
             {
                 if (GLAD_GL_EXT_texture_compression_s3tc)
                 {
-                    stream = getResourceStream("dds/" + basename + "dds");
+                    stream = getResourceStream(basename + "dds");
                 }
 
                 if (!stream && GLAD_GL_OES_compressed_ETC1_RGB8_texture)
                 {
-                    stream = getResourceStream("es2/" + basename + "ktx");
+                    stream = getResourceStream(basename + "ktx");
                 }
 
                 if (stream && image.loadFromStream(**stream))
