@@ -14,6 +14,8 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "SFML/stb/dds-ktx.h"
+
 GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
 : GuiElement(owner, id)
 {
@@ -35,27 +37,76 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
         // Load up the cube texture.
         // Face setup
         std::array<std::tuple<const char*, uint32_t>, 6> faces{
-            std::make_tuple("StarsRight.png", GL_TEXTURE_CUBE_MAP_POSITIVE_X),
-            std::make_tuple("StarsLeft.png", GL_TEXTURE_CUBE_MAP_NEGATIVE_X),
-            std::make_tuple("StarsTop.png", GL_TEXTURE_CUBE_MAP_POSITIVE_Y),
-            std::make_tuple("StarsBottom.png", GL_TEXTURE_CUBE_MAP_NEGATIVE_Y),
-            std::make_tuple("StarsFront.png", GL_TEXTURE_CUBE_MAP_POSITIVE_Z),
-            std::make_tuple("StarsBack.png", GL_TEXTURE_CUBE_MAP_NEGATIVE_Z),
+            std::make_tuple("StarsRight.", GL_TEXTURE_CUBE_MAP_POSITIVE_X),
+            std::make_tuple("StarsLeft.", GL_TEXTURE_CUBE_MAP_NEGATIVE_X),
+            std::make_tuple("StarsTop.", GL_TEXTURE_CUBE_MAP_POSITIVE_Y),
+            std::make_tuple("StarsBottom.", GL_TEXTURE_CUBE_MAP_NEGATIVE_Y),
+            std::make_tuple("StarsFront.", GL_TEXTURE_CUBE_MAP_POSITIVE_Z),
+            std::make_tuple("StarsBack.", GL_TEXTURE_CUBE_MAP_NEGATIVE_Z),
         };
 
         // Upload
         glBindTexture(GL_TEXTURE_CUBE_MAP, starbox_texture[0]);
         sf::Image image;
+
         for (const auto& face : faces)
         {
-            auto stream = getResourceStream(std::get<0>(face));
-            if (!stream || !image.loadFromStream(**stream))
+            P<ResourceStream> stream;
+            const string basename{ std::get<0>(face) };
+            // Attempt to load compressed textures first.
+            if (GLAD_GL_EXT_texture_compression_s3tc || GLAD_GL_OES_compressed_ETC1_RGB8_texture)
             {
-                LOG(WARNING) << "Failed to load texture: " << std::get<0>(face);
-                image.create(8, 8, sf::Color(255, 0, 255, 128));
+                if (GLAD_GL_EXT_texture_compression_s3tc)
+                {
+                    stream = getResourceStream("dds/" + basename + "dds");
+                }
+
+                if (!stream && GLAD_GL_OES_compressed_ETC1_RGB8_texture)
+                {
+                    stream = getResourceStream("es2/" + basename + "ktx");
+                }
+
+                if (stream && image.loadFromStream(**stream))
+                {
+                    ddsktx_texture_info info{};
+                    if (ddsktx_parse(&info, image.data(), image.getByteSize()))
+                    {
+                        auto gl_format = [ddsktx_format = image.getFormat()]()
+                        {
+                            switch (ddsktx_format)
+                            {
+                            case DDSKTX_FORMAT_BC1:
+                                return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+                            case DDSKTX_FORMAT_BC3:
+                                return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                            case DDSKTX_FORMAT_ETC1:
+                                return GL_ETC1_RGB8_OES;
+                            }
+
+                            return GL_NONE;
+                        }();
+
+                        ddsktx_sub_data sub_data{};
+                        for (auto mip = 0; mip < 1; ++mip)
+                        {
+                            ddsktx_get_sub(&info, &sub_data, image.data(), image.getByteSize(), 0, 0, mip);
+                            glCompressedTexImage2D(std::get<1>(face), mip, gl_format, sub_data.width, sub_data.height, 0, sub_data.size_bytes, sub_data.buff);
+                        }
+                    }
+                }
             }
 
-            glTexImage2D(std::get<1>(face), 0, GL_RGBA, image.getSize().x, image.getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.getPixelsPtr());
+            if (!stream)
+            {
+                auto stream = getResourceStream(basename + "png");
+                if (!stream || !image.loadFromStream(**stream))
+                {
+                    LOG(WARNING) << "Failed to load texture: " << std::get<0>(face);
+                    image.create(8, 8, sf::Color(255, 0, 255, 128));
+                }
+
+                glTexImage2D(std::get<1>(face), 0, GL_RGBA, image.getSize().x, image.getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.getPixelsPtr());
+            }
         }
 
         // Make it pretty.
