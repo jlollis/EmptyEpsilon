@@ -1,0 +1,125 @@
+crunch: Advanced DXTn Texture Compressor - http://code.google.com/p/crunch
+Copyright (c) 2010-2012 Rich Geldreich and Tenacious Software LLC
+crnlib version v1.04 x64 Built Nov 19 2015, 17:45:31
+
+Error: No command line parameters specified!
+
+Command line usage:
+crunch [options] -file filename
+-file filename - Required input filename, wildcards, multiple -file params OK.
+-file @list.txt - List of files to convert.
+Supported source file formats: dds,ktx,crn,tga,bmp,png,jpg/jpeg,psd
+Note: Some file format variants are unsupported.
+See the docs for stb_image.c: http://www.nothings.org/stb_image.c
+Progressive JPEG files are supported, see: http://code.google.com/p/jpeg-compressor/
+
+Path/file related parameters:
+-out filename - Output filename
+-outdir dir - Output directory
+-outsamedir - Write output file to input directory
+-deep - Recurse subdirectories, default=false
+-nooverwrite - Don't overwrite existing files
+-timestamp - Update only changed files
+-forcewrite - Overwrite read-only files
+-recreate - Recreate directory structure
+-fileformat [dds,ktx,crn,tga,bmp,png] - Output file format, default=crn or dds
+
+Modes:
+-compare - Compare input and output files (no output files are written).
+-info - Only display input file statistics (no output files are written).
+
+Misc. options:
+-helperThreads # - Set number of helper threads, 0-16, default=(# of CPU's)-1
+-noprogress - Disable progress output
+-quiet - Disable all console output
+-ignoreerrors - Continue processing files after errors. Note: The default
+                behavior is to immediately exit whenever an error occurs.
+-logfile filename - Append output to log file
+-pause - Wait for keypress on error
+-window <left> <top> <right> <bottom> - Crop window before processing
+-clamp <width> <height> - Crop image if larger than width/height
+-clampscale <width> <height> - Scale image if larger than width/height
+-nostats - Disable all output file statistics (faster)
+-imagestats - Print various image qualilty statistics
+-mipstats - Print statistics for each mipmap, not just the top mip
+-lzmastats - Print size of output file compressed with LZMA codec
+-split - Write faces/mip levels to multiple separate output PNG files
+-yflip - Always flip texture on Y axis before processing
+-unflip - Unflip texture if read from source file as flipped
+
+Image rescaling (mutually exclusive options)
+-rescale <int> <int> - Rescale image to specified resolution
+-relscale <float> <float> - Rescale image to specified relative resolution
+-rescalemode <nearest | hi | lo> - Auto-rescale non-power of two images
+ nearest - Use nearest power of 2, hi - Use next, lo - Use previous
+
+DDS/CRN compression quality control:
+-quality # (or /q #) - Set Clustered DDS/CRN quality factor [0-255] 255=best
+       DDS default quality is best possible.
+       CRN default quality is 128.
+-bitrate # - Set the desired output bitrate of DDS or CRN output files.
+             This option causes crunch to find the quality factor
+             closest to the desired bitrate using a binary search.
+
+Low-level CRN specific options:
+-c # - Color endpoint palette size, 32-8192, default=3072
+-s # - Color selector palette size, 32-8192, default=3072
+-ca # - Alpha endpoint palette size, 32-8192, default=3072
+-sa # - Alpha selector palette size, 32-8192, default=3072
+
+Mipmap filtering options:
+-mipMode [UseSourceOrGenerate,UseSource,Generate,None]
+         Default mipMode is UseSourceOrGenerate
+ UseSourceOrGenerate: Use source mipmaps if possible, or create new mipmaps.
+ UseSource: Always use source mipmaps, if any (never generate new mipmaps)
+ Generate: Always generate a new mipmap chain (ignore source mipmaps)
+ None: Do not output any mipmaps
+-mipFilter [box,tent,lanczos4,mitchell,kaiser], default=kaiser
+-gamma # - Mipmap gamma correction value, default=2.2, use 1.0 for linear
+-blurriness # - Scale filter kernel, >1=blur, <1=sharpen, .01-8, default=.9
+-wrap - Assume texture is tiled when filtering, default=clamping
+-renormalize - Renormalize filtered normal map texels, default=disabled
+-maxmips # - Limit number of generated texture mipmap levels, 1-16, default=16
+-minmipsize # - Smallest allowable mipmap resolution, default=1
+
+Compression options:
+-alphaThreshold # - Set DXT1A alpha threshold, 0-255, default=128
+ Note: -alphaThreshold also changes the compressor's behavior to
+ prefer DXT1A over DXT5 for images with alpha channels (.DDS only).
+-uniformMetrics - Use uniform color metrics, default=use perceptual metrics
+-noAdaptiveBlocks - Disable adaptive block sizes (i.e. disable macroblocks).
+-compressor [CRN,CRNF,RYG,ATI] - Set DXTn compressor, default=CRN
+-dxtQuality [superfast,fast,normal,better,uber] - Endpoint optimizer speed.
+            Sets endpoint optimizer's max iteration depth. Default=uber.
+-noendpointcaching - Don't try reusing previous DXT endpoint solutions.
+-grayscalsampling - Assume shader will convert fetched results to luma (Y).
+-forceprimaryencoding - Only use DXT1 color4 and DXT5 alpha8 block encodings.
+-usetransparentindicesforblack - Try DXT1 transparent indices for dark pixels.
+
+Ouptut pixel format options:
+-usesourceformat - Use input file's format for output format (when possible).
+
+All supported texture formats (Note: .CRN only supports DXTn pixel formats):
+-DXT1
+-DXT2
+-DXT3
+-DXT4
+-DXT5
+-3DC
+-DXN
+-DXT5A
+-DXT5_CCxY
+-DXT5_xGxR
+-DXT5_xGBR
+-DXT5_AGBR
+-DXT1A
+-ETC1
+-R8G8B8
+-L8
+-A8
+-A8L8
+-A8R8G8B8
+
+For bugs, support, or feedback: richgel99@gmail.com
+
+Exit status: 1
