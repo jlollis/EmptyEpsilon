@@ -8,6 +8,7 @@ project(EmptyEpsilon VERSION ${MAJOR}.${MINOR}.${PATCH})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+option(GENERATE_ASTC_TEXTURES "Compress textures" ON)
 option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)
 message(STATUS "ENABLE_CRASH_LOGGER is " ${ENABLE_CRASH_LOGGER})
 
@@ -302,6 +303,50 @@ else()
 )	  
 endif()
 
+if(GENERATE_ASTC_TEXTURES)
+	message(STATUS "Compressing textures to ASTC")
+
+	include(ExternalProject)
+	set(astcenc_prefix "${PROJECT_BINARY_DIR}")
+
+    ExternalProject_Add(astcenc
+        GIT_REPOSITORY https://github.com/ARM-software/astc-encoder
+        GIT_TAG 2.5 #Always build with this tag, so we're sure it is stable.
+        GIT_SHALLOW 1 # Don't get the entire history
+        CMAKE_ARGS
+			-DCMAKE_BUILD_TYPE:STRING=Release
+            -DCMAKE_INSTALL_PREFIX:PATH=${astcenc_prefix}
+            -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM}
+            -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+			-DISA_SSE2:BOOL=ON
+    )
+
+	set(astcenc_bin "${astcenc_prefix}/astcenc/astcenc-sse2${CMAKE_EXECUTABLE_SUFFIX}")
+
+	
+	file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
+	list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
+	set(ktx_textures)
+	foreach(png_texture IN LISTS png_textures)
+		get_filename_component(texture_dir "${png_texture}" DIRECTORY)
+		get_filename_component(basename "${png_texture}" NAME_WE)
+		set(texture_absdir "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
+		set(texture_ktx_fullpath "${texture_absdir}/${basename}.ktx")
+		add_custom_command(
+		OUTPUT "${texture_ktx_fullpath}"
+		COMMAND "${astcenc_bin}" ARGS -cl "${basename}.png" "${basename}.ktx" 8x6 -medium -silent
+		WORKING_DIRECTORY "${texture_absdir}"
+		MAIN_DEPENDENCY "${texture_absdir}/${basename}.png"
+		DEPENDS astcenc
+		VERBATIM
+		)
+		list(APPEND ktx_textures "${texture_ktx_fullpath}")
+	endforeach()
+	add_custom_target(convert_png DEPENDS ${ktx_textures})
+	add_dependencies(${PROJECT_NAME} convert_png)
+endif()
+
+
 include(InstallRequiredSystemLibraries)
 
 if(WIN32)
@@ -346,10 +391,26 @@ elseif(ANDROID)
   android_apk(EmptyEpsilon)
 else()
   include(GNUInstallDirs)
-  install(DIRECTORY resources DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
+  set(PNG_EXCLUDE)
+  set(KTX_EXCLUDE EXCLUDE)
+  set(DDS_EXCLUDE EXCLUDE)
+
+  if(GENERATE_ASTC_TEXTURES)
+	set(PNG_EXCLUDE EXCLUDE)
+	set(KTX_EXCLUDE)
+  endif()
+
+  install(DIRECTORY resources
+		DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/"
+		FILES_MATCHING
+			PATTERN "*.png" ${PNG_EXCLUDE}
+			PATTERN "*.dds" ${DDS_EXCLUDE}
+			PATTERN "*.ktx" ${KTX_EXCLUDE}
+			PATTERN "*"
+	)
   install(DIRECTORY scripts DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
   install(DIRECTORY packs DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
-  install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 find_package(PythonInterp)

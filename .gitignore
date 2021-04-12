@@ -40,3 +40,7 @@ options.ini
 .vscode
 logs
 *.log
+
+# Generated textures
+*.ktx
+*.dds
