@@ -326,17 +326,18 @@ if(GENERATE_ASTC_TEXTURES)
 	
 	file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
 	list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
+	string(REPLACE ".png" "" png_textures "${png_textures}")
 	set(ktx_textures)
 	foreach(png_texture IN LISTS png_textures)
+		get_filename_component(basename "${png_texture}" NAME)
 		get_filename_component(texture_dir "${png_texture}" DIRECTORY)
-		get_filename_component(basename "${png_texture}" NAME_WE)
-		set(texture_absdir "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
-		set(texture_ktx_fullpath "${texture_absdir}/${basename}.ktx")
+		set(texture_abspath "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
+		set(texture_ktx_fullpath "${texture_abspath}/${basename}.ktx")
 		add_custom_command(
 		OUTPUT "${texture_ktx_fullpath}"
-		COMMAND "${astcenc_bin}" ARGS -cl "${basename}.png" "${basename}.ktx" 8x6 -medium -silent
-		WORKING_DIRECTORY "${texture_absdir}"
-		MAIN_DEPENDENCY "${texture_absdir}/${basename}.png"
+		COMMAND "${astcenc_bin}" ARGS -cl "${basename}.png" "${basename}.ktx" 4x4 -medium -silent
+		WORKING_DIRECTORY "${texture_abspath}"
+		MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
 		DEPENDS astcenc
 		VERBATIM
 		)
