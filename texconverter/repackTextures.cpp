@@ -200,8 +200,11 @@ size_t compress_dxt(const image_ptr& image_data, uint32_t channels, uint32_t wid
 
 struct AstcDetails
 {
+	astcenc_config config{};
+
 	std::vector<std::thread> workers;
 	std::vector<astcenc_error> errors;
+	
 	
 	astcenc_context_ptr context{nullptr, &astcenc_context_free};
 	
@@ -211,7 +214,32 @@ struct AstcDetails
 	{}
 
 	~AstcDetails() = default;
+	AstcDetails(const AstcDetails&) = delete;
+	AstcDetails& operator=(const AstcDetails&) = delete;
+	AstcDetails(AstcDetails&&) = default;
+	AstcDetails& operator=(AstcDetails&&) = default;
 };
+
+AstcDetails setup_astc_compression(bool initialize)
+{
+	AstcDetails details{ std::thread::hardware_concurrency() };
+	
+	if (initialize)
+	{
+		auto status = astcenc_config_init(ASTCENC_PRF_LDR, 4, 4, 1, ASTCENC_PRE_MEDIUM, ASTCENC_FLG_SELF_DECOMPRESS_ONLY, &details.config);
+		if (status == ASTCENC_SUCCESS)
+		{
+			details.context = create_context(details.config, details.workers.size());
+
+		}
+		else
+		{
+			fprintf(stderr, "astcenc config init: %s" LF, astcenc_get_error_string(status));
+		}
+	}
+
+	return details;
+}
 
 size_t compress_astc(const image_ptr& image_data, uint32_t width, uint32_t height, std::vector<uint8_t>& compressed, AstcDetails& details)
 {
@@ -317,23 +345,10 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 	}
 
 	// ASTC 'context'.
-	AstcDetails details{ std::thread::hardware_concurrency() };
-	astcenc_config config{};
-	
-	if (outputs[OutputASTC])
-	{
-		auto status = astcenc_config_init(ASTCENC_PRF_LDR, 4, 4, 1, ASTCENC_PRE_MEDIUM, ASTCENC_FLG_SELF_DECOMPRESS_ONLY, &config);
-		if (status != ASTCENC_SUCCESS)
-		{
-			fprintf(stderr, "astcenc config init: %s" LF, astcenc_get_error_string(status));
-			return -1;
-		}
+	auto details = setup_astc_compression(outputs[OutputASTC]);
 
-		details.context = create_context(config, details.workers.size());
-		
-		if (!details.context)
-			return -1;
-	}
+	if (outputs[OutputASTC] && !details.context)
+		return -1;
 	
 	// Compute header size.
 	std::array<size_t, OutputCount> base_offsets{};
@@ -469,17 +484,7 @@ int process_image(std::string_view src_name, const file_ptr& src_file, std::bits
 	if (outputs[OutputASTC])
 	{
 		// ASTC 'context'.
-		AstcDetails details{ std::thread::hardware_concurrency() };
-		astcenc_config config{};
-
-		auto status = astcenc_config_init(ASTCENC_PRF_LDR, 4, 4, 1, ASTCENC_PRE_MEDIUM, ASTCENC_FLG_SELF_DECOMPRESS_ONLY, &config);
-		if (status != ASTCENC_SUCCESS)
-		{
-			fprintf(stderr, "astcenc config init: %s" LF, astcenc_get_error_string(status));
-			return -1;
-		}
-
-		details.context = create_context(config, details.workers.size());
+		auto details = setup_astc_compression(outputs[OutputASTC]);
 
 		if (!details.context)
 			return -1;
