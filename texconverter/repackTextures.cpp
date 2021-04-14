@@ -149,6 +149,17 @@ struct Entry
 
 static constexpr std::array suffixes{ "-astc", "-dxt" };
 
+void write_ktx(uint32_t format, uint32_t base_format, uint32_t width, uint32_t height, const void* image, uint32_t image_length, const file_ptr& dst)
+{
+	KtxHeader header;
+	header.internal_format = format;
+	header.base_internal_format = base_format;
+	header.pixel_width = width;
+	header.pixel_height = height;
+	fwrite(&header, sizeof(header), 1, dst.get());
+	fwrite(&image_length, sizeof(image_length), 1, dst.get());
+	fwrite(image, image_length, 1, dst.get());
+}
 
 
 int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<OutputCount> outputs)
@@ -319,19 +330,15 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 
 				// Write the KTX texture.
 				auto& dst_pack = dst_packs[OutputDXT];
-				KtxHeader header;
-				header.internal_format = channels % 2 == 0 ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-				header.base_internal_format = channels % 2 == 0 ? GL_RGBA : GL_RGB;
-				header.pixel_width = width;
-				header.pixel_height = height;
-				fwrite(&header, sizeof(header), 1, dst_pack.get());
-				auto image_length = static_cast<uint32_t>(compressed_size);
-				fwrite(&image_length, sizeof(image_length), 1, dst_pack.get());
-				fwrite(compressed.data(), compressed_size, 1, dst_pack.get());
+				write_ktx(
+					channels % 2 == 0 ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
+					channels % 2 == 0 ? GL_RGBA : GL_RGB,
+					width, height, compressed.data(), compressed_size, dst_pack
+				);
 
 				// Update entry information (replace extension, fixup size, position)
 				auto position = static_cast<int32_t>(base_offsets[OutputDXT]);
-				auto size = static_cast<int32_t>(compressed_size + sizeof(header) + sizeof(uint32_t));
+				auto size = static_cast<int32_t>(compressed_size + sizeof(KtxHeader) + sizeof(uint32_t));
 				dst_offsets[OutputDXT][i] = std::make_tuple(position, size);
 				base_offsets[OutputDXT] += size;
 			}
@@ -370,19 +377,11 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 
 				// Write the KTX texture.
 				auto& dst_pack = dst_packs[OutputASTC];
-				KtxHeader header;
-				header.internal_format = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
-				header.base_internal_format = GL_RGBA;
-				header.pixel_width = width;
-				header.pixel_height = height;
-				fwrite(&header, sizeof(header), 1, dst_pack.get());
-				auto image_length = static_cast<uint32_t>(compressed_size);
-				fwrite(&image_length, sizeof(image_length), 1, dst_pack.get());
-				fwrite(compressed.data(),compressed_size, 1, dst_pack.get());
+				write_ktx(GL_COMPRESSED_RGBA_ASTC_4x4_KHR, GL_RGBA, width, height, compressed.data(), compressed_size, dst_pack);
 
 				// Update entry information (replace extension, fixup size, position)
 				auto position = static_cast<int32_t>(base_offsets[OutputASTC]);
-				auto size = static_cast<int32_t>(compressed_size + sizeof(header) + sizeof(uint32_t));
+				auto size = static_cast<int32_t>(compressed_size + sizeof(KtxHeader) + sizeof(uint32_t));
 				dst_offsets[OutputASTC][i] = std::make_tuple(position, size);
 				base_offsets[OutputASTC] += size;
 				astcenc_compress_reset(context.get());
@@ -462,17 +461,11 @@ int process_image(std::string_view src_name, const file_ptr& src_file, std::bits
 		auto dxt_name = std::string{ basename } + suffixes[OutputDXT] + ".ktx";
 		auto dxt_ktx = open_file(dxt_name.data(), "wb");
 
-		KtxHeader header;
-		header.internal_format = channels % 2 == 0 ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-		header.base_internal_format = channels % 2 == 0 ? GL_RGBA : GL_RGB;
-		header.pixel_width = width;
-		header.pixel_height = height;
-		
-		fwrite(&header, sizeof(header), 1, dxt_ktx.get());
-		
-		auto image_length = static_cast<uint32_t>(compressed_size);
-		fwrite(&image_length, sizeof(image_length), 1, dxt_ktx.get());
-		fwrite(compressed.data(), compressed_size, 1, dxt_ktx.get());
+		write_ktx(
+			channels % 2 == 0 ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
+			channels % 2 == 0 ? GL_RGBA : GL_RGB,
+			width, height, compressed.data(), compressed_size, dxt_ktx
+		);
 	}
 
 	if (outputs[OutputASTC])
@@ -527,18 +520,7 @@ int process_image(std::string_view src_name, const file_ptr& src_file, std::bits
 		// Write the KTX texture.
 		auto astc_name = std::string{ basename } + suffixes[OutputASTC] + ".ktx";
 		auto astc_ktx = open_file(astc_name.data(), "wb");
-
-		KtxHeader header;
-		header.internal_format = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
-		header.base_internal_format = GL_RGBA;
-		header.pixel_width = width;
-		header.pixel_height = height;
-
-		fwrite(&header, sizeof(header), 1, astc_ktx.get());
-
-		auto image_length = static_cast<uint32_t>(compressed_size);
-		fwrite(&image_length, sizeof(image_length), 1, astc_ktx.get());
-		fwrite(compressed.data(), compressed_size, 1, astc_ktx.get());
+		write_ktx(GL_COMPRESSED_RGBA_ASTC_4x4_KHR, GL_RGBA, width, height, compressed.data(), compressed_size, astc_ktx);
 		astcenc_compress_reset(context.get());
 	}
 
