@@ -5,3 +5,6 @@
 [submodule "meshoptimizer"]
 	path = meshoptimizer
 	url = https://github.com/zeux/meshoptimizer
+[submodule "texconverter/astc-encoder"]
+	path = texconverter/astc-encoder
+	url = https://github.com/ARM-software/astc-encoder

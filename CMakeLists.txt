@@ -8,7 +8,8 @@ project(EmptyEpsilon VERSION ${MAJOR}.${MINOR}.${PATCH})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-option(GENERATE_ASTC_TEXTURES "Compress textures" ON)
+
+set(COMPRESS_TEXTURES "" CACHE STRING "Texture compression (list: dxt, astc)")
 option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)
 message(STATUS "ENABLE_CRASH_LOGGER is " ${ENABLE_CRASH_LOGGER})
 
@@ -303,48 +304,91 @@ else()
 )	  
 endif()
 
-if(GENERATE_ASTC_TEXTURES)
-	message(STATUS "Compressing textures to ASTC")
+if(COMPRESS_TEXTURES)
+	message(STATUS "Compressing textures to ${COMPRESS_TEXTURES}")
 
 	include(ExternalProject)
-	set(astcenc_prefix "${PROJECT_BINARY_DIR}")
+	set(texencoder_prefix "${PROJECT_BINARY_DIR}/texconverter")
 
-    ExternalProject_Add(astcenc
-        GIT_REPOSITORY https://github.com/ARM-software/astc-encoder
-        GIT_TAG 2.5 #Always build with this tag, so we're sure it is stable.
-        GIT_SHALLOW 1 # Don't get the entire history
+    ExternalProject_Add(texencoder
+        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/texconverter"
         CMAKE_ARGS
-			-DCMAKE_BUILD_TYPE:STRING=Release
-            -DCMAKE_INSTALL_PREFIX:PATH=${astcenc_prefix}
+			-DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_INSTALL_PREFIX:PATH=${texencoder_prefix}
             -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM}
             -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-			-DISA_SSE2:BOOL=ON
+		INSTALL_COMMAND
+			${CMAKE_COMMAND} --build . --target install --config Release
     )
-
-	set(astcenc_bin "${astcenc_prefix}/astcenc/astcenc-sse2${CMAKE_EXECUTABLE_SUFFIX}")
-
 	
+	set(texencoder_bin "${texencoder_prefix}/bin/texconverter${CMAKE_EXECUTABLE_SUFFIX}")
+
 	file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
 	list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
 	string(REPLACE ".png" "" png_textures "${png_textures}")
+
+	# Filter out generated textures.
+	list(FILTER png_textures EXCLUDE REGEX "-dxt$")
+	list(FILTER png_textures EXCLUDE REGEX "-astc$")
 	set(ktx_textures)
 	foreach(png_texture IN LISTS png_textures)
 		get_filename_component(basename "${png_texture}" NAME)
 		get_filename_component(texture_dir "${png_texture}" DIRECTORY)
 		set(texture_abspath "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
-		set(texture_ktx_fullpath "${texture_abspath}/${basename}.ktx")
+		set(ktx_outputs)
+		if("astc" IN_LIST COMPRESS_TEXTURES)
+			list(APPEND ktx_outputs "${texture_abspath}/${basename}-astc.ktx")
+		endif()
+		if("dxt" IN_LIST COMPRESS_TEXTURES)
+			list(APPEND ktx_outputs "${texture_abspath}/${basename}-dxt.ktx")
+		endif()
 		add_custom_command(
-		OUTPUT "${texture_ktx_fullpath}"
-		COMMAND "${astcenc_bin}" ARGS -cl "${basename}.png" "${basename}.ktx" 4x4 -medium -silent
-		WORKING_DIRECTORY "${texture_abspath}"
-		MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
-		DEPENDS astcenc
-		VERBATIM
+			OUTPUT ${ktx_outputs}
+			COMMAND "${texencoder_bin}" single "${basename}.png" ${COMPRESS_TEXTURES}
+			WORKING_DIRECTORY "${texture_abspath}"
+			MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
+			DEPENDS texencoder
+			COMMAND_EXPAND_LISTS
+			VERBATIM
 		)
-		list(APPEND ktx_textures "${texture_ktx_fullpath}")
+		list(APPEND ktx_textures "${ktx_outputs}")
 	endforeach()
 	add_custom_target(convert_png DEPENDS ${ktx_textures})
-	add_dependencies(${PROJECT_NAME} convert_png)
+
+	file(GLOB_RECURSE pack_files LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/packs" "*.pack")
+	list(FILTER pack_files EXCLUDE REGEX "^\\.\\.")
+	string(REPLACE ".pack" "" pack_files "${pack_files}")
+
+	list(FILTER pack_files EXCLUDE REGEX "-dxt$")
+	list(FILTER pack_files EXCLUDE REGEX "-astc$")
+	set(repacked)
+	foreach(packfile IN LISTS pack_files)
+		get_filename_component(basename "${packfile}" NAME)
+		get_filename_component(pack_dir "${packfile}" DIRECTORY)
+		set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
+		set(texpack_outputs)
+		if("astc" IN_LIST COMPRESS_TEXTURES)
+			list(APPEND texpack_outputs "${pack_abspath}/${basename}-astc.pack")
+		endif()
+		if("dxt" IN_LIST COMPRESS_TEXTURES)
+			list(APPEND texpack_outputs "${pack_abspath}/${basename}-dxt.pack")
+		endif()
+
+		add_custom_command(
+			OUTPUT ${texpack_outputs}
+			COMMAND "${texencoder_bin}" pack "${basename}.pack" ${COMPRESS_TEXTURES}
+			WORKING_DIRECTORY "${pack_abspath}"
+				MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
+				DEPENDS texencoder
+				COMMAND_EXPAND_LISTS
+				VERBATIM
+		)
+
+		list(APPEND repacked "${texpack_outputs}")
+	endforeach()
+	add_custom_target(convert_packs DEPENDS ${repacked})
+	add_custom_target(convert_textures DEPENDS convert_png convert_packs)
+	add_dependencies(${PROJECT_NAME} convert_textures)
 endif()
 
 
@@ -394,9 +438,8 @@ else()
   include(GNUInstallDirs)
   set(PNG_EXCLUDE)
   set(KTX_EXCLUDE EXCLUDE)
-  set(DDS_EXCLUDE EXCLUDE)
 
-  if(GENERATE_ASTC_TEXTURES)
+  if(COMPRESS_TEXTURES)
 	set(PNG_EXCLUDE EXCLUDE)
 	set(KTX_EXCLUDE)
   endif()
@@ -405,7 +448,6 @@ else()
 		DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/"
 		FILES_MATCHING
 			PATTERN "*.png" ${PNG_EXCLUDE}
-			PATTERN "*.dds" ${DDS_EXCLUDE}
 			PATTERN "*.ktx" ${KTX_EXCLUDE}
 			PATTERN "*"
 	)
