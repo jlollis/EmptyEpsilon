@@ -256,7 +256,7 @@ size_t compress_astc(const image_ptr& image_data, uint32_t width, uint32_t heigh
 	for (auto worker = 0; worker < details.workers.size(); ++worker)
 	{
 		details.workers[worker] = std::thread{ [&raw, &compressed, compressed_size, worker, &details]() {
-			astcenc_swizzle swizzle{};
+			astcenc_swizzle swizzle{ASTCENC_SWZ_R, ASTCENC_SWZ_G, ASTCENC_SWZ_B, ASTCENC_SWZ_A};
 			details.errors[worker] = astcenc_compress_image(details.context.get(), &raw, swizzle, compressed.data(), compressed_size, worker);
 		} };
 	}
