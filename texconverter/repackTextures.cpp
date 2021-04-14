@@ -161,6 +161,42 @@ void write_ktx(uint32_t format, uint32_t width, uint32_t height, const void* ima
 	fwrite(image, image_length, 1, dst.get());
 }
 
+size_t compress_dxt(const image_ptr& image_data, uint32_t channels, uint32_t width, uint32_t height, std::vector<uint8_t>& compressed)
+{
+	auto block_size = channels % 2 == 0 ? 16 : 8;
+	auto blocks_x = (width + 4 - 1) / 4;
+	auto blocks_y = (height + 4 - 1) / 4;
+	auto compressed_size = static_cast<size_t>(block_size * blocks_x * blocks_y);
+	compressed.resize(std::max(compressed.size(), compressed_size));
+
+	auto pixels = reinterpret_cast<const uint32_t*>(image_data.get());
+	auto output = compressed.data();
+
+	// Traverse each 4x4 block from the source image.
+	for (auto by = 0; by < blocks_y; ++by)
+	{
+		auto start_y = 4 * by;
+		for (auto bx = 0; bx < blocks_x; ++bx)
+		{
+			// Each block is 4x4, with 4 components (RGBA).
+			std::array<uint32_t, 4 * 4> block{};
+			// Load up the block.
+			for (auto y = 0; y < 4; ++y)
+				for (auto x = 0; x < 4; ++x)
+				{
+					auto pixel_offset = (start_y + y) * width + 4 * bx + x;
+					if (pixel_offset < width * height)
+						block[y * 4 + x] = pixels[pixel_offset];
+				}
+
+
+			stb_compress_dxt_block(output, reinterpret_cast<const uint8_t*>(block.data()), channels % 2 == 0 ? 1 : 0, STB_DXT_HIGHQUAL);
+			output += block_size;
+		}
+	}
+
+	return compressed_size;
+}
 
 int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<OutputCount> outputs)
 {
@@ -295,38 +331,7 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 
 			if (outputs[OutputDXT])
 			{
-				auto block_size = channels % 2 == 0 ? 16 : 8;
-				auto blocks_x = (width + 4 - 1) / 4;
-				auto blocks_y = (height + 4 - 1) / 4;
-				auto compressed_size = static_cast<size_t>(block_size * blocks_x * blocks_y);
-				compressed.resize(std::max(compressed.size(), compressed_size));
-
-				auto pixels = reinterpret_cast<const uint32_t*>(image_data.get());
-				auto output = compressed.data();
-
-				// Traverse each 4x4 block from the source image.
-				for (auto by = 0; by < blocks_y; ++by)
-				{
-					auto start_y = 4 * by;
-					for (auto bx = 0; bx < blocks_x; ++bx)
-					{
-						// Each block is 4x4, with 4 components (RGBA).
-						std::array<uint32_t, 4 * 4> block{};
-						// Load up the block.
-						for (auto y = 0; y < 4; ++y)
-							for (auto x = 0; x < 4; ++x)
-							{
-								auto pixel_offset = (start_y + y) * width + 4 * bx + x;
-								if (pixel_offset < width * height)
-									block[y * 4 + x] = pixels[pixel_offset];
-							}
-								
-
-						stb_compress_dxt_block(output, reinterpret_cast<const uint8_t*>(block.data()), channels % 2 == 0 ? 1 : 0, STB_DXT_HIGHQUAL);
-						output += block_size;
-					}
-				}
-				
+				auto compressed_size = compress_dxt(image_data, channels, width, height, compressed);
 
 				// Write the KTX texture.
 				auto& dst_pack = dst_packs[OutputDXT];
@@ -424,37 +429,7 @@ int process_image(std::string_view src_name, const file_ptr& src_file, std::bits
 
 	if (outputs[OutputDXT])
 	{
-		auto block_size = channels % 2 == 0 ? 16 : 8;
-		auto blocks_x = (width + 4 - 1) / 4;
-		auto blocks_y = (height + 4 - 1) / 4;
-		auto compressed_size = static_cast<size_t>(block_size * blocks_x * blocks_y);
-		compressed.resize(std::max(compressed.size(), compressed_size));
-
-		auto pixels = reinterpret_cast<const uint32_t*>(image_data.get());
-		auto output = compressed.data();
-
-		// Traverse each 4x4 block from the source image.
-		for (auto by = 0; by < blocks_y; ++by)
-		{
-			auto start_y = 4 * by;
-			for (auto bx = 0; bx < blocks_x; ++bx)
-			{
-				// Each block is 4x4, with 4 components (RGBA).
-				std::array<uint32_t, 4 * 4> block{};
-				// Load up the block.
-				for (auto y = 0; y < 4; ++y)
-					for (auto x = 0; x < 4; ++x)
-					{
-						auto pixel_offset = (start_y + y) * width + 4 * bx + x;
-						if (pixel_offset < width * height)
-							block[y * 4 + x] = pixels[pixel_offset];
-					}
-
-				stb_compress_dxt_block(output, reinterpret_cast<const uint8_t*>(block.data()), channels % 2 == 0 ? 1 : 0, STB_DXT_HIGHQUAL);
-				output += block_size;
-			}
-		}
-
+		auto compressed_size = compress_dxt(image_data, channels, width, height, compressed);
 
 		// Write the KTX texture.
 		auto dxt_name = std::string{ basename } + suffixes[OutputDXT] + ".ktx";
