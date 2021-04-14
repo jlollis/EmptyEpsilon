@@ -198,6 +198,62 @@ size_t compress_dxt(const image_ptr& image_data, uint32_t channels, uint32_t wid
 	return compressed_size;
 }
 
+struct AstcDetails
+{
+	std::vector<std::thread> workers;
+	std::vector<astcenc_error> errors;
+	
+	astcenc_context_ptr context{nullptr, &astcenc_context_free};
+	
+	explicit AstcDetails(size_t thread_count)
+		:workers(std::thread::hardware_concurrency())
+		, errors(std::thread::hardware_concurrency())
+	{}
+
+	~AstcDetails() = default;
+};
+
+size_t compress_astc(const image_ptr& image_data, uint32_t width, uint32_t height, std::vector<uint8_t>& compressed, AstcDetails& details)
+{
+	std::array<void*, 1> data{ image_data.get() };
+	astcenc_image raw
+	{
+		static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1u,
+		ASTCENC_TYPE_U8, data.data()
+	};
+
+	size_t compressed_size = ((raw.dim_x + 4 - 1) / 4) * (raw.dim_y + 4 - 1) / 4 * 16;
+
+	compressed.resize(std::max(compressed.size(), compressed_size));
+	for (auto worker = 0; worker < details.workers.size(); ++worker)
+	{
+		details.workers[worker] = std::thread{ [&raw, &compressed, compressed_size, worker, &details]() {
+			astcenc_swizzle swizzle{};
+			details.errors[worker] = astcenc_compress_image(details.context.get(), &raw, swizzle, compressed.data(), compressed_size, worker);
+		} };
+	}
+
+	for (auto& worker : details.workers)
+		worker.join();
+
+	astcenc_compress_reset(details.context.get());
+	return compressed_size;
+}
+
+astcenc_error astc_check_errors(const AstcDetails& details, std::string_view name)
+{
+	for (auto worker = 0; worker < details.errors.size(); ++worker)
+	{
+		if (details.errors[worker] != ASTCENC_SUCCESS)
+		{
+			fprintf(stderr, "[%s][%d]: %s" LF, name.data(), worker, astcenc_get_error_string(details.errors[worker]));
+			return details.errors[worker];
+		}
+	}
+
+	return ASTCENC_SUCCESS;
+}
+
 int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<OutputCount> outputs)
 {
 	auto version = read_int32(src_pack);
@@ -261,13 +317,9 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 	}
 
 	// ASTC 'context'.
-	std::vector<std::thread> workers(std::thread::hardware_concurrency());
-	std::vector<astcenc_error> worker_errors(workers.size());
+	AstcDetails details{ std::thread::hardware_concurrency() };
 	astcenc_config config{};
 	
-	
-	astcenc_context_ptr context{nullptr, &astcenc_context_free};
-
 	if (outputs[OutputASTC])
 	{
 		auto status = astcenc_config_init(ASTCENC_PRF_LDR, 4, 4, 1, ASTCENC_PRE_MEDIUM, ASTCENC_FLG_SELF_DECOMPRESS_ONLY, &config);
@@ -277,9 +329,9 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 			return -1;
 		}
 
-		context = create_context(config, workers.size());
+		details.context = create_context(config, details.workers.size());
 		
-		if (!context)
+		if (!details.context)
 			return -1;
 	}
 	
@@ -349,35 +401,9 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 
 			if (outputs[OutputASTC])
 			{
-				std::array<void*, 1> data{ image_data.get() };
-				astcenc_image raw
-				{
-					static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1u,
-					ASTCENC_TYPE_U8, data.data()
-				};
-				
-				size_t compressed_size = ((raw.dim_x + 4 - 1) / 4) * (raw.dim_y + 4 - 1) / 4 * 16;
-
-				compressed.resize(std::max(compressed.size(), compressed_size));
-				for (auto worker = 0; worker < workers.size(); ++worker)
-				{
-					workers[worker] = std::thread{ [&raw, &compressed, compressed_size, worker, &worker_errors, &context]() {
-						astcenc_swizzle swizzle{};
-						worker_errors[worker] = astcenc_compress_image(context.get(), &raw, swizzle, compressed.data(), compressed_size, worker);
-					} };
-				}
-
-				for (auto& worker : workers)
-					worker.join();
-
-				for (auto worker = 0; worker < worker_errors.size(); ++worker)
-				{
-					if (worker_errors[worker] != ASTCENC_SUCCESS)
-					{
-						fprintf(stderr, "[%s][%d]: %s" LF, entry.name.data(), worker, astcenc_get_error_string(worker_errors[worker]));
-						return -1;
-					}
-				}
+				auto compressed_size = compress_astc(image_data, width, height, compressed, details);
+				if (astc_check_errors(details, entry.name) != ASTCENC_SUCCESS)
+					return -1;
 
 				// Write the KTX texture.
 				auto& dst_pack = dst_packs[OutputASTC];
@@ -388,7 +414,6 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 				auto size = static_cast<int32_t>(compressed_size + sizeof(KtxHeader) + sizeof(uint32_t));
 				dst_offsets[OutputASTC][i] = std::make_tuple(position, size);
 				base_offsets[OutputASTC] += size;
-				astcenc_compress_reset(context.get());
 			}
 		}
 
@@ -444,8 +469,7 @@ int process_image(std::string_view src_name, const file_ptr& src_file, std::bits
 	if (outputs[OutputASTC])
 	{
 		// ASTC 'context'.
-		std::vector<std::thread> workers(std::thread::hardware_concurrency());
-		std::vector<astcenc_error> worker_errors(workers.size());
+		AstcDetails details{ std::thread::hardware_concurrency() };
 		astcenc_config config{};
 
 		auto status = astcenc_config_init(ASTCENC_PRF_LDR, 4, 4, 1, ASTCENC_PRE_MEDIUM, ASTCENC_FLG_SELF_DECOMPRESS_ONLY, &config);
@@ -455,46 +479,19 @@ int process_image(std::string_view src_name, const file_ptr& src_file, std::bits
 			return -1;
 		}
 
-		auto context = create_context(config, workers.size());
+		details.context = create_context(config, details.workers.size());
 
-		if (!context)
+		if (!details.context)
 			return -1;
 
-		std::array<void*, 1> data{ image_data.get() };
-		astcenc_image raw
-		{
-			static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1u,
-			ASTCENC_TYPE_U8, data.data()
-		};
-
-		size_t compressed_size = ((raw.dim_x + 4 - 1) / 4) * (raw.dim_y + 4 - 1) / 4 * 16;
-
-		compressed.resize(std::max(compressed.size(), compressed_size));
-		for (auto worker = 0; worker < workers.size(); ++worker)
-		{
-			workers[worker] = std::thread{ [&raw, &compressed, compressed_size, worker, &worker_errors, &context]() {
-				astcenc_swizzle swizzle{};
-				worker_errors[worker] = astcenc_compress_image(context.get(), &raw, swizzle, compressed.data(), compressed_size, worker);
-			} };
-		}
-
-		for (auto& worker : workers)
-			worker.join();
-
-		for (auto worker = 0; worker < worker_errors.size(); ++worker)
-		{
-			if (worker_errors[worker] != ASTCENC_SUCCESS)
-			{
-				fprintf(stderr, "[%s][%d]: %s" LF, src_name.data(), worker, astcenc_get_error_string(worker_errors[worker]));
-				return -1;
-			}
-		}
+		auto compressed_size = compress_astc(image_data, width, height, compressed, details);
+		if (astc_check_errors(details, src_name) != ASTCENC_SUCCESS)
+			return -1;
 
 		// Write the KTX texture.
 		auto astc_name = std::string{ basename } + suffixes[OutputASTC] + ".ktx";
 		auto astc_ktx = open_file(astc_name.data(), "wb");
 		write_ktx(GL_COMPRESSED_RGBA_ASTC_4x4_KHR, width, height, compressed.data(), compressed_size, astc_ktx);
-		astcenc_compress_reset(context.get());
 	}
 
 	return 0;
