@@ -37,12 +37,12 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
         // Load up the cube texture.
         // Face setup
         std::array<std::tuple<const char*, uint32_t>, 6> faces{
-            std::make_tuple("StarsRight.", GL_TEXTURE_CUBE_MAP_POSITIVE_X),
-            std::make_tuple("StarsLeft.", GL_TEXTURE_CUBE_MAP_NEGATIVE_X),
-            std::make_tuple("StarsTop.", GL_TEXTURE_CUBE_MAP_POSITIVE_Y),
-            std::make_tuple("StarsBottom.", GL_TEXTURE_CUBE_MAP_NEGATIVE_Y),
-            std::make_tuple("StarsFront.", GL_TEXTURE_CUBE_MAP_POSITIVE_Z),
-            std::make_tuple("StarsBack.", GL_TEXTURE_CUBE_MAP_NEGATIVE_Z),
+            std::make_tuple("StarsRight", GL_TEXTURE_CUBE_MAP_POSITIVE_X),
+            std::make_tuple("StarsLeft", GL_TEXTURE_CUBE_MAP_NEGATIVE_X),
+            std::make_tuple("StarsTop", GL_TEXTURE_CUBE_MAP_POSITIVE_Y),
+            std::make_tuple("StarsBottom", GL_TEXTURE_CUBE_MAP_NEGATIVE_Y),
+            std::make_tuple("StarsFront", GL_TEXTURE_CUBE_MAP_POSITIVE_Z),
+            std::make_tuple("StarsBack", GL_TEXTURE_CUBE_MAP_NEGATIVE_Z),
         };
 
         // Upload
@@ -56,22 +56,17 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
             // Attempt to load compressed textures first.
             if (GLAD_GL_EXT_texture_compression_s3tc || GLAD_GL_KHR_texture_compression_astc_ldr)
             {
-                if (GLAD_GL_EXT_texture_compression_s3tc)
-                {
-                    stream = getResourceStream(basename + "dds");
-                }
-
-                if (!stream && GLAD_GL_KHR_texture_compression_astc_ldr)
-                {
-                    stream = getResourceStream(basename + "ktx");
-                }
+                if (GLAD_GL_KHR_texture_compression_astc_ldr)
+                    stream = getResourceStream(basename + "-astc.ktx");
+                if (!stream && GLAD_GL_EXT_texture_compression_s3tc)
+                    stream = getResourceStream(basename + "-dxt.ktx");
 
                 if (stream && image.loadFromStream(**stream))
                 {
                     ddsktx_texture_info info{};
                     if (ddsktx_parse(&info, image.data(), image.getByteSize()))
                     {
-                        auto gl_format = [ddsktx_format = image.getFormat()]()
+                        auto gl_format = [ddsktx_format = info.format]()
                         {
                             switch (ddsktx_format)
                             {
@@ -79,18 +74,24 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
                                 return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
                             case DDSKTX_FORMAT_BC3:
                                 return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                            case DDSKTX_FORMAT_ASTC4x4:
+                                return GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
                             case DDSKTX_FORMAT_ASTC8x6:
                                 return GL_COMPRESSED_RGBA_ASTC_8x6_KHR;
                             }
 
-                            return GL_RGBA;
+                            SDL_assert_paranoid(false);
+                            return GL_NONE;
                         }();
 
-                        ddsktx_sub_data sub_data{};
-                        for (auto mip = 0; mip < 1; ++mip)
+                        if (gl_format != GL_NONE)
                         {
-                            ddsktx_get_sub(&info, &sub_data, image.data(), image.getByteSize(), 0, 0, mip);
-                            glCompressedTexImage2D(std::get<1>(face), mip, gl_format, sub_data.width, sub_data.height, 0, sub_data.size_bytes, sub_data.buff);
+                            ddsktx_sub_data sub_data{};
+                            for (auto mip = 0; mip < 1; ++mip)
+                            {
+                                ddsktx_get_sub(&info, &sub_data, image.data(), image.getByteSize(), 0, 0, mip);
+                                glCompressedTexImage2D(std::get<1>(face), mip, gl_format, sub_data.width, sub_data.height, 0, sub_data.size_bytes, sub_data.buff);
+                            }
                         }
                     }
                 }
@@ -98,7 +99,7 @@ GuiViewport3D::GuiViewport3D(GuiContainer* owner, string id)
 
             if (!stream)
             {
-                auto stream = getResourceStream(basename + "png");
+                auto stream = getResourceStream(basename + ".png");
                 if (!stream || !image.loadFromStream(**stream))
                 {
                     LOG(WARNING) << "Failed to load texture: " << std::get<0>(face);
