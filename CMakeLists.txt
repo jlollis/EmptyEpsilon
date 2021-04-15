@@ -315,8 +315,6 @@ if(COMPRESS_TEXTURES)
         CMAKE_ARGS
 			-DCMAKE_BUILD_TYPE=Release
             -DCMAKE_INSTALL_PREFIX:PATH=${texencoder_prefix}
-            -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM}
-            -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
 		INSTALL_COMMAND
 			${CMAKE_COMMAND} --build . --target install --config Release
     )
