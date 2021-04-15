@@ -209,9 +209,12 @@ struct AstcDetails
 	astcenc_context_ptr context{nullptr, &astcenc_context_free};
 	
 	explicit AstcDetails(size_t thread_count)
-		:workers(std::thread::hardware_concurrency())
-		, errors(std::thread::hardware_concurrency())
-	{}
+		:workers(thread_count - 1)
+		, errors(thread_count)
+	{
+		for (auto& error : errors)
+			error = ASTCENC_SUCCESS;
+	}
 
 	~AstcDetails() = default;
 	AstcDetails(const AstcDetails&) = delete;
@@ -229,7 +232,7 @@ AstcDetails setup_astc_compression(bool initialize)
 		auto status = astcenc_config_init(ASTCENC_PRF_LDR, 4, 4, 1, ASTCENC_PRE_MEDIUM, ASTCENC_FLG_SELF_DECOMPRESS_ONLY, &details.config);
 		if (status == ASTCENC_SUCCESS)
 		{
-			details.context = create_context(details.config, details.workers.size());
+			details.context = create_context(details.config, details.errors.size());
 
 		}
 		else
@@ -253,13 +256,19 @@ size_t compress_astc(const image_ptr& image_data, uint32_t width, uint32_t heigh
 	size_t compressed_size = ((raw.dim_x + 4 - 1) / 4) * (raw.dim_y + 4 - 1) / 4 * 16;
 
 	compressed.resize(std::max(compressed.size(), compressed_size));
+
+	auto worker_function = [&raw, &compressed, compressed_size, &details](auto worker)
+	{
+		astcenc_swizzle swizzle{ ASTCENC_SWZ_R, ASTCENC_SWZ_G, ASTCENC_SWZ_B, ASTCENC_SWZ_A };
+		details.errors[worker] = astcenc_compress_image(details.context.get(), &raw, swizzle, compressed.data(), compressed_size, worker);
+	};
+
 	for (auto worker = 0; worker < details.workers.size(); ++worker)
 	{
-		details.workers[worker] = std::thread{ [&raw, &compressed, compressed_size, worker, &details]() {
-			astcenc_swizzle swizzle{ASTCENC_SWZ_R, ASTCENC_SWZ_G, ASTCENC_SWZ_B, ASTCENC_SWZ_A};
-			details.errors[worker] = astcenc_compress_image(details.context.get(), &raw, swizzle, compressed.data(), compressed_size, worker);
-		} };
+		details.workers[worker] = std::thread(worker_function, worker + 1);
 	}
+
+	worker_function(0);
 
 	for (auto& worker : details.workers)
 		worker.join();
