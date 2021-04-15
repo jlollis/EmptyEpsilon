@@ -308,18 +308,18 @@ if(COMPRESS_TEXTURES)
 	message(STATUS "Compressing textures to ${COMPRESS_TEXTURES}")
 
 	include(ExternalProject)
-	set(texencoder_prefix "${PROJECT_BINARY_DIR}/texconverter")
+	set(texconverter_prefix "${PROJECT_BINARY_DIR}/texconverter")
 
-    ExternalProject_Add(texencoder
+    ExternalProject_Add(texconverter
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/texconverter"
         CMAKE_ARGS
 			-DCMAKE_BUILD_TYPE:STRING=Release
-            -DCMAKE_INSTALL_PREFIX:PATH=${texencoder_prefix}
+            -DCMAKE_INSTALL_PREFIX:PATH=${texconverter_prefix}
 		INSTALL_COMMAND
 			${CMAKE_COMMAND} --build . --target install --config Release
     )
 	
-	set(texencoder_bin "${texencoder_prefix}/bin/texconverter${CMAKE_EXECUTABLE_SUFFIX}")
+	set(texconverter_bin "${texconverter_prefix}/bin/texconverter${CMAKE_EXECUTABLE_SUFFIX}")
 
 	file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
 	list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
@@ -342,10 +342,10 @@ if(COMPRESS_TEXTURES)
 		endif()
 		add_custom_command(
 			OUTPUT ${ktx_outputs}
-			COMMAND "${texencoder_bin}" single "${basename}.png" ${COMPRESS_TEXTURES}
+			COMMAND "${texconverter_bin}" single "${basename}.png" ${COMPRESS_TEXTURES}
 			WORKING_DIRECTORY "${texture_abspath}"
 			MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
-			DEPENDS texencoder
+			DEPENDS texconverter
 			COMMAND_EXPAND_LISTS
 			VERBATIM
 		)
@@ -374,10 +374,10 @@ if(COMPRESS_TEXTURES)
 
 		add_custom_command(
 			OUTPUT ${texpack_outputs}
-			COMMAND "${texencoder_bin}" pack "${basename}.pack" ${COMPRESS_TEXTURES}
+			COMMAND "${texconverter_bin}" pack "${basename}.pack" ${COMPRESS_TEXTURES}
 			WORKING_DIRECTORY "${pack_abspath}"
 				MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
-				DEPENDS texencoder
+				DEPENDS texconverter
 				COMMAND_EXPAND_LISTS
 				VERBATIM
 		)
