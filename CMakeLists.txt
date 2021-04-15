@@ -313,7 +313,7 @@ if(COMPRESS_TEXTURES)
     ExternalProject_Add(texencoder
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/texconverter"
         CMAKE_ARGS
-			-DCMAKE_BUILD_TYPE=Release
+			-DCMAKE_BUILD_TYPE:STRING=Release
             -DCMAKE_INSTALL_PREFIX:PATH=${texencoder_prefix}
 		INSTALL_COMMAND
 			${CMAKE_COMMAND} --build . --target install --config Release
