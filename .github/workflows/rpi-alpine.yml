@@ -10,7 +10,7 @@ jobs:
   rpi2b:
     name: Alpine RPi2
     runs-on: ubuntu-latest
-    container: alpine:3.10
+    container: alpine:3.13
     steps:
     #### Setup #######
     - name: Sysroot setup
@@ -19,23 +19,31 @@ jobs:
         apk --root /sysroot --initdb --arch armv7 add
         cp /etc/apk/repositories /sysroot/etc/apk
         apk --root /sysroot --allow-untrusted add alpine-keys
-        apk --root add add build-base mesa-dev sdl2-dev eudev-dev \
+        apk --root /sysroot update
+    - name: Sysroot build base
+      run: apk --root /sysroot add build-base
+    - name: Sysroot eudev
+      if: ${{ false }}
+      run: apk --root /sysroot add eudev-dev
+    - name: Sysroot packages
+      run: >
+        apk --root /sysroot add mesa-dev sdl2-dev
         freetype-dev flac-dev libogg-dev libvorbis-dev openal-soft-dev
     - name: Host setup
       run: |
-        apk add clang lld git cmake ninja llvm wget unzip
+        apk add clang lld git cmake ninja llvm wget unzip build-base
     - name: EmptyEpsilon Checkout
       uses: actions/checkout@v2
+      with:
+        path: EmptyEpsilon
+        submodules: true
 
     ####### SFML ##############
     - name: SFML - Get Sources
       run: |
         wget https://www.sfml-dev.org/files/SFML-2.5.1-sources.zip
         unzip SFML-2.5.1-sources.zip
-    - name: SFML - Create Build Environment
-      run: cmake -E make_directory ${{github.workspace}}/sfml-build
     - name: SFML - Configure
-      working-directory: ${{github.workspace}}/sfml-build
       run: >
         cmake -G Ninja
         -DCMAKE_BUILD_TYPE:STRING=Release
@@ -46,32 +54,29 @@ jobs:
         -DSFML_BUILD_GRAPHICS:BOOL=OFF
         -DSFML_BUILD_WINDOW:BOOL=OFF
         -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/rpi2b-alpine.toolchain
-        ../SFML-2.5.1
+        -S SFML-2.5.1 -B sfml-build
     - name: SFML - Install
-      working-directory: ${{github.workspace}}/sfml-build
-      run: cmake --build . --parallel --target install
+      run: cmake --build sfml-build --parallel --target install
     - name: SFML - Fix up
-      working-directory: /sysroot/opt/sfml/include
-      run: rm -rf Window Graphics GpuPreference.hpp Graphics.hpp OpenGL.hpp Window.hpp
+      run: |
+        cd /sysroot/opt/sfml/include/SFML
+        rm -rf Window Graphics GpuPreference.hpp Graphics.hpp OpenGL.hpp Window.hpp
     
     ###### EmptyEpsilon ##########
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{github.workspace}}/build
     - name: Configure CMake
-      working-directory: ${{github.workspace}}/build
       run: >
         cmake
         -G Ninja
+        -DCOMPRESS_TEXTURES:STRING=astc
         -DSFML_ROOT:PATH=/opt/sfml
         -DCMAKE_INSTALL_PREFIX:STRING=dist
-        -DCPACK_GENERATOR:STRING=ZIP
-        -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+        -DCPACK_GENERATOR:STRING=TGZ
+        -DCMAKE_BUILD_TYPE:STRING=Release
         -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../EmptyEpsilon/cmake/rpi2b-alpine.toolchain
-        ../EmptyEpsilon
+        -S EmptyEpsilon -B ee-build
     - name: Build
-      working-directory: ${{github.workspace}}/build
-      run: cmake --build . --parallel --target package
+      run: cmake --build ee-build --parallel --target package
     - uses: actions/upload-artifact@v2
       with:
-        name: emptyepsilon-alpine.zip
-        path: ${{ github.workspace }}/build/EmptyEpsilon.zip
+        name: emptyepsilon-alpine.tar.gz
+        path: ${{ github.workspace }}/ee-build/EmptyEpsilon.tar.gz

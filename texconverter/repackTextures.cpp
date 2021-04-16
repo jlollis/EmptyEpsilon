@@ -225,7 +225,7 @@ struct AstcDetails
 
 AstcDetails setup_astc_compression(bool initialize)
 {
-	AstcDetails details{ std::thread::hardware_concurrency() };
+	AstcDetails details{ 1 };
 	
 	if (initialize)
 	{

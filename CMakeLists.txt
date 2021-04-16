@@ -433,7 +433,24 @@ elseif(APPLE)
 elseif(ANDROID)
   android_apk(EmptyEpsilon)
 else()
-  include(GNUInstallDirs)
+	include(GNUInstallDirs)
+	
+	set(resource_root "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
+	set(bin_root "${CMAKE_INSTALL_BINDIR}")
+	if(CMAKE_CROSSCOMPILING AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7")
+		set(resource_root ".")
+		set(bin_root ".")
+		install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-audio.so.2.5.1"
+				DESTINATION "${bin_root}"
+				RENAME libsfml-audio.so.2.5)
+		install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-network.so.2.5.1"
+				DESTINATION "${bin_root}"
+				RENAME libsfml-network.so.2.5)
+		install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-system.so.2.5.1"
+				DESTINATION "${bin_root}"
+				RENAME libsfml-system.so.2.5)
+	endif()
+  
   set(PNG_EXCLUDE)
   set(KTX_EXCLUDE EXCLUDE)
 
@@ -443,15 +460,14 @@ else()
   endif()
 
   install(DIRECTORY resources
-		DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/"
+		DESTINATION "${resource_root}"
 		FILES_MATCHING
 			PATTERN "*.png" ${PNG_EXCLUDE}
 			PATTERN "*.ktx" ${KTX_EXCLUDE}
 			PATTERN "*"
 	)
-  install(DIRECTORY scripts DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
-  install(DIRECTORY packs DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
-  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  install(DIRECTORY scripts packs DESTINATION "${resource_root}")
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${bin_root}")
 endif()
 
 find_package(PythonInterp)
@@ -493,4 +509,5 @@ if(NOT DEFINED CPACK_GENERATOR)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfml")
   endif()
 endif()
+
 include(CPack)
