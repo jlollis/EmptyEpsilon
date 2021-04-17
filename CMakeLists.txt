@@ -27,23 +27,23 @@ message(STATUS "EmptyEpsilon Version = ${PROJECT_VERSION}")
 # Globals
 # install resources, scripts, and packs to app bundle instead of system dir.
 if(APPLE)
-	set(CMAKE_INSTALL_PREFIX "./")
-	# Set minimum target macOS version
-	set(MACOSX_DEPLOYMENT_TARGET "10.10")
+    set(CMAKE_INSTALL_PREFIX "./")
+    # Set minimum target macOS version
+    set(MACOSX_DEPLOYMENT_TARGET "10.10")
 endif()
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 add_compile_definitions(
-	VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
-	WINDOW_TITLE="${PROJECT_NAME}"
-	SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
+    VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
+    WINDOW_TITLE="${PROJECT_NAME}"
+    SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
 
-	$<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
-	# Platform-specific
-	$<$<BOOL:${WIN32}>:NOMINMAX>
-	$<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
-	$<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
-	$<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+    $<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
+    # Platform-specific
+    $<$<BOOL:${WIN32}>:NOMINMAX>
+    $<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+    $<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
+    $<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
 )
 
 # Dependencies
@@ -73,200 +73,200 @@ if(WIN32)
   endif()
   add_library(discord SHARED IMPORTED)
   set_target_properties(discord PROPERTIES
-  	IMPORTED_LOCATION "${DISCORD_LIB_PATH}/discord_game_sdk.dll"
-  	IMPORTED_IMPLIB "${DISCORD_LIB_PATH}/discord_game_sdk.dll.lib"
-	INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/discord/c/"
+    IMPORTED_LOCATION "${DISCORD_LIB_PATH}/discord_game_sdk.dll"
+    IMPORTED_IMPLIB "${DISCORD_LIB_PATH}/discord_game_sdk.dll.lib"
+    INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/discord/c/"
   )
 endif()
 
 set(SOURCES
-	src/main.cpp
-	src/threatLevelEstimate.cpp
-	src/preferenceManager.cpp
-	src/pathPlanner.cpp
-	src/epsilonServer.cpp
-	src/particleEffect.cpp
-	src/mouseCalibrator.cpp
-	src/httpScriptAccess.cpp
-	src/modelInfo.cpp
-	src/packResourceProvider.cpp
-	src/scienceDatabase.cpp
-	src/commsScriptInterface.cpp
-	src/modelData.cpp
-	src/gameGlobalInfo.cpp
-	src/GMActions.cpp
-	src/script.cpp
-	src/playerInfo.cpp
-	src/gameStateLogger.cpp
-	src/shipTemplate.cpp
-	src/beamTemplate.cpp
-	src/missileWeaponData.cpp
-	src/factionInfo.cpp
-	src/mesh.cpp
-	src/scenarioInfo.cpp
-	src/shaderRegistry.cpp
-	src/repairCrew.cpp
-	src/GMScriptCallback.cpp
-	src/GMMessage.cpp
-	src/tutorialGame.cpp
-	src/scriptDataStorage.cpp
-	src/glObjects.cpp
-	src/menus/joinServerMenu.cpp
-	src/menus/serverBrowseMenu.cpp
-	src/menus/mainMenus.cpp
-	src/menus/serverCreationScreen.cpp
-	src/menus/tutorialMenu.cpp
-	src/menus/optionsMenu.cpp
-	src/menus/shipSelectionScreen.cpp
-	src/menus/autoConnectScreen.cpp
-	src/menus/hotkeyMenu.cpp
-	src/screens/cinematicViewScreen.cpp
-	src/screens/crewStationScreen.cpp
-	src/screens/topDownScreen.cpp
-	src/screens/windowScreen.cpp
-	src/screens/mainScreen.cpp
-	src/screens/spectatorScreen.cpp
-	src/screens/crew4/operationsScreen.cpp
-	src/screens/crew4/engineeringAdvancedScreen.cpp
-	src/screens/crew4/tacticalScreen.cpp
-	src/screens/crew6/engineeringScreen.cpp
-	src/screens/crew6/scienceScreen.cpp
-	src/screens/crew6/relayScreen.cpp
-	src/screens/crew6/weaponsScreen.cpp
-	src/screens/crew6/helmsScreen.cpp
-	src/screens/crew1/singlePilotScreen.cpp
-	src/screens/extra/damcon.cpp
-	src/screens/extra/powerManagement.cpp
-	src/screens/extra/databaseScreen.cpp
-	src/screens/extra/commsScreen.cpp
-	src/screens/extra/shipLogScreen.cpp
-	src/screens/gm/gameMasterScreen.cpp
-	src/screens/gm/objectCreationView.cpp
-	src/screens/gm/globalMessageEntryView.cpp
-	src/screens/gm/chatDialog.cpp
-	src/screens/gm/tweak.cpp
-	src/screenComponents/aimLock.cpp
-	src/screenComponents/alertOverlay.cpp
-	src/screenComponents/helpOverlay.cpp
-	src/screenComponents/missileTubeControls.cpp
-	src/screenComponents/selfDestructIndicator.cpp
-	src/screenComponents/viewport3d.cpp
-	src/screenComponents/viewportMainScreen.cpp
-	src/screenComponents/selfDestructEntry.cpp
-	src/screenComponents/dockingButton.cpp
-	src/screenComponents/shieldsEnableButton.cpp
-	src/screenComponents/selfDestructButton.cpp
-	src/screenComponents/shieldFreqencySelect.cpp
-	src/screenComponents/jumpControls.cpp
-	src/screenComponents/impulseControls.cpp
-	src/screenComponents/frequencyCurve.cpp
-	src/screenComponents/noiseOverlay.cpp
-	src/screenComponents/powerDamageIndicator.cpp
-	src/screenComponents/beamTargetSelector.cpp
-	src/screenComponents/shipInternalView.cpp
-	src/screenComponents/beamFrequencySelector.cpp
-	src/screenComponents/radarView.cpp
-	src/screenComponents/rawScannerDataRadarOverlay.cpp
-	src/screenComponents/scanTargetButton.cpp
-	src/screenComponents/snapSlider.cpp
-	src/screenComponents/indicatorOverlays.cpp
-	src/screenComponents/openCommsButton.cpp
-	src/screenComponents/combatManeuver.cpp
-	src/screenComponents/rotatingModelView.cpp
-	src/screenComponents/shipDestroyedPopup.cpp
-	src/screenComponents/warpControls.cpp
-	src/screenComponents/targetsContainer.cpp
-	src/screenComponents/globalMessage.cpp
-	src/screenComponents/commsOverlay.cpp
-	src/screenComponents/jumpIndicator.cpp
-	src/screenComponents/scanningDialog.cpp
-	src/screenComponents/signalQualityIndicator.cpp
-	src/screenComponents/mainScreenControls.cpp
-	src/screenComponents/databaseView.cpp
-	src/screenComponents/shipsLogControl.cpp
-	src/screenComponents/onScreenKeyboard.cpp
-	src/screenComponents/hackingDialog.cpp
-	src/screenComponents/customShipFunctions.cpp
-	src/screenComponents/scrollingBanner.cpp
-	src/screenComponents/lightsOut.cpp
-	src/screenComponents/miniGame.cpp
-	src/screenComponents/mineSweeper.cpp
-	src/screenComponents/impulseSound.cpp
-	src/gui/colorConfig.cpp
-	src/gui/hotkeyBinder.cpp
-	src/gui/hotkeyConfig.cpp
-	src/gui/joystickConfig.cpp
-	src/gui/mouseRenderer.cpp
-	src/gui/scriptError.cpp
-	src/gui/gui2_slider.cpp
-	src/gui/gui2_togglebutton.cpp
-	src/gui/gui2_arrow.cpp
-	src/gui/gui2_selector.cpp
-	src/gui/gui2_canvas.cpp
-	src/gui/gui2_rotationdial.cpp
-	src/gui/gui2_textentry.cpp
-	src/gui/gui2_label.cpp
-	src/gui/gui2_image.cpp
-	src/gui/gui2_autolayout.cpp
-	src/gui/gui2_arrowbutton.cpp
-	src/gui/gui2_entrylist.cpp
-	src/gui/gui2_progressbar.cpp
-	src/gui/gui2_progressslider.cpp
-	src/gui/gui2_scrolltext.cpp
-	src/gui/gui2_advancedscrolltext.cpp
-	src/gui/gui2_button.cpp
-	src/gui/gui2_resizabledialog.cpp
-	src/gui/debugRenderer.cpp
-	src/gui/gui2_element.cpp
-	src/gui/gui2_keyvaluedisplay.cpp
-	src/gui/gui2_listbox.cpp
-	src/gui/gui2_scrollbar.cpp
-	src/gui/gui2_container.cpp
-	src/gui/gui2_panel.cpp
-	src/gui/gui2_overlay.cpp
-	src/spaceObjects/missiles/missileWeapon.cpp
-	src/spaceObjects/missiles/EMPMissile.cpp
-	src/spaceObjects/missiles/homingMissile.cpp
-	src/spaceObjects/missiles/hvli.cpp
-	src/spaceObjects/missiles/nuke.cpp
-	src/spaceObjects/spaceStation.cpp
-	src/spaceObjects/spaceship.cpp
-	src/spaceObjects/wormHole.cpp
-	src/spaceObjects/spaceObject.cpp
-	src/spaceObjects/nebula.cpp
-	src/spaceObjects/explosionEffect.cpp
-	src/spaceObjects/cpuShip.cpp
-	src/spaceObjects/asteroid.cpp
-	src/spaceObjects/mine.cpp
-	src/spaceObjects/blackHole.cpp
-	src/spaceObjects/playerSpaceship.cpp
-	src/spaceObjects/beamEffect.cpp
-	src/spaceObjects/electricExplosionEffect.cpp
-	src/spaceObjects/supplyDrop.cpp
-	src/spaceObjects/warpJammer.cpp
-	src/spaceObjects/scanProbe.cpp
-	src/spaceObjects/artifact.cpp
-	src/spaceObjects/shipTemplateBasedObject.cpp
-	src/spaceObjects/planet.cpp
-	src/spaceObjects/zone.cpp
-	src/spaceObjects/spaceshipParts/beamWeapon.cpp
-	src/spaceObjects/spaceshipParts/weaponTube.cpp
-	src/ai/fighterAI.cpp
-	src/ai/ai.cpp
-	src/ai/aiFactory.cpp
-	src/ai/evasionAI.cpp
-	src/ai/missileVolleyAI.cpp
-	src/hardware/hardwareController.cpp
-	src/hardware/hardwareMappingEffects.cpp
-	src/hardware/serialDriver.cpp
-	src/hardware/devices/dmx512SerialDevice.cpp
-	src/hardware/devices/enttecDMXProDevice.cpp
-	src/hardware/devices/sACNDMXDevice.cpp
-	src/hardware/devices/uDMXDevice.cpp
-	src/hardware/devices/virtualOutputDevice.cpp
-	src/hardware/devices/philipsHueDevice.cpp
-	$<$<BOOL:${WIN32}>:EmptyEpsilon.rc>
-	$<$<BOOL:${WIN32}>:src/discord.cpp>
+    src/main.cpp
+    src/threatLevelEstimate.cpp
+    src/preferenceManager.cpp
+    src/pathPlanner.cpp
+    src/epsilonServer.cpp
+    src/particleEffect.cpp
+    src/mouseCalibrator.cpp
+    src/httpScriptAccess.cpp
+    src/modelInfo.cpp
+    src/packResourceProvider.cpp
+    src/scienceDatabase.cpp
+    src/commsScriptInterface.cpp
+    src/modelData.cpp
+    src/gameGlobalInfo.cpp
+    src/GMActions.cpp
+    src/script.cpp
+    src/playerInfo.cpp
+    src/gameStateLogger.cpp
+    src/shipTemplate.cpp
+    src/beamTemplate.cpp
+    src/missileWeaponData.cpp
+    src/factionInfo.cpp
+    src/mesh.cpp
+    src/scenarioInfo.cpp
+    src/shaderRegistry.cpp
+    src/repairCrew.cpp
+    src/GMScriptCallback.cpp
+    src/GMMessage.cpp
+    src/tutorialGame.cpp
+    src/scriptDataStorage.cpp
+    src/glObjects.cpp
+    src/menus/joinServerMenu.cpp
+    src/menus/serverBrowseMenu.cpp
+    src/menus/mainMenus.cpp
+    src/menus/serverCreationScreen.cpp
+    src/menus/tutorialMenu.cpp
+    src/menus/optionsMenu.cpp
+    src/menus/shipSelectionScreen.cpp
+    src/menus/autoConnectScreen.cpp
+    src/menus/hotkeyMenu.cpp
+    src/screens/cinematicViewScreen.cpp
+    src/screens/crewStationScreen.cpp
+    src/screens/topDownScreen.cpp
+    src/screens/windowScreen.cpp
+    src/screens/mainScreen.cpp
+    src/screens/spectatorScreen.cpp
+    src/screens/crew4/operationsScreen.cpp
+    src/screens/crew4/engineeringAdvancedScreen.cpp
+    src/screens/crew4/tacticalScreen.cpp
+    src/screens/crew6/engineeringScreen.cpp
+    src/screens/crew6/scienceScreen.cpp
+    src/screens/crew6/relayScreen.cpp
+    src/screens/crew6/weaponsScreen.cpp
+    src/screens/crew6/helmsScreen.cpp
+    src/screens/crew1/singlePilotScreen.cpp
+    src/screens/extra/damcon.cpp
+    src/screens/extra/powerManagement.cpp
+    src/screens/extra/databaseScreen.cpp
+    src/screens/extra/commsScreen.cpp
+    src/screens/extra/shipLogScreen.cpp
+    src/screens/gm/gameMasterScreen.cpp
+    src/screens/gm/objectCreationView.cpp
+    src/screens/gm/globalMessageEntryView.cpp
+    src/screens/gm/chatDialog.cpp
+    src/screens/gm/tweak.cpp
+    src/screenComponents/aimLock.cpp
+    src/screenComponents/alertOverlay.cpp
+    src/screenComponents/helpOverlay.cpp
+    src/screenComponents/missileTubeControls.cpp
+    src/screenComponents/selfDestructIndicator.cpp
+    src/screenComponents/viewport3d.cpp
+    src/screenComponents/viewportMainScreen.cpp
+    src/screenComponents/selfDestructEntry.cpp
+    src/screenComponents/dockingButton.cpp
+    src/screenComponents/shieldsEnableButton.cpp
+    src/screenComponents/selfDestructButton.cpp
+    src/screenComponents/shieldFreqencySelect.cpp
+    src/screenComponents/jumpControls.cpp
+    src/screenComponents/impulseControls.cpp
+    src/screenComponents/frequencyCurve.cpp
+    src/screenComponents/noiseOverlay.cpp
+    src/screenComponents/powerDamageIndicator.cpp
+    src/screenComponents/beamTargetSelector.cpp
+    src/screenComponents/shipInternalView.cpp
+    src/screenComponents/beamFrequencySelector.cpp
+    src/screenComponents/radarView.cpp
+    src/screenComponents/rawScannerDataRadarOverlay.cpp
+    src/screenComponents/scanTargetButton.cpp
+    src/screenComponents/snapSlider.cpp
+    src/screenComponents/indicatorOverlays.cpp
+    src/screenComponents/openCommsButton.cpp
+    src/screenComponents/combatManeuver.cpp
+    src/screenComponents/rotatingModelView.cpp
+    src/screenComponents/shipDestroyedPopup.cpp
+    src/screenComponents/warpControls.cpp
+    src/screenComponents/targetsContainer.cpp
+    src/screenComponents/globalMessage.cpp
+    src/screenComponents/commsOverlay.cpp
+    src/screenComponents/jumpIndicator.cpp
+    src/screenComponents/scanningDialog.cpp
+    src/screenComponents/signalQualityIndicator.cpp
+    src/screenComponents/mainScreenControls.cpp
+    src/screenComponents/databaseView.cpp
+    src/screenComponents/shipsLogControl.cpp
+    src/screenComponents/onScreenKeyboard.cpp
+    src/screenComponents/hackingDialog.cpp
+    src/screenComponents/customShipFunctions.cpp
+    src/screenComponents/scrollingBanner.cpp
+    src/screenComponents/lightsOut.cpp
+    src/screenComponents/miniGame.cpp
+    src/screenComponents/mineSweeper.cpp
+    src/screenComponents/impulseSound.cpp
+    src/gui/colorConfig.cpp
+    src/gui/hotkeyBinder.cpp
+    src/gui/hotkeyConfig.cpp
+    src/gui/joystickConfig.cpp
+    src/gui/mouseRenderer.cpp
+    src/gui/scriptError.cpp
+    src/gui/gui2_slider.cpp
+    src/gui/gui2_togglebutton.cpp
+    src/gui/gui2_arrow.cpp
+    src/gui/gui2_selector.cpp
+    src/gui/gui2_canvas.cpp
+    src/gui/gui2_rotationdial.cpp
+    src/gui/gui2_textentry.cpp
+    src/gui/gui2_label.cpp
+    src/gui/gui2_image.cpp
+    src/gui/gui2_autolayout.cpp
+    src/gui/gui2_arrowbutton.cpp
+    src/gui/gui2_entrylist.cpp
+    src/gui/gui2_progressbar.cpp
+    src/gui/gui2_progressslider.cpp
+    src/gui/gui2_scrolltext.cpp
+    src/gui/gui2_advancedscrolltext.cpp
+    src/gui/gui2_button.cpp
+    src/gui/gui2_resizabledialog.cpp
+    src/gui/debugRenderer.cpp
+    src/gui/gui2_element.cpp
+    src/gui/gui2_keyvaluedisplay.cpp
+    src/gui/gui2_listbox.cpp
+    src/gui/gui2_scrollbar.cpp
+    src/gui/gui2_container.cpp
+    src/gui/gui2_panel.cpp
+    src/gui/gui2_overlay.cpp
+    src/spaceObjects/missiles/missileWeapon.cpp
+    src/spaceObjects/missiles/EMPMissile.cpp
+    src/spaceObjects/missiles/homingMissile.cpp
+    src/spaceObjects/missiles/hvli.cpp
+    src/spaceObjects/missiles/nuke.cpp
+    src/spaceObjects/spaceStation.cpp
+    src/spaceObjects/spaceship.cpp
+    src/spaceObjects/wormHole.cpp
+    src/spaceObjects/spaceObject.cpp
+    src/spaceObjects/nebula.cpp
+    src/spaceObjects/explosionEffect.cpp
+    src/spaceObjects/cpuShip.cpp
+    src/spaceObjects/asteroid.cpp
+    src/spaceObjects/mine.cpp
+    src/spaceObjects/blackHole.cpp
+    src/spaceObjects/playerSpaceship.cpp
+    src/spaceObjects/beamEffect.cpp
+    src/spaceObjects/electricExplosionEffect.cpp
+    src/spaceObjects/supplyDrop.cpp
+    src/spaceObjects/warpJammer.cpp
+    src/spaceObjects/scanProbe.cpp
+    src/spaceObjects/artifact.cpp
+    src/spaceObjects/shipTemplateBasedObject.cpp
+    src/spaceObjects/planet.cpp
+    src/spaceObjects/zone.cpp
+    src/spaceObjects/spaceshipParts/beamWeapon.cpp
+    src/spaceObjects/spaceshipParts/weaponTube.cpp
+    src/ai/fighterAI.cpp
+    src/ai/ai.cpp
+    src/ai/aiFactory.cpp
+    src/ai/evasionAI.cpp
+    src/ai/missileVolleyAI.cpp
+    src/hardware/hardwareController.cpp
+    src/hardware/hardwareMappingEffects.cpp
+    src/hardware/serialDriver.cpp
+    src/hardware/devices/dmx512SerialDevice.cpp
+    src/hardware/devices/enttecDMXProDevice.cpp
+    src/hardware/devices/sACNDMXDevice.cpp
+    src/hardware/devices/uDMXDevice.cpp
+    src/hardware/devices/virtualOutputDevice.cpp
+    src/hardware/devices/philipsHueDevice.cpp
+    $<$<BOOL:${WIN32}>:EmptyEpsilon.rc>
+    $<$<BOOL:${WIN32}>:src/discord.cpp>
 )
 
 if(ANDROID)
@@ -276,172 +276,172 @@ else()
 endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-	"${PROJECT_SOURCE_DIR}/src"
-	${SFML_INCLUDE_DIR}
-	${SDL2_INCLUDE_DIRS}
-	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
+    "${PROJECT_SOURCE_DIR}/src"
+    ${SFML_INCLUDE_DIR}
+    ${SDL2_INCLUDE_DIRS}
+    $<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
 )
 
 target_compile_options(${PROJECT_NAME} PUBLIC
-	$<$<NOT:$<BOOL:${MSVC}>>:-Wall -Werror=return-type>
-	$<$<BOOL:${MSVC}>:/MP /permissive->
+    $<$<NOT:$<BOOL:${MSVC}>>:-Wall -Werror=return-type>
+    $<$<BOOL:${MSVC}>:/MP /permissive->
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES
-	#LINK_FLAGS $<$<SYSTEM_NAME:Darwin>:-framework OpenGL -framework Foundation>
-	MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/osx/MacOSXBundleInfo.plist.in
-	MACOSX_BUNDLE_ICON_FILE "${PROJECT_NAME}.icns"
+    #LINK_FLAGS $<$<SYSTEM_NAME:Darwin>:-framework OpenGL -framework Foundation>
+    MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/osx/MacOSXBundleInfo.plist.in
+    MACOSX_BUNDLE_ICON_FILE "${PROJECT_NAME}.icns"
 )
 
 if(ANDROID)
   target_link_libraries(${PROJECT_NAME}
-	  GLESv1_CM ${SFML_main_LIBRARY} log android EGL
-	  "-Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
+      GLESv1_CM ${SFML_main_LIBRARY} log android EGL
+      "-Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
 else()
-	target_link_libraries(${PROJECT_NAME} PUBLIC
-	seriousproton meshoptimizer
-	${SDL2_LIBRARIES}
-	$<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
-	$<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/lib/exchndl>
+    target_link_libraries(${PROJECT_NAME} PUBLIC
+    seriousproton meshoptimizer
+    ${SDL2_LIBRARIES}
+    $<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
+    $<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/lib/exchndl>
 )	  
 endif()
 
 if(COMPRESS_TEXTURES OR CONVERT_MESHES)
 include(ExternalProject)
-	set(texconverter_prefix "${PROJECT_BINARY_DIR}/texconverter")
+    set(texconverter_prefix "${PROJECT_BINARY_DIR}/texconverter")
 
     ExternalProject_Add(texconverter
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/texconverter"
         CMAKE_ARGS
-			-DCMAKE_BUILD_TYPE:STRING=Release
+            -DCMAKE_BUILD_TYPE:STRING=Release
             -DCMAKE_INSTALL_PREFIX:PATH=${texconverter_prefix}
-		INSTALL_COMMAND
-			${CMAKE_COMMAND} --build . --target install --config Release
+        INSTALL_COMMAND
+            ${CMAKE_COMMAND} --build . --target install --config Release
     )
 
-	
-	file(GLOB_RECURSE pack_files LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/packs" "*.pack")
-	list(FILTER pack_files EXCLUDE REGEX "^\\.\\.")
-	string(REPLACE ".pack" "" pack_files "${pack_files}")
+    
+    file(GLOB_RECURSE pack_files LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/packs" "*.pack")
+    list(FILTER pack_files EXCLUDE REGEX "^\\.\\.")
+    string(REPLACE ".pack" "" pack_files "${pack_files}")
 
-		
-	list(FILTER pack_files EXCLUDE REGEX "-model2$")
-	list(FILTER pack_files EXCLUDE REGEX "-dxt$")
-	list(FILTER pack_files EXCLUDE REGEX "-astc$")
+        
+    list(FILTER pack_files EXCLUDE REGEX "-model2$")
+    list(FILTER pack_files EXCLUDE REGEX "-dxt$")
+    list(FILTER pack_files EXCLUDE REGEX "-astc$")
 
-	if(CONVERT_MESHES)
-		message(STATUS "Converting obj and model to model2")
-		
-		set(meshconverter_bin "${texconverter_prefix}/bin/meshconverter${CMAKE_EXECUTABLE_SUFFIX}")
-	
-		file(GLOB_RECURSE obj_meshes LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.obj")
-		list(FILTER obj_meshes EXCLUDE REGEX "^\\.\\.")
-		string(REPLACE ".obj" "" obj_meshes "${obj_meshes}")
+    if(CONVERT_MESHES)
+        message(STATUS "Converting obj and model to model2")
+        
+        set(meshconverter_bin "${texconverter_prefix}/bin/meshconverter${CMAKE_EXECUTABLE_SUFFIX}")
+    
+        file(GLOB_RECURSE obj_meshes LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.obj")
+        list(FILTER obj_meshes EXCLUDE REGEX "^\\.\\.")
+        string(REPLACE ".obj" "" obj_meshes "${obj_meshes}")
 
-		set(model2_meshes)
-		foreach(obj_mesh IN LISTS obj_meshes)
-			get_filename_component(basename "${obj_mesh}" NAME)
-			get_filename_component(obj_dir "${obj_mesh}" DIRECTORY)
-			set(obj_abspath "${CMAKE_SOURCE_DIR}/resources/${obj_dir}")
-			add_custom_command(
-				OUTPUT "${obj_abspath}/${basename}.model2"
-				COMMAND "${meshconverter_bin}" single "${basename}.obj"
-				WORKING_DIRECTORY "${obj_abspath}"
-				MAIN_DEPENDENCY "${obj_abspath}/${basename}.obj"
-				DEPENDS texconverter
-				VERBATIM
-			)
-			list(APPEND model2_meshes "${obj_abspath}/${basename}.model2")
-		endforeach()
-		add_custom_target(convert_obj DEPENDS ${model2_meshes})
+        set(model2_meshes)
+        foreach(obj_mesh IN LISTS obj_meshes)
+            get_filename_component(basename "${obj_mesh}" NAME)
+            get_filename_component(obj_dir "${obj_mesh}" DIRECTORY)
+            set(obj_abspath "${CMAKE_SOURCE_DIR}/resources/${obj_dir}")
+            add_custom_command(
+                OUTPUT "${obj_abspath}/${basename}.model2"
+                COMMAND "${meshconverter_bin}" single "${basename}.obj"
+                WORKING_DIRECTORY "${obj_abspath}"
+                MAIN_DEPENDENCY "${obj_abspath}/${basename}.obj"
+                DEPENDS texconverter
+                VERBATIM
+            )
+            list(APPEND model2_meshes "${obj_abspath}/${basename}.model2")
+        endforeach()
+        add_custom_target(convert_obj DEPENDS ${model2_meshes})
 
-		set(repacked)
-		foreach(packfile IN LISTS pack_files)
-			get_filename_component(basename "${packfile}" NAME)
-			get_filename_component(pack_dir "${packfile}" DIRECTORY)
-			set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
-			
-			add_custom_command(
-				OUTPUT "${pack_abspath}/${basename}-model2.pack"
-				COMMAND "${meshconverter_bin}" pack "${basename}.pack"
-				WORKING_DIRECTORY "${pack_abspath}"
-					MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
-					DEPENDS texconverter
-					VERBATIM
-			)
+        set(repacked)
+        foreach(packfile IN LISTS pack_files)
+            get_filename_component(basename "${packfile}" NAME)
+            get_filename_component(pack_dir "${packfile}" DIRECTORY)
+            set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
+            
+            add_custom_command(
+                OUTPUT "${pack_abspath}/${basename}-model2.pack"
+                COMMAND "${meshconverter_bin}" pack "${basename}.pack"
+                WORKING_DIRECTORY "${pack_abspath}"
+                    MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
+                    DEPENDS texconverter
+                    VERBATIM
+            )
 
-			list(APPEND repacked "${pack_abspath}/${basename}-model2.pack")
-		endforeach()
-		add_custom_target(convert_obj_packs DEPENDS ${repacked})
-		add_custom_target(convert_meshes DEPENDS convert_obj convert_obj_packs)
-		add_dependencies(${PROJECT_NAME} convert_meshes)
-	endif()
+            list(APPEND repacked "${pack_abspath}/${basename}-model2.pack")
+        endforeach()
+        add_custom_target(convert_obj_packs DEPENDS ${repacked})
+        add_custom_target(convert_meshes DEPENDS convert_obj convert_obj_packs)
+        add_dependencies(${PROJECT_NAME} convert_meshes)
+    endif()
 
-	if(COMPRESS_TEXTURES)
-		message(STATUS "Compressing textures to ${COMPRESS_TEXTURES}")
-	
-		set(texconverter_bin "${texconverter_prefix}/bin/texconverter${CMAKE_EXECUTABLE_SUFFIX}")
-	
-		file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
-		list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
-		string(REPLACE ".png" "" png_textures "${png_textures}")
+    if(COMPRESS_TEXTURES)
+        message(STATUS "Compressing textures to ${COMPRESS_TEXTURES}")
+    
+        set(texconverter_bin "${texconverter_prefix}/bin/texconverter${CMAKE_EXECUTABLE_SUFFIX}")
+    
+        file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
+        list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
+        string(REPLACE ".png" "" png_textures "${png_textures}")
 
-		# Filter out generated textures.
-		list(FILTER png_textures EXCLUDE REGEX "-dxt$")
-		list(FILTER png_textures EXCLUDE REGEX "-astc$")
-		set(ktx_textures)
-		foreach(png_texture IN LISTS png_textures)
-			get_filename_component(basename "${png_texture}" NAME)
-			get_filename_component(texture_dir "${png_texture}" DIRECTORY)
-			set(texture_abspath "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
-			set(ktx_outputs)
-			if("astc" IN_LIST COMPRESS_TEXTURES)
-				list(APPEND ktx_outputs "${texture_abspath}/${basename}-astc.ktx")
-			endif()
-			if("dxt" IN_LIST COMPRESS_TEXTURES)
-				list(APPEND ktx_outputs "${texture_abspath}/${basename}-dxt.ktx")
-			endif()
-			add_custom_command(
-				OUTPUT ${ktx_outputs}
-				COMMAND "${texconverter_bin}" single "${basename}.png" ${COMPRESS_TEXTURES}
-				WORKING_DIRECTORY "${texture_abspath}"
-				MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
-				DEPENDS texconverter
-				COMMAND_EXPAND_LISTS
-				VERBATIM
-			)
-			list(APPEND ktx_textures "${ktx_outputs}")
-		endforeach()
-		add_custom_target(convert_png DEPENDS ${ktx_textures})
+        # Filter out generated textures.
+        list(FILTER png_textures EXCLUDE REGEX "-dxt$")
+        list(FILTER png_textures EXCLUDE REGEX "-astc$")
+        set(ktx_textures)
+        foreach(png_texture IN LISTS png_textures)
+            get_filename_component(basename "${png_texture}" NAME)
+            get_filename_component(texture_dir "${png_texture}" DIRECTORY)
+            set(texture_abspath "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
+            set(ktx_outputs)
+            if("astc" IN_LIST COMPRESS_TEXTURES)
+                list(APPEND ktx_outputs "${texture_abspath}/${basename}-astc.ktx")
+            endif()
+            if("dxt" IN_LIST COMPRESS_TEXTURES)
+                list(APPEND ktx_outputs "${texture_abspath}/${basename}-dxt.ktx")
+            endif()
+            add_custom_command(
+                OUTPUT ${ktx_outputs}
+                COMMAND "${texconverter_bin}" single "${basename}.png" ${COMPRESS_TEXTURES}
+                WORKING_DIRECTORY "${texture_abspath}"
+                MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
+                DEPENDS texconverter
+                COMMAND_EXPAND_LISTS
+                VERBATIM
+            )
+            list(APPEND ktx_textures "${ktx_outputs}")
+        endforeach()
+        add_custom_target(convert_png DEPENDS ${ktx_textures})
 
-		set(repacked)
-		foreach(packfile IN LISTS pack_files)
-			get_filename_component(basename "${packfile}" NAME)
-			get_filename_component(pack_dir "${packfile}" DIRECTORY)
-			set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
-			set(texpack_outputs)
-			if("astc" IN_LIST COMPRESS_TEXTURES)
-				list(APPEND texpack_outputs "${pack_abspath}/${basename}-astc.pack")
-			endif()
-			if("dxt" IN_LIST COMPRESS_TEXTURES)
-				list(APPEND texpack_outputs "${pack_abspath}/${basename}-dxt.pack")
-			endif()
+        set(repacked)
+        foreach(packfile IN LISTS pack_files)
+            get_filename_component(basename "${packfile}" NAME)
+            get_filename_component(pack_dir "${packfile}" DIRECTORY)
+            set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
+            set(texpack_outputs)
+            if("astc" IN_LIST COMPRESS_TEXTURES)
+                list(APPEND texpack_outputs "${pack_abspath}/${basename}-astc.pack")
+            endif()
+            if("dxt" IN_LIST COMPRESS_TEXTURES)
+                list(APPEND texpack_outputs "${pack_abspath}/${basename}-dxt.pack")
+            endif()
 
-			add_custom_command(
-				OUTPUT ${texpack_outputs}
-				COMMAND "${texconverter_bin}" pack "${basename}.pack" ${COMPRESS_TEXTURES}
-				WORKING_DIRECTORY "${pack_abspath}"
-					MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
-					DEPENDS texconverter
-					COMMAND_EXPAND_LISTS
-					VERBATIM
-			)
+            add_custom_command(
+                OUTPUT ${texpack_outputs}
+                COMMAND "${texconverter_bin}" pack "${basename}.pack" ${COMPRESS_TEXTURES}
+                WORKING_DIRECTORY "${pack_abspath}"
+                    MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
+                    DEPENDS texconverter
+                    COMMAND_EXPAND_LISTS
+                    VERBATIM
+            )
 
-			list(APPEND repacked "${texpack_outputs}")
-		endforeach()
-		add_custom_target(convert_packs DEPENDS ${repacked})
-		add_custom_target(convert_textures DEPENDS convert_png convert_packs)
-		add_dependencies(${PROJECT_NAME} convert_textures)
-	endif()
+            list(APPEND repacked "${texpack_outputs}")
+        endforeach()
+        add_custom_target(convert_packs DEPENDS ${repacked})
+        add_custom_target(convert_textures DEPENDS convert_png convert_packs)
+        add_dependencies(${PROJECT_NAME} convert_textures)
+    endif()
 endif()
 
 
@@ -488,41 +488,52 @@ elseif(APPLE)
 elseif(ANDROID)
   android_apk(EmptyEpsilon)
 else()
-	include(GNUInstallDirs)
-	
-	set(resource_root "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
-	set(bin_root "${CMAKE_INSTALL_BINDIR}")
-	if(CMAKE_CROSSCOMPILING AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7")
-		set(resource_root ".")
-		set(bin_root ".")
-		install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-audio.so.2.5.1"
-				DESTINATION "${bin_root}"
-				RENAME libsfml-audio.so.2.5)
-		install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-network.so.2.5.1"
-				DESTINATION "${bin_root}"
-				RENAME libsfml-network.so.2.5)
-		install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-system.so.2.5.1"
-				DESTINATION "${bin_root}"
-				RENAME libsfml-system.so.2.5)
-	endif()
+    include(GNUInstallDirs)
+    
+    set(resource_root "${CMAKE_INSTALL_DATAROOTDIR}/emptyepsilon/")
+    set(bin_root "${CMAKE_INSTALL_BINDIR}")
+    if(CMAKE_CROSSCOMPILING AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7")
+        set(resource_root ".")
+        set(bin_root ".")
+        install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-audio.so.2.5.1"
+                DESTINATION "${bin_root}"
+                RENAME libsfml-audio.so.2.5)
+        install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-network.so.2.5.1"
+                DESTINATION "${bin_root}"
+                RENAME libsfml-network.so.2.5)
+        install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-system.so.2.5.1"
+                DESTINATION "${bin_root}"
+                RENAME libsfml-system.so.2.5)
+    endif()
   
-  set(PNG_EXCLUDE)
-  set(KTX_EXCLUDE EXCLUDE)
+      set(resouces_patterns PATTERN "*")
+      if(CMAKE_CROSSCOMPILING)
+          if(COMPRESS_TEXTURES)
+            list(APPEND resources_patterns PATTERN "*.png" EXCLUDE)
+          else()
+            list(APPEND resources_patterns PATTERN "*.ktx" EXCLUDE)
+          endif()
 
-  if(COMPRESS_TEXTURES)
-	set(PNG_EXCLUDE EXCLUDE)
-	set(KTX_EXCLUDE)
-  endif()
+          if(CONVERT_MESHES)
+            list(APPEND resources_patterns PATTERN "*.obj" EXCLUDE)
+          else()
+            list(APPEND resources_patterns PATTERN "*.model2" EXCLUDE)
+          endif()
+      endif()
 
-  install(DIRECTORY resources
-		DESTINATION "${resource_root}"
-		FILES_MATCHING
-			PATTERN "*.png" ${PNG_EXCLUDE}
-			PATTERN "*.ktx" ${KTX_EXCLUDE}
-			PATTERN "*"
-	)
-  install(DIRECTORY scripts packs DESTINATION "${resource_root}")
-  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${bin_root}")
+      set(packs_patterns PATTERN "*")
+      if(CMAKE_CROSSCOMPILING)
+          if (COMPRESS_TEXTURES AND CONVERT_MESHES)
+                list(APPEND packs_pattern PATTERN "*.pack" EXCLUDE PATTERN "*-model2.pack")
+                foreach(texture_type IN LISTS COMPRESSED_TEXTURES)
+                    list(APPEND packs_pattern PATTERN "*-${texture_type}.pack")
+                endforeach()
+          endif()
+      endif()
+      install(DIRECTORY resources DESTINATION "${resource_root}" FILES_MATCHING ${resources_patterns})
+      install(DIRECTORY packs DESTINATION "${resource_root}" FILES_MATCHING ${packs_patterns})
+      install(DIRECTORY scripts DESTINATION "${resource_root}")
+      install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "${bin_root}")
 endif()
 
 find_package(PythonInterp)
@@ -536,22 +547,22 @@ if(PYTHONINTERP_FOUND)
   
   # Matches install logic above.
   if(WIN32)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION .)
+    install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION .)
   elseif(APPLE)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "EmptyEpsilon.app/Contents/Resources")
+    install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "EmptyEpsilon.app/Contents/Resources")
   elseif(NOT ANDROID)
-	# DOCDIR already has PROJECT_NAME (EmptyEpsilon) appended (from CMake docs)
-  	install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+    # DOCDIR already has PROJECT_NAME (EmptyEpsilon) appended (from CMake docs)
+    install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_DOCDIR}")
   endif()
 endif()
 
 add_custom_target(update_locale
-	COMMAND sed -i "/^#: /d" resources/locale/en.po
-	COMMAND sed -i "/^#: /d" resources/locale/tutorial.en.po
-	COMMAND xgettext --keyword=tr:1c,2 --keyword=tr:1 --keyword=trMark:1c,2 --keyword=trMark:1 --omit-header -j -d resources/locale/en ${SOURCES}
-	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/en scripts/shipTemplates_*.lua scripts/comms_ship.lua scripts/comms_station.lua scripts/comms_supply_drop.lua scripts/factionInfo.lua scripts/science_db.lua
-	COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/tutorial.en scripts/tutorial_*.lua
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    COMMAND sed -i "/^#: /d" resources/locale/en.po
+    COMMAND sed -i "/^#: /d" resources/locale/tutorial.en.po
+    COMMAND xgettext --keyword=tr:1c,2 --keyword=tr:1 --keyword=trMark:1c,2 --keyword=trMark:1 --omit-header -j -d resources/locale/en ${SOURCES}
+    COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/en scripts/shipTemplates_*.lua scripts/comms_ship.lua scripts/comms_station.lua scripts/comms_supply_drop.lua scripts/factionInfo.lua scripts/science_db.lua
+    COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/tutorial.en scripts/tutorial_*.lua
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 set(CPACK_PACKAGE_EXECUTABLES ${PROJECT_NAME})
 set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}")
