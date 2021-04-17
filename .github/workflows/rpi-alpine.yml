@@ -67,6 +67,7 @@ jobs:
       run: >
         cmake
         -G Ninja
+        -DINSTALL_ONLY_PROCESSED_ASSETS:BOOL=ON
         -DCOMPRESS_TEXTURES:STRING=astc
         -DSFML_ROOT:PATH=/opt/sfml
         -DCMAKE_INSTALL_PREFIX:STRING=dist
