@@ -18,7 +18,12 @@ class Mesh : public sf::NonCopyable
     uint32_t element_type{};
     uint32_t face_count{};
 public:
-    explicit Mesh(std::vector<MeshVertex>&& vertices);
+    Mesh(std::vector<MeshVertex>&& vertices, std::vector<uint8_t>&& indices);
+    Mesh(const Mesh&) = delete;
+    Mesh(Mesh&&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+    Mesh& operator=(Mesh&&) = delete;
+
     ~Mesh();
 
     void render(int32_t position_attrib, int32_t texcoords_attrib, int32_t normal_attrib);

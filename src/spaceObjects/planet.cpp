@@ -267,7 +267,7 @@ void Planet::draw3D()
         if (!planet_mesh[level_of_detail])
         {
             PlanetMeshGenerator planet_mesh_generator(level_of_detail);
-            planet_mesh[level_of_detail] = new Mesh(std::move(planet_mesh_generator.vertices));
+            planet_mesh[level_of_detail] = new Mesh(std::move(planet_mesh_generator.vertices), {});
         }
 
         ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Planet);
@@ -306,7 +306,7 @@ void Planet::draw3DTransparent()
         if (!planet_mesh[level_of_detail])
         {
             PlanetMeshGenerator planet_mesh_generator(level_of_detail);
-            planet_mesh[level_of_detail] = new Mesh(std::move(planet_mesh_generator.vertices));
+            planet_mesh[level_of_detail] = new Mesh(std::move(planet_mesh_generator.vertices), {});
         }
 
         ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::Planet);
