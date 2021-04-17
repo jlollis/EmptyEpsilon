@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 set(COMPRESS_TEXTURES "" CACHE STRING "Texture compression (list: dxt, astc)")
+option(CONVERT_MESHES "Mesh re-encoding" ON)
 option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)
 message(STATUS "ENABLE_CRASH_LOGGER is " ${ENABLE_CRASH_LOGGER})
 
@@ -50,7 +51,7 @@ add_compile_definitions(
 # SeriousProton
 set(SERIOUSPROTON_WITH_JSON ON CACHE BOOL "" FORCE)
 add_subdirectory(SeriousProton EXCLUDE_FROM_ALL)
-add_subdirectory(meshoptimizer EXCLUDE_FROM_ALL)
+add_subdirectory(texconverter/meshoptimizer EXCLUDE_FROM_ALL)
 
 # Discord
 # Some magical Win 32 stuff
@@ -304,10 +305,8 @@ else()
 )	  
 endif()
 
-if(COMPRESS_TEXTURES)
-	message(STATUS "Compressing textures to ${COMPRESS_TEXTURES}")
-
-	include(ExternalProject)
+if(COMPRESS_TEXTURES OR CONVERT_MESHES)
+include(ExternalProject)
 	set(texconverter_prefix "${PROJECT_BINARY_DIR}/texconverter")
 
     ExternalProject_Add(texconverter
@@ -318,75 +317,131 @@ if(COMPRESS_TEXTURES)
 		INSTALL_COMMAND
 			${CMAKE_COMMAND} --build . --target install --config Release
     )
+
 	
-	set(texconverter_bin "${texconverter_prefix}/bin/texconverter${CMAKE_EXECUTABLE_SUFFIX}")
-
-	file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
-	list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
-	string(REPLACE ".png" "" png_textures "${png_textures}")
-
-	# Filter out generated textures.
-	list(FILTER png_textures EXCLUDE REGEX "-dxt$")
-	list(FILTER png_textures EXCLUDE REGEX "-astc$")
-	set(ktx_textures)
-	foreach(png_texture IN LISTS png_textures)
-		get_filename_component(basename "${png_texture}" NAME)
-		get_filename_component(texture_dir "${png_texture}" DIRECTORY)
-		set(texture_abspath "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
-		set(ktx_outputs)
-		if("astc" IN_LIST COMPRESS_TEXTURES)
-			list(APPEND ktx_outputs "${texture_abspath}/${basename}-astc.ktx")
-		endif()
-		if("dxt" IN_LIST COMPRESS_TEXTURES)
-			list(APPEND ktx_outputs "${texture_abspath}/${basename}-dxt.ktx")
-		endif()
-		add_custom_command(
-			OUTPUT ${ktx_outputs}
-			COMMAND "${texconverter_bin}" single "${basename}.png" ${COMPRESS_TEXTURES}
-			WORKING_DIRECTORY "${texture_abspath}"
-			MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
-			DEPENDS texconverter
-			COMMAND_EXPAND_LISTS
-			VERBATIM
-		)
-		list(APPEND ktx_textures "${ktx_outputs}")
-	endforeach()
-	add_custom_target(convert_png DEPENDS ${ktx_textures})
-
 	file(GLOB_RECURSE pack_files LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/packs" "*.pack")
 	list(FILTER pack_files EXCLUDE REGEX "^\\.\\.")
 	string(REPLACE ".pack" "" pack_files "${pack_files}")
 
+		
+	list(FILTER pack_files EXCLUDE REGEX "-model2$")
 	list(FILTER pack_files EXCLUDE REGEX "-dxt$")
 	list(FILTER pack_files EXCLUDE REGEX "-astc$")
-	set(repacked)
-	foreach(packfile IN LISTS pack_files)
-		get_filename_component(basename "${packfile}" NAME)
-		get_filename_component(pack_dir "${packfile}" DIRECTORY)
-		set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
-		set(texpack_outputs)
-		if("astc" IN_LIST COMPRESS_TEXTURES)
-			list(APPEND texpack_outputs "${pack_abspath}/${basename}-astc.pack")
-		endif()
-		if("dxt" IN_LIST COMPRESS_TEXTURES)
-			list(APPEND texpack_outputs "${pack_abspath}/${basename}-dxt.pack")
-		endif()
 
-		add_custom_command(
-			OUTPUT ${texpack_outputs}
-			COMMAND "${texconverter_bin}" pack "${basename}.pack" ${COMPRESS_TEXTURES}
-			WORKING_DIRECTORY "${pack_abspath}"
-				MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
+	if(CONVERT_MESHES)
+		message(STATUS "Converting obj and model to model2")
+		
+		set(meshconverter_bin "${texconverter_prefix}/bin/meshconverter${CMAKE_EXECUTABLE_SUFFIX}")
+	
+		file(GLOB_RECURSE obj_meshes LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.obj")
+		list(FILTER obj_meshes EXCLUDE REGEX "^\\.\\.")
+		string(REPLACE ".obj" "" obj_meshes "${obj_meshes}")
+
+		set(model2_meshes)
+		foreach(obj_mesh IN LISTS obj_meshes)
+			get_filename_component(basename "${obj_mesh}" NAME)
+			get_filename_component(obj_dir "${obj_mesh}" DIRECTORY)
+			set(obj_abspath "${CMAKE_SOURCE_DIR}/resources/${obj_dir}")
+			add_custom_command(
+				OUTPUT "${obj_abspath}/${basename}.model2"
+				COMMAND "${meshconverter_bin}" single "${basename}.obj"
+				WORKING_DIRECTORY "${obj_abspath}"
+				MAIN_DEPENDENCY "${obj_abspath}/${basename}.obj"
+				DEPENDS texconverter
+				VERBATIM
+			)
+			list(APPEND model2_meshes "${obj_abspath}/${basename}.model2")
+		endforeach()
+		add_custom_target(convert_obj DEPENDS ${model2_meshes})
+
+		set(repacked)
+		foreach(packfile IN LISTS pack_files)
+			get_filename_component(basename "${packfile}" NAME)
+			get_filename_component(pack_dir "${packfile}" DIRECTORY)
+			set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
+			
+			add_custom_command(
+				OUTPUT "${pack_abspath}/${basename}-model2.pack"
+				COMMAND "${meshconverter_bin}" pack "${basename}.pack"
+				WORKING_DIRECTORY "${pack_abspath}"
+					MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
+					DEPENDS texconverter
+					VERBATIM
+			)
+
+			list(APPEND repacked "${pack_abspath}/${basename}-model2.pack")
+		endforeach()
+		add_custom_target(convert_obj_packs DEPENDS ${repacked})
+		add_custom_target(convert_meshes DEPENDS convert_obj convert_obj_packs)
+		add_dependencies(${PROJECT_NAME} convert_meshes)
+	endif()
+
+	if(COMPRESS_TEXTURES)
+		message(STATUS "Compressing textures to ${COMPRESS_TEXTURES}")
+	
+		set(texconverter_bin "${texconverter_prefix}/bin/texconverter${CMAKE_EXECUTABLE_SUFFIX}")
+	
+		file(GLOB_RECURSE png_textures LIST_DIRECTORIES false RELATIVE "${CMAKE_SOURCE_DIR}/resources" "*.png")
+		list(FILTER png_textures EXCLUDE REGEX "^\\.\\.")
+		string(REPLACE ".png" "" png_textures "${png_textures}")
+
+		# Filter out generated textures.
+		list(FILTER png_textures EXCLUDE REGEX "-dxt$")
+		list(FILTER png_textures EXCLUDE REGEX "-astc$")
+		set(ktx_textures)
+		foreach(png_texture IN LISTS png_textures)
+			get_filename_component(basename "${png_texture}" NAME)
+			get_filename_component(texture_dir "${png_texture}" DIRECTORY)
+			set(texture_abspath "${CMAKE_SOURCE_DIR}/resources/${texture_dir}")
+			set(ktx_outputs)
+			if("astc" IN_LIST COMPRESS_TEXTURES)
+				list(APPEND ktx_outputs "${texture_abspath}/${basename}-astc.ktx")
+			endif()
+			if("dxt" IN_LIST COMPRESS_TEXTURES)
+				list(APPEND ktx_outputs "${texture_abspath}/${basename}-dxt.ktx")
+			endif()
+			add_custom_command(
+				OUTPUT ${ktx_outputs}
+				COMMAND "${texconverter_bin}" single "${basename}.png" ${COMPRESS_TEXTURES}
+				WORKING_DIRECTORY "${texture_abspath}"
+				MAIN_DEPENDENCY "${texture_abspath}/${basename}.png"
 				DEPENDS texconverter
 				COMMAND_EXPAND_LISTS
 				VERBATIM
-		)
+			)
+			list(APPEND ktx_textures "${ktx_outputs}")
+		endforeach()
+		add_custom_target(convert_png DEPENDS ${ktx_textures})
 
-		list(APPEND repacked "${texpack_outputs}")
-	endforeach()
-	add_custom_target(convert_packs DEPENDS ${repacked})
-	add_custom_target(convert_textures DEPENDS convert_png convert_packs)
-	add_dependencies(${PROJECT_NAME} convert_textures)
+		set(repacked)
+		foreach(packfile IN LISTS pack_files)
+			get_filename_component(basename "${packfile}" NAME)
+			get_filename_component(pack_dir "${packfile}" DIRECTORY)
+			set(pack_abspath "${CMAKE_SOURCE_DIR}/packs/${pack_dir}")
+			set(texpack_outputs)
+			if("astc" IN_LIST COMPRESS_TEXTURES)
+				list(APPEND texpack_outputs "${pack_abspath}/${basename}-astc.pack")
+			endif()
+			if("dxt" IN_LIST COMPRESS_TEXTURES)
+				list(APPEND texpack_outputs "${pack_abspath}/${basename}-dxt.pack")
+			endif()
+
+			add_custom_command(
+				OUTPUT ${texpack_outputs}
+				COMMAND "${texconverter_bin}" pack "${basename}.pack" ${COMPRESS_TEXTURES}
+				WORKING_DIRECTORY "${pack_abspath}"
+					MAIN_DEPENDENCY "${pack_abspath}/${basename}.pack"
+					DEPENDS texconverter
+					COMMAND_EXPAND_LISTS
+					VERBATIM
+			)
+
+			list(APPEND repacked "${texpack_outputs}")
+		endforeach()
+		add_custom_target(convert_packs DEPENDS ${repacked})
+		add_custom_target(convert_textures DEPENDS convert_png convert_packs)
+		add_dependencies(${PROJECT_NAME} convert_textures)
+	endif()
 endif()
 
 
