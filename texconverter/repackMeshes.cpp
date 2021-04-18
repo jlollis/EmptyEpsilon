@@ -369,10 +369,10 @@ int process_pack(std::string_view src_name, file_ptr& src_pack)
 	
 	// Compute header size.
 	auto base_offset = 2 * sizeof(int32_t);
-
+	constexpr std::string_view model2{ ".model2" };
 	for (const auto& entry: entries)
 	{
-		base_offset += sizeof(int8_t) + entry.name.size() + 2 * sizeof(int32_t);
+		base_offset += sizeof(int8_t) + entry.name.find_last_of('.') + model2.size() + 2 * sizeof(int32_t);
 	}
 
 	// reserve header space.
@@ -410,7 +410,7 @@ int process_pack(std::string_view src_name, file_ptr& src_pack)
 		fseek(dst_pack.get(), 2 * sizeof(int32_t), SEEK_SET);
 		for (auto e = 0; e < entries.size(); ++e)
 		{
-			auto entry_name = entries[e].name.substr(0, entries[e].name.find_last_of('.')) + ".model2";
+			auto entry_name = entries[e].name.substr(0, entries[e].name.find_last_of('.')) + model2.data();
 			auto&& [position, size] = dst_offset[e];
 			write_string(dst_pack, entry_name);
 			write_int32(dst_pack, position);

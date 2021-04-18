@@ -186,7 +186,7 @@ size_t compress_dxt(const image_ptr& image_data, uint32_t channels, uint32_t wid
 				{
 					auto pixel_offset = (start_y + y) * width + 4 * bx + x;
 					if (pixel_offset < width * height)
-						block[y * 4 + x] = pixels[pixel_offset];
+						block[y * 4 + x] = pixels[pixel_offset];	
 				}
 
 
@@ -364,17 +364,21 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 	for (auto& base_offset: base_offsets)
 		base_offset = 2 * sizeof(int32_t);
 
+	constexpr std::string_view dotktx{ ".ktx" };
 	for (const auto& entry: entries)
 	{
-		for (auto& base_offset: base_offsets)
-			base_offset += sizeof(int8_t) + entry.name.size() + 2 * sizeof(int32_t);
+		auto basename_length = entry.name.find_last_of('.');
+		for (auto i = 0; i < OutputCount; ++i)
+		{
+			base_offsets[i] += sizeof(int8_t) + basename_length + std::string_view{ suffixes[i] }.size() + dotktx.size() + 2 * sizeof(int32_t);
+		}	
 	}
 
 	// reserve header space.
-	for (auto& dst_pack: dst_packs)
+	for (auto i = 0; i < OutputCount; ++i)
 	{
-		if (dst_pack)
-			fseek(dst_pack.get(), base_offsets[0], SEEK_SET);
+		if (dst_packs[i])
+			fseek(dst_packs[i].get(), base_offsets[i], SEEK_SET);
 	}
 	
 	// offset for each destination type.
@@ -449,7 +453,7 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 				fseek(dst_packs[i].get(), 2 * sizeof(int32_t), SEEK_SET);
 				for (auto e = 0; e < entries.size(); ++e)
 				{
-					auto entry_name = entries[e].name.substr(0, entries[e].name.find_last_of('.')) + suffixes[i] + ".ktx";
+					auto entry_name = entries[e].name.substr(0, entries[e].name.find_last_of('.')) + suffixes[i] + dotktx.data();
 					auto&& [position, size] = dst_offsets[i][e];
 					write_string(dst_packs[i], entry_name);
 					write_int32(dst_packs[i], position);
