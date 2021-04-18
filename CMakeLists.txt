@@ -307,7 +307,8 @@ else()
 endif()
 
 if(COMPRESS_TEXTURES OR CONVERT_MESHES)
-include(ExternalProject)
+    add_custom_target(convert_assets)
+    include(ExternalProject)
     set(texconverter_prefix "${PROJECT_BINARY_DIR}/texconverter")
 
     ExternalProject_Add(texconverter
@@ -374,7 +375,7 @@ include(ExternalProject)
         endforeach()
         add_custom_target(convert_obj_packs DEPENDS ${repacked})
         add_custom_target(convert_meshes DEPENDS convert_obj convert_obj_packs)
-        add_dependencies(${PROJECT_NAME} convert_meshes)
+        add_dependencies(convert_assets convert_meshes)
     endif()
 
     if(COMPRESS_TEXTURES)
@@ -441,8 +442,9 @@ include(ExternalProject)
         endforeach()
         add_custom_target(convert_packs DEPENDS ${repacked})
         add_custom_target(convert_textures DEPENDS convert_png convert_packs)
-        add_dependencies(${PROJECT_NAME} convert_textures)
+        add_dependencies(convert_assets convert_textures)
     endif()
+    add_dependencies(${PROJECT_NAME} convert_assets)
 endif()
 
 
