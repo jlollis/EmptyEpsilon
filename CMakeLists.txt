@@ -507,7 +507,7 @@ else()
                 RENAME libsfml-system.so.2.5)
     endif()
   
-      set(resouces_patterns PATTERN "*")
+      set(resources_patterns PATTERN "*")
       if(INSTALL_ONLY_PROCESSED_ASSETS)
           if(COMPRESS_TEXTURES)
             list(APPEND resources_patterns PATTERN "*.png" EXCLUDE)
