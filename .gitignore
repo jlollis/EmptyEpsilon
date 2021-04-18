@@ -44,3 +44,11 @@ logs
 # Generated textures
 *.ktx
 *.dds
+
+# Generated models
+*.model2
+
+# Generated packs
+*-model2.pack
+*-astc.pack
+*-dxt.pack
