@@ -4,7 +4,7 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include "main.h"
 
-GuiElement::GuiElement(GuiContainer* owner, string id)
+GuiElement::GuiElement(GuiContainer* owner, const string& id)
 : position_alignment(ATopLeft), owner(owner), rect(0, 0, 0, 0), visible(true), enabled(true), hover(false), focus(false), active(false), id(id)
 {
     owner->elements.push_back(this);
@@ -305,7 +305,7 @@ void GuiElement::drawRenderTexture(sf::RenderTexture& texture, sf::RenderTarget&
     window.draw(sprite, states);
 }
 
-void GuiElement::drawText(sf::RenderTarget& window, sf::FloatRect rect, string text, EGuiAlign align, float font_size, sf::Font* font, sf::Color color)
+void GuiElement::drawText(sf::RenderTarget& window, sf::FloatRect rect, const string& text, EGuiAlign align, float font_size, sf::Font* font, sf::Color color)
 {
     sf::Text textElement(sf::String::fromUtf8(std::begin(text), std::end(text)), *font, font_size);
     float y = 0;
@@ -356,7 +356,7 @@ void GuiElement::drawText(sf::RenderTarget& window, sf::FloatRect rect, string t
     window.draw(textElement);
 }
 
-void GuiElement::drawVerticalText(sf::RenderTarget& window, sf::FloatRect rect, string text, EGuiAlign align, float font_size, sf::Font* font, sf::Color color)
+void GuiElement::drawVerticalText(sf::RenderTarget& window, sf::FloatRect rect, const string& text, EGuiAlign align, float font_size, sf::Font* font, sf::Color color)
 {
     sf::Text textElement(sf::String::fromUtf8(std::begin(text), std::end(text)), *font, font_size);
     textElement.setRotation(-90);
@@ -386,7 +386,7 @@ void GuiElement::drawVerticalText(sf::RenderTarget& window, sf::FloatRect rect, 
     window.draw(textElement);
 }
 
-void GuiElement::draw9Cut(sf::RenderTarget& window, sf::FloatRect rect, string texture, sf::Color color, float width_factor)
+void GuiElement::draw9Cut(sf::RenderTarget& window, sf::FloatRect rect, const string& texture, sf::Color color, float width_factor)
 {
     sf::Sprite sprite;
     textureManager.setTexture(sprite, texture);
@@ -485,7 +485,7 @@ void GuiElement::draw9Cut(sf::RenderTarget& window, sf::FloatRect rect, string t
     }
 }
 
-void GuiElement::draw9CutV(sf::RenderTarget& window, sf::FloatRect rect, string texture, sf::Color color, float height_factor)
+void GuiElement::draw9CutV(sf::RenderTarget& window, sf::FloatRect rect, const string& texture, sf::Color color, float height_factor)
 {
     sf::Sprite sprite;
     textureManager.setTexture(sprite, texture);
@@ -586,7 +586,7 @@ void GuiElement::draw9CutV(sf::RenderTarget& window, sf::FloatRect rect, string 
     }
 }
 
-void GuiElement::drawStretched(sf::RenderTarget& window, sf::FloatRect rect, string texture, sf::Color color)
+void GuiElement::drawStretched(sf::RenderTarget& window, sf::FloatRect rect, const string& texture, sf::Color color)
 {
     if (rect.width >= rect.height)
     {
@@ -596,7 +596,7 @@ void GuiElement::drawStretched(sf::RenderTarget& window, sf::FloatRect rect, str
     }
 }
 
-void GuiElement::drawStretchedH(sf::RenderTarget& window, sf::FloatRect rect, string texture, sf::Color color)
+void GuiElement::drawStretchedH(sf::RenderTarget& window, sf::FloatRect rect, const string& texture, sf::Color color)
 {
     sf::Texture* texture_ptr = textureManager.getTexture(texture);
     sf::Vector2f texture_size = sf::Vector2f(texture_ptr->getSize());
@@ -629,7 +629,7 @@ void GuiElement::drawStretchedH(sf::RenderTarget& window, sf::FloatRect rect, st
     window.draw(a, texture_ptr);
 }
 
-void GuiElement::drawStretchedV(sf::RenderTarget& window, sf::FloatRect rect, string texture, sf::Color color)
+void GuiElement::drawStretchedV(sf::RenderTarget& window, sf::FloatRect rect, const string& texture, sf::Color color)
 {
     sf::Texture* texture_ptr = textureManager.getTexture(texture);
     sf::Vector2f texture_size = sf::Vector2f(texture_ptr->getSize());
@@ -662,7 +662,7 @@ void GuiElement::drawStretchedV(sf::RenderTarget& window, sf::FloatRect rect, st
     window.draw(a, texture_ptr);
 }
 
-void GuiElement::drawStretchedHV(sf::RenderTarget& window, sf::FloatRect rect, float corner_size, string texture, sf::Color color)
+void GuiElement::drawStretchedHV(sf::RenderTarget& window, sf::FloatRect rect, float corner_size, const string& texture, sf::Color color)
 {
     sf::Texture* texture_ptr = textureManager.getTexture(texture);
     sf::Vector2f texture_size = sf::Vector2f(texture_ptr->getSize());
@@ -744,7 +744,7 @@ sf::Color GuiElement::selectColor(ColorSet& color_set) const
     return color_set.normal;
 }
 
-GuiElement::LineWrapResult GuiElement::doLineWrap(string text, float font_size, float width)
+GuiElement::LineWrapResult GuiElement::doLineWrap(const string& text, float font_size, float width)
 {
     LineWrapResult result;
     result.text = text;
