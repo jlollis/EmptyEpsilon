@@ -401,9 +401,8 @@ int process_pack(std::string_view src_name, file_ptr& src_pack)
 			fwrite(optimized.data(), length, 1, dst_pack.get());
 			// Update entry information (replace extension, fixup size, position)
 			auto position = static_cast<int32_t>(base_offset);
-			auto size = static_cast<int32_t>(length + sizeof(uint32_t));
-			dst_offset[i] = std::make_tuple(position, size);
-			base_offset += size;
+			dst_offset[i] = std::make_tuple(position, static_cast<int32_t>(length));
+			base_offset += length;
 		}
 
 		// Second pass: write the header information
