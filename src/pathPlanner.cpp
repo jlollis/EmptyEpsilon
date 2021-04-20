@@ -22,6 +22,9 @@ P<PathPlannerManager> PathPlannerManager::instance;
 
 void PathPlannerManager::addAvoidObject(P<SpaceObject> source, float size)
 {
+    if (!game_server)
+        return;
+
     // Make a classification for small objects which fit in a grid, so the checkToAvoid function does not has to iterate on all objects.
     // Until then, astroids and mines should not generate avoidAreas to prevent performance issues.
     if (size < small_object_max_size)
