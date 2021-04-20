@@ -533,13 +533,28 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     if (show_headings && my_spaceship)
     {
         float distance = 2500.f;
-
-        for(int angle = 0; angle < 360; angle += 30)
+        struct Heading
         {
-            sf::Vector2f world_pos = my_spaceship->getPosition() + sf::vector2FromAngle(float(angle - 90)) * distance;
-            sf::Vector3f screen_pos = worldToScreen(window, sf::Vector3f(world_pos.x, world_pos.y, 0.0f));
-            if (screen_pos.z > 0.0f)
-                drawText(window, sf::FloatRect(screen_pos.x, screen_pos.y, 0, 0), string(angle), ACenter, 30, bold_font, sf::Color(255, 255, 255, 128));
+            string name{};
+            sf::Vector2f angle{};
+        };
+        static std::vector<Heading> headings;
+        if (headings.empty())
+        {
+            headings.reserve(360 / 30);
+            for (int angle = 0; angle < 360; angle += 30)
+            {
+                headings.emplace_back(Heading{ angle, sf::vector2FromAngle(angle - 90.f) });
+            }
+        }
+
+        auto spaceship_position = my_spaceship->getPosition();
+        for(auto& heading: headings)
+        {
+            sf::Vector2f world_pos{ spaceship_position + heading.angle * distance };
+            sf::Vector3f screen_pos = worldToScreen(window, sf::Vector3f{ world_pos.x, world_pos.y, 0.f });
+            if (screen_pos.z > 0.f)
+                drawText(window, sf::FloatRect(screen_pos.x, screen_pos.y, 0.f, 0.f), heading.name, ACenter, 30, bold_font, sf::Color(255, 255, 255, 128));
         }
     }
 #endif//FEATURE_3D_RENDERING
