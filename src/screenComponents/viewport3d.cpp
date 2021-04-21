@@ -464,13 +464,12 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
             std::initializer_list<uint8_t> indices{ 0, 1, 2, 2, 3, 0 };
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, std::begin(indices));
         }
-    }
+    }  
 
+#ifdef DEBUG
     glDepthMask(true);
     glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);
-
-#ifdef DEBUG
     glDisable(GL_DEPTH_TEST);
     
     {
