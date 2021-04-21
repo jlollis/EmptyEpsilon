@@ -163,6 +163,10 @@ void write_ktx(uint32_t format, uint32_t width, uint32_t height, const void* ima
 
 size_t compress_dxt(const image_ptr& image_data, uint32_t channels, uint32_t width, uint32_t height, std::vector<uint8_t>& compressed)
 {
+	// 1 channel: Grey (no alpha).
+	// 2 channels: LumAlpha
+	// 3 channels: RGB (no alpha!)
+	// 4 channels: RGBA.
 	auto block_size = channels % 2 == 0 ? 16 : 8;
 	auto blocks_x = (width + 4 - 1) / 4;
 	auto blocks_y = (height + 4 - 1) / 4;
@@ -244,7 +248,7 @@ AstcDetails setup_astc_compression(bool initialize)
 	return details;
 }
 
-size_t compress_astc(const image_ptr& image_data, uint32_t width, uint32_t height, std::vector<uint8_t>& compressed, AstcDetails& details)
+size_t compress_astc(const image_ptr& image_data, uint32_t channels, uint32_t width, uint32_t height, std::vector<uint8_t>& compressed, AstcDetails& details)
 {
 	std::array<void*, 1> data{ image_data.get() };
 	astcenc_image raw
@@ -256,10 +260,22 @@ size_t compress_astc(const image_ptr& image_data, uint32_t width, uint32_t heigh
 	size_t compressed_size = ((raw.dim_x + 4 - 1) / 4) * (raw.dim_y + 4 - 1) / 4 * 16;
 
 	compressed.resize(std::max(compressed.size(), compressed_size));
-
-	auto worker_function = [&raw, &compressed, compressed_size, &details](auto worker)
+	auto swizzle = [channels]() -> astcenc_swizzle
 	{
-		astcenc_swizzle swizzle{ ASTCENC_SWZ_R, ASTCENC_SWZ_G, ASTCENC_SWZ_B, ASTCENC_SWZ_A };
+		if (channels == 1) // Grey
+			return { ASTCENC_SWZ_R, ASTCENC_SWZ_R, ASTCENC_SWZ_R, ASTCENC_SWZ_1 };
+
+		if (channels == 2) // Lum Alpha
+			return { ASTCENC_SWZ_R, ASTCENC_SWZ_R, ASTCENC_SWZ_R, ASTCENC_SWZ_A };
+		
+		if (channels == 3)
+			return { ASTCENC_SWZ_R, ASTCENC_SWZ_G, ASTCENC_SWZ_B, ASTCENC_SWZ_1 };
+
+		if (channels == 4)
+			return { ASTCENC_SWZ_R, ASTCENC_SWZ_G, ASTCENC_SWZ_B, ASTCENC_SWZ_A };
+	}();
+	auto worker_function = [&raw, &compressed, swizzle, compressed_size, &details](auto worker)
+	{
 		details.errors[worker] = astcenc_compress_image(details.context.get(), &raw, swizzle, compressed.data(), compressed_size, worker);
 	};
 
@@ -429,7 +445,7 @@ int process_pack(std::string_view src_name, file_ptr& src_pack, std::bitset<Outp
 
 			if (outputs[OutputASTC])
 			{
-				auto compressed_size = compress_astc(image_data, width, height, compressed, details);
+				auto compressed_size = compress_astc(image_data, channels, width, height, compressed, details);
 				if (astc_check_errors(details, entry.name) != ASTCENC_SUCCESS)
 					return -1;
 
@@ -502,7 +518,7 @@ int process_image(std::string_view src_name, const file_ptr& src_file, std::bits
 		if (!details.context)
 			return -1;
 
-		auto compressed_size = compress_astc(image_data, width, height, compressed, details);
+		auto compressed_size = compress_astc(image_data, channels, width, height, compressed, details);
 		if (astc_check_errors(details, src_name) != ASTCENC_SUCCESS)
 			return -1;
 
