@@ -243,7 +243,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         glViewport(left, top, window_rect.width, window_rect.height);
     }
     glClearDepthf(1.f);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClear(GL_STENCIL_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
 
     projection_matrix = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f);
@@ -338,6 +338,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
     }
 
+    // First pass - opaque
     for(int n=render_lists.size() - 1; n >= 0; n--)
     {
         auto& render_list = render_lists[n];
@@ -356,29 +357,43 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
         glUseProgram(GL_NONE);
 
-        glDepthMask(true);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        glDisable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        
         for(const auto &info : render_list)
         {
             SpaceObject* obj = info.object;
             obj->draw3D();
         }
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        glDisable(GL_CULL_FACE);
-        glDepthMask(false);
-        for(const auto &info : render_list)
+    }
+
+    // Second pass: transparent objects.
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glDepthMask(GL_FALSE);
+    for (int n = render_lists.size() - 1; n >= 0; n--)
+    {
+        auto& render_list = render_lists[n];
+        
+        auto projection = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f * (n + 1));
+        // Update projection matrix in shaders.
+        for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
+        {
+            const auto& shader = ShaderRegistry::get(ShaderRegistry::Shaders(i));
+            if (shader.uniform(ShaderRegistry::Uniforms::Projection) != -1)
+            {
+                glUseProgram(shader.get()->getNativeHandle());
+                glUniformMatrix4fv(shader.uniform(ShaderRegistry::Uniforms::Projection), 1, GL_FALSE, glm::value_ptr(projection));
+            }
+        }
+        glUseProgram(GL_NONE);
+
+        for (const auto& info : render_list)
         {
             SpaceObject* obj = info.object;
             obj->draw3DTransparent();
         }
     }
     
+    // Intentionally don't have particles write in depth
+    glDisable(GL_BLEND);
     ParticleEngine::render(projection_matrix, view_matrix);
 
     if (show_spacedust && my_spaceship)
