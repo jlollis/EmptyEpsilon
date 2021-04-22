@@ -90,11 +90,11 @@ ParticleEngine::ParticleEngine()
 
             // Each quad is two triangles
             elements[base_element + 0] = base_vertex + 0;
-            elements[base_element + 1] = base_vertex + 3;
+            elements[base_element + 1] = base_vertex + 1;
             elements[base_element + 2] = base_vertex + 2;
             elements[base_element + 3] = base_vertex + 0;
             elements[base_element + 4] = base_vertex + 2;
-            elements[base_element + 5] = base_vertex + 1;
+            elements[base_element + 5] = base_vertex + 3;
 
             // Setup texcoords.
             texcoords[base_vertex + 0] = { 0.f, 0.f };

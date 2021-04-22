@@ -393,7 +393,6 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     }
     
     // Intentionally don't have particles write in depth
-    glDisable(GL_BLEND);
     ParticleEngine::render(projection_matrix, view_matrix);
 
     if (show_spacedust && my_spaceship)
