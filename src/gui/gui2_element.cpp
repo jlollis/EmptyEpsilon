@@ -282,7 +282,7 @@ void GuiElement::adjustRenderTexture(sf::RenderTexture& texture)
     sf::Vector2u texture_size{ static_cast<uint32_t>(pixel_coords.x), static_cast<uint32_t>(pixel_coords.y) };
     if (texture.getSize() != texture_size)
     {
-        texture.create(texture_size.x, texture_size.y, true);
+        texture.create(texture_size.x, texture_size.y, false);
     }
 
     //Set the view so it covers this elements normal rect. So we can draw exactly the same on this texture as no the normal screen.
