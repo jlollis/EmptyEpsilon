@@ -244,21 +244,25 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     }
     glClearDepthf(1.f);
     glClear(GL_STENCIL_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
 
     projection_matrix = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f);
     view_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
     view_matrix = glm::scale(view_matrix, glm::vec3(1.f, 1.f, -1.f));
     view_matrix = glm::rotate(view_matrix, glm::radians(-camera_pitch), glm::vec3(1.f, 0.f, 0.f));
     view_matrix = glm::rotate(view_matrix, glm::radians(-camera_yaw - 90.f), glm::vec3(0.f, 0.f, 1.f));
+
+    // Translate camera
     view_matrix = glm::translate(view_matrix, -glm::vec3(camera_position.x, camera_position.y, camera_position.z));
+ 
     
     glGetFloatv(GL_VIEWPORT, glm::value_ptr(viewport));
 
     // Draw starbox.
     glDepthMask(GL_FALSE);
     {
-        
         sf::Shader::bind(starbox_shader);
         starbox_shader->setUniform("scale", 100.f);
 
@@ -290,8 +294,6 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         glBindTexture(GL_TEXTURE_CUBE_MAP, GL_NONE);
         sf::Shader::bind(nullptr);
     }
-    glDepthMask(GL_TRUE);
-
     sf::Texture::bind(NULL);
 
     class RenderInfo
@@ -339,6 +341,8 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     }
 
     // First pass - opaque
+    glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
     for(int n=render_lists.size() - 1; n >= 0; n--)
     {
         auto& render_list = render_lists[n];

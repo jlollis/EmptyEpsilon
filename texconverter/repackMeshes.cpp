@@ -278,18 +278,18 @@ size_t optimize_obj(const std::vector<uint8_t>& mesh, std::vector<uint8_t>& opti
 
 	auto copy_vertex = [&unindexed_vertices, &obj](size_t i, const auto& index)
 	{
-		// EE flips some coordinates:
-		// - z/y are swapped.
-		// - x is flipped.
-		unindexed_vertices[i].position[0] = -obj->positions[3 * index.p + 0];
+		// EE swaps z/y.
+		unindexed_vertices[i].position[0] = obj->positions[3 * index.p + 0];
 		unindexed_vertices[i].position[1] = obj->positions[3 * index.p + 2];
 		unindexed_vertices[i].position[2] = obj->positions[3 * index.p + 1];
 
-		unindexed_vertices[i].normal[0] = -obj->normals[3 * index.n + 0];
+		unindexed_vertices[i].normal[0] = obj->normals[3 * index.n + 0];
 		unindexed_vertices[i].normal[1] = obj->normals[3 * index.n + 2];
 		unindexed_vertices[i].normal[2] = obj->normals[3 * index.n + 1];
 
 		unindexed_vertices[i].uv[0] = obj->texcoords[2 * index.t + 0];
+		
+		// Make OpenGL happy by flipping the y coordinate.
 		unindexed_vertices[i].uv[1] = 1.f - obj->texcoords[2 * index.t + 1];
 
 	};
@@ -303,8 +303,8 @@ size_t optimize_obj(const std::vector<uint8_t>& mesh, std::vector<uint8_t>& opti
 		for (auto v = 2; v < obj->face_vertices[face]; ++v)
 		{
 			copy_vertex(current_vertex, indices[0]);
-			copy_vertex(current_vertex + 1, indices[v]); // 2
-			copy_vertex(current_vertex + 2, indices[v - 1]); // 1
+			copy_vertex(current_vertex + 2, indices[v]); // 2
+			copy_vertex(current_vertex + 1, indices[v - 1]); // 1
 
 			current_vertex += 3;
 		}
@@ -318,8 +318,27 @@ size_t optimize_obj(const std::vector<uint8_t>& mesh, std::vector<uint8_t>& opti
 size_t optimize_model(const std::vector<uint8_t>& mesh, std::vector<uint8_t>& optimized)
 {
 	auto vertex_count = from_big(*reinterpret_cast<const int32_t*>(mesh.data()));
-	auto vertex_data = reinterpret_cast<const Vertex*>(mesh.data() + sizeof(int32_t));
-	return optimize_vertices(vertex_data, vertex_count, optimized);
+
+	std::vector<Vertex> vertices(vertex_count);
+
+	memcpy(vertices.data(), mesh.data() + sizeof(int32_t), vertex_count * sizeof(Vertex));
+	
+#if 1
+	for (auto tri = 0; tri < vertex_count; tri += 3)
+	{
+		for (auto v = 0; v < 3; ++v)
+		{
+			// unflip X.
+			vertices[tri + v].position[0] = -vertices[tri + v].position[0];
+			vertices[tri + v].normal[0] = -vertices[tri + v].normal[0];
+		}
+
+		// Model vertices are stored clockwise - we want to go counter-clockwise.
+		std::swap(vertices[tri + 1], vertices[tri + 2]);
+	}
+#endif
+
+	return optimize_vertices(vertices.data(), vertices.size(), optimized);
 }
 
 int process_pack(std::string_view src_name, file_ptr& src_pack)
