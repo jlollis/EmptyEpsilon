@@ -774,21 +774,20 @@ void GuiRadarView::drawHeadingIndicators(sf::RenderTarget& window)
         small_tig_interval = 10;
     }
 
-    sf::VertexArray tigs(sf::Lines, 360 / tig_interval * 2);
+    sf::VertexArray all_tigs(sf::Lines, 360 / tig_interval * 2 + 360 / small_tig_interval * 2);
     for(unsigned int n = 0; n < 360; n += tig_interval)
     {
-        tigs[n / tig_interval * 2].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 20);
-        tigs[n / tig_interval * 2 + 1].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 40);
+        all_tigs[n / tig_interval * 2].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 20);
+        all_tigs[n / tig_interval * 2 + 1].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 40);
     }
-    window.draw(tigs);
-
-    sf::VertexArray small_tigs(sf::Lines, 360 / small_tig_interval * 2);
+    
+    auto small_tigs_start = ((360 - tig_interval) / tig_interval * 2 + 1) + 1;
     for(unsigned int n = 0; n < 360; n += small_tig_interval)
     {
-        small_tigs[n / small_tig_interval * 2].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 20);
-        small_tigs[n / small_tig_interval * 2 + 1].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 30);
+        all_tigs[small_tigs_start + n / small_tig_interval * 2].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 20);
+        all_tigs[small_tigs_start + n / small_tig_interval * 2 + 1].position = radar_screen_center + sf::vector2FromAngle(float(n) - 90 - view_rotation) * (scale - 30);
     }
-    window.draw(small_tigs);
+    window.draw(all_tigs);
 
     for(unsigned int n = 0; n < 360; n += tig_interval)
     {
