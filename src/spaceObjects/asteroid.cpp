@@ -48,10 +48,11 @@ void Asteroid::draw3D()
     if (size != getRadius())
         setRadius(size);
 
+    const auto model_matrix = getModelMatrix();
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::ObjectSpecular);
 
-    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
-    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(model_matrix)))));
     
 
     glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("Astroid_" + string(model_number) + "_d.png")->getNativeHandle());
@@ -159,10 +160,11 @@ void VisualAsteroid::draw3D()
     if (size != getRadius())
         setRadius(size);
 
+    const auto model_matrix = getModelMatrix();
     ShaderRegistry::ScopedShader shader(ShaderRegistry::Shaders::ObjectSpecular);
 
-    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(getModelMatrix()));
-    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(getModelMatrix())))));
+    glUniformMatrix4fv(shader.get().uniform(ShaderRegistry::Uniforms::Model), 1, GL_FALSE, glm::value_ptr(model_matrix));
+    glUniformMatrix3fv(shader.get().uniform(ShaderRegistry::Uniforms::ModelNormal), 1, GL_FALSE, glm::value_ptr(glm::mat3(glm::transpose(glm::inverse(model_matrix)))));
 
     glBindTexture(GL_TEXTURE_2D, textureManager.getTexture("Astroid_" + string(model_number) + "_d.png")->getNativeHandle());
 

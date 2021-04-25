@@ -229,7 +229,7 @@ public:
     bool sendCommsMessage(P<PlayerSpaceship> target, string message);
 
     ScriptSimpleCallback on_destroyed;
-
+    glm::mat4 getWorldTransform() const { return getModelMatrix(); }
 protected:
     virtual glm::mat4 getModelMatrix() const;
     ModelInfo model_info;

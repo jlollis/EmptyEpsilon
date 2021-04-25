@@ -8,6 +8,7 @@
 #include "particleEffect.h"
 #include "glObjects.h"
 #include "shaderRegistry.h"
+#include "frustumCull.h"
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -361,10 +362,15 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
         glUseProgram(GL_NONE);
 
+        const Frustum frustum{ projection * view_matrix };
+
         for(const auto &info : render_list)
         {
             SpaceObject* obj = info.object;
-            obj->draw3D();
+            const auto model_matrix = obj->getWorldTransform();
+            const glm::vec3 world_center{ model_matrix * glm::vec4{glm::vec3{0.f}, 1.f} };
+            if (frustum.IsBoxVisible(world_center - glm::vec3{ obj->getRadius() }, world_center + glm::vec3{ obj->getRadius() }))
+                obj->draw3D();
         }
     }
 
@@ -389,10 +395,15 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
         glUseProgram(GL_NONE);
 
+        const Frustum frustum{ projection * view_matrix };
+
         for (const auto& info : render_list)
         {
             SpaceObject* obj = info.object;
-            obj->draw3DTransparent();
+            const auto model_matrix = obj->getWorldTransform();
+            const glm::vec3 world_center{ model_matrix * glm::vec4{glm::vec3{0.f}, 1.f} };
+            if (frustum.IsBoxVisible(world_center - glm::vec3{ obj->getRadius() }, world_center + glm::vec3{ obj->getRadius() }))
+                obj->draw3DTransparent();
         }
     }
     
