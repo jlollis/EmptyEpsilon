@@ -307,28 +307,40 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         SpaceObject* object;
         float depth;
     };
+
+    std::vector<std::tuple<Frustum, glm::mat4, bool>> projections;
     std::vector<std::vector<RenderInfo>> render_lists;
 
     sf::Vector2f viewVector = sf::vector2FromAngle(camera_yaw);
-    float depth_cutoff_back = camera_position.z * -tanf((90+camera_pitch + camera_fov/2.0) / 180.0f * M_PI);
-    float depth_cutoff_front = camera_position.z * -tanf((90+camera_pitch - camera_fov/2.0) / 180.0f * M_PI);
-    if (camera_pitch - camera_fov/2.0 <= 0.0)
-        depth_cutoff_front = std::numeric_limits<float>::infinity();
-    if (camera_pitch + camera_fov/2.0 >= 180.0)
-        depth_cutoff_back = -std::numeric_limits<float>::infinity();
+    
     foreach(SpaceObject, obj, space_object_list)
     {
         float depth = sf::dot(viewVector, obj->getPosition() - sf::Vector2f(camera_position.x, camera_position.y));
-        if (depth + obj->getRadius() < depth_cutoff_back)
-            continue;
-        if (depth - obj->getRadius() > depth_cutoff_front)
-            continue;
-        if (depth > 0 && obj->getRadius() / depth < 1.0 / 500)
-            continue;
         int render_list_index = std::max(0, int((depth + obj->getRadius()) / 25000));
-        while(render_list_index >= int(render_lists.size()))
-            render_lists.emplace_back();
-        render_lists[render_list_index].emplace_back(*obj, depth);
+        if ((render_list_index + 1) > render_lists.size())
+        {
+            render_lists.resize(render_list_index + 1);
+            projections.resize(render_list_index + 1);
+        }
+
+        auto& frustum = projections[render_list_index];
+        if (!std::get<2>(frustum))
+        {
+            // First encounter, initialize
+            std::get<1>(frustum) = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f * (render_list_index + 1));
+            std::get<0>(frustum) = Frustum{ std::get<1>(frustum) * view_matrix };
+            std::get<2>(frustum) = true;
+        }
+
+        auto& render_list = render_lists[render_list_index];
+        
+        if (render_list.capacity() < space_object_list.size())
+            render_list.reserve(space_object_list.size());
+
+        const auto model_matrix = obj->getWorldTransform();
+        const glm::vec3 world_center{ model_matrix * glm::vec4{glm::vec3{0.f}, 1.f} };
+        if (std::get<0>(frustum).IsBoxVisible(world_center - glm::vec3{ obj->getRadius() }, world_center + glm::vec3{ obj->getRadius() }))
+            render_lists[render_list_index].emplace_back(*obj, depth);
     }
 
     for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
@@ -349,7 +361,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         auto& render_list = render_lists[n];
         std::sort(render_list.begin(), render_list.end(), [](const RenderInfo& a, const RenderInfo& b) { return a.depth > b.depth; });
 
-        auto projection = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f * (n + 1));
+        const auto& projection = std::get<1>(projections[n]);
         // Update projection matrix in shaders.
         for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
         {
@@ -362,15 +374,10 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
         glUseProgram(GL_NONE);
 
-        const Frustum frustum{ projection * view_matrix };
-
         for(const auto &info : render_list)
         {
             SpaceObject* obj = info.object;
-            const auto model_matrix = obj->getWorldTransform();
-            const glm::vec3 world_center{ model_matrix * glm::vec4{glm::vec3{0.f}, 1.f} };
-            if (frustum.IsBoxVisible(world_center - glm::vec3{ obj->getRadius() }, world_center + glm::vec3{ obj->getRadius() }))
-                obj->draw3D();
+            obj->draw3D();
         }
     }
 
@@ -382,7 +389,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
     {
         auto& render_list = render_lists[n];
         
-        auto projection = glm::perspective(glm::radians(camera_fov), rect.width / rect.height, 1.f, 25000.f * (n + 1));
+        const auto& projection = std::get<1>(projections[n]);
         // Update projection matrix in shaders.
         for (auto i = 0; i < ShaderRegistry::Shaders_t(ShaderRegistry::Shaders::Count); ++i)
         {
@@ -395,15 +402,10 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         }
         glUseProgram(GL_NONE);
 
-        const Frustum frustum{ projection * view_matrix };
-
         for (const auto& info : render_list)
         {
             SpaceObject* obj = info.object;
-            const auto model_matrix = obj->getWorldTransform();
-            const glm::vec3 world_center{ model_matrix * glm::vec4{glm::vec3{0.f}, 1.f} };
-            if (frustum.IsBoxVisible(world_center - glm::vec3{ obj->getRadius() }, world_center + glm::vec3{ obj->getRadius() }))
-                obj->draw3DTransparent();
+            obj->draw3DTransparent();
         }
     }
     

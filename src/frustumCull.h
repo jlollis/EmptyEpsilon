@@ -7,6 +7,7 @@
 class Frustum
 {
 public:
+	Frustum() = default;
 	// m = ProjectionMatrix * ViewMatrix 
 	explicit Frustum(glm::mat4 m);
 
