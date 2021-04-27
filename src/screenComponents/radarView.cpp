@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/Text.hpp>
+#include <GL/glad.h>
 
 
 #include "main.h"
@@ -245,6 +246,7 @@ void GuiRadarView::onDraw(sf::RenderTarget& window)
     background_texture.setActive(true);
     glDepthMask(GL_TRUE);
     glDisable(GL_STENCIL_TEST);
+    background_texture.setActive(false);
 
     //Render the final radar
     drawRenderTexture(background_texture, window);
