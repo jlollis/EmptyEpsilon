@@ -139,9 +139,9 @@ jobs:
       - name: SeriousProton Checkout
         uses: actions/checkout@v2
         with:
-          repository: daid/SeriousProton
+          repository: gcask/SeriousProton
           path: SeriousProton
-          ref: EE-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}
+          ref: EE-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}-hotfixes
       - name: EmptyEpsilon Checkout
         uses: actions/checkout@v2
         with:
