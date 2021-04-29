@@ -67,6 +67,7 @@ jobs:
       run: >
         cmake
         -G Ninja
+        -DSERIOUS_PROTON_DIR:PATH=./SeriousProton
         -DINSTALL_ONLY_PROCESSED_ASSETS:BOOL=ON
         -DCOMPRESS_TEXTURES:STRING=astc
         -DSFML_ROOT:PATH=/opt/sfml
