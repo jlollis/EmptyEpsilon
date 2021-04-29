@@ -245,7 +245,7 @@ static std::vector<std::pair<string, SDL_Scancode> > sdl_key_names = {
 
 string HotkeyConfig::getStringForKey(SDL_Scancode key) const
 {
-    for(const auto& key_name : sfml_key_names)
+    for(const auto& key_name : sdl_key_names)
     {
         if (key_name.second == key)
         {
@@ -275,7 +275,7 @@ void HotkeyConfig::load()
     }
 }
 
-std::vector<HotkeyResult> HotkeyConfig::getHotkey(const SDL_Keysym& key)
+std::vector<HotkeyResult> HotkeyConfig::getHotkey(const SDL_Keysym& key) const
 {
     std::vector<HotkeyResult> results;
     // SDL will report *all* mod keys - and that includes caps lock and num.
@@ -394,7 +394,7 @@ SDL_Scancode HotkeyConfig::getKeyByHotkey(const string& hotkey_category, const s
 }
 
 HotkeyConfigItem::HotkeyConfigItem(const string& key, const std::tuple<string, string>& value)
-    :key{key}, value{value}, hotkey{sf::Keyboard::KeyCount, false, false, false, false}
+    :key{key}, value{value}, hotkey{ SDL_SCANCODE_UNKNOWN, SDLK_UNKNOWN, 0, 0 }
 {
 }
 

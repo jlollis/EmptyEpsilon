@@ -78,18 +78,6 @@ if(WIN32)
   )
 endif()
 
-# GLM
-set(GLM_BASE_PATH "${EXTERNALS_DIR}")
-
-if(NOT EXISTS "${GLM_BASE_PATH}/glm/CMakeLists.txt")
-  set(GLM_ZIP "${DOWNLOADS_DIR}/glm.zip")
-  file(DOWNLOAD "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip" "${GLM_ZIP}" TIMEOUT 60 TLS_VERIFY ON)
-
-  file(MAKE_DIRECTORY "${GLM_BASE_PATH}/glm")
-  execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${GLM_ZIP}" WORKING_DIRECTORY "${GLM_BASE_PATH}")
-endif()
-
-add_subdirectory("${GLM_BASE_PATH}/glm" "${PROJECT_BINARY_DIR}/glm" EXCLUDE_FROM_ALL)
 add_subdirectory(texconverter/meshoptimizer EXCLUDE_FROM_ALL)
 
 
@@ -125,6 +113,7 @@ set(SOURCES
     src/factionInfo.cpp
     src/mesh.cpp
     src/scenarioInfo.cpp
+    src/shaderRegistry.cpp
     src/repairCrew.cpp
     src/GMScriptCallback.cpp
     src/GMMessage.cpp
@@ -462,7 +451,7 @@ target_link_libraries(opengl
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        seriousproton glm::glm opengl
+        seriousproton glm::glm opengl meshoptimizer
         "$<$<BOOL:${ANDROID}>:log;android>"
         "$<$<BOOL:${WIN32}>:iphlpapi;discord>"
         "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"   
