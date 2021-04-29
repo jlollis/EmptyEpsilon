@@ -1,84 +1,104 @@
-cmake_minimum_required(VERSION 3.7)
-#cmake_policy(SET CMP0048 NEW) # VERSION in project (3.0)
-string(TIMESTAMP MAJOR "%Y")
-string(TIMESTAMP MINOR "%m")
-string(TIMESTAMP PATCH "%d")
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
-project(EmptyEpsilon VERSION ${MAJOR}.${MINOR}.${PATCH})
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
+# Set a default version.
+# For historical reason, we first honor CPack variables if they are set.
+if(DEFINED CPACK_PACKAGE_VERSION_MAJOR)
+    message(DEPRECATION "Prefer setting the version through CMAKE_PROJECT_EmptyEpsilon_INCLUDE file override")
+    set(MAJOR "${CPACK_PACKAGE_VERSION_MAJOR}")
+    set(MINOR "${CPACK_PACKAGE_VERSION_MINOR}")
+    set(PATCH "${CPACK_PACKAGE_VERSION_PATCH}")
+else()
+    # Following [CMake docs](https://cmake.org/cmake/help/v3.7/command/project.html) 
+    # You can override these by setting CMAKE_PROJECT_EmptyEpsilon_INCLUDE=<a_file>
+    # In which you'd define the following variables:
+    # - PROJECT_VERSION
+    # - PROJECT_VERSION_MAJOR
+    # - PROJECT_VERSION_MINOR
+    # - PROJECT_VERSION_PATCH
+    string(TIMESTAMP MAJOR "%Y")
+    string(TIMESTAMP MINOR "%m")
+    string(TIMESTAMP PATCH "%d")
+endif()
 
+project(EmptyEpsilon LANGUAGES CXX C  VERSION ${MAJOR}.${MINOR}.${PATCH})
+
+# User-settings
 set(COMPRESS_TEXTURES "" CACHE STRING "Texture compression (list: dxt, astc)")
 option(CONVERT_MESHES "Mesh re-encoding" ON)
 option(INSTALL_ONLY_PROCESSED_ASSETS "Exclude source assets when installing if processing has been enabled" OFF)
-option(ENABLE_CRASH_LOGGER "Enable the drmingw crash logging facilities" OFF)
-message(STATUS "ENABLE_CRASH_LOGGER is " ${ENABLE_CRASH_LOGGER})
-
-if(ENABLE_CRASH_LOGGER)
- if(MINGW)
-  if(NOT DEFINED DRMINGW_ROOT)
-   message(FATAL_ERROR "DRMINGW_ROOT was not set. Unable to continue")
-  endif(NOT DEFINED DRMINGW_ROOT)
- endif(MINGW)
-endif(ENABLE_CRASH_LOGGER)
+set(SERIOUS_PROTON_DIR "../SeriousProton" CACHE PATH "Path to SeriousProton")
 
 message(STATUS "EmptyEpsilon Version = ${PROJECT_VERSION}")
 
-# Globals
-# install resources, scripts, and packs to app bundle instead of system dir.
-if(APPLE)
-    set(CMAKE_INSTALL_PREFIX "./")
-    # Set minimum target macOS version
-    set(MACOSX_DEPLOYMENT_TARGET "10.10")
-endif()
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
-add_compile_definitions(
-    VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
-    WINDOW_TITLE="${PROJECT_NAME}"
-    SFML_NO_DEPRECATED_WARNINGS # SFML 2.5 gives deprication warnings on a few functions we use. But we maintain 2.3 compatibility, so ignore those warnings.
-
-    $<$<AND:$<BOOL:${ENABLE_CRASH_LOGGER}>,$<BOOL:${MINGW}>>:ENABLE_CRASH_LOGGER>
-    # Platform-specific
-    $<$<BOOL:${WIN32}>:NOMINMAX>
-    $<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
-    $<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
-    $<$<AND:$<NOT:$<BOOL:${CONFIG_DIR}>>,$<BOOL:${UNIX}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
-)
-
 # Dependencies
 
+# Setup OpenGl
+if(NOT ANDROID)
+    find_package(OpenGL REQUIRED)
+endif()
+
 # SeriousProton
+# Use SP provided json library.
 set(SERIOUSPROTON_WITH_JSON ON CACHE BOOL "" FORCE)
-add_subdirectory(SeriousProton EXCLUDE_FROM_ALL)
-add_subdirectory(texconverter/meshoptimizer EXCLUDE_FROM_ALL)
+add_subdirectory("${SERIOUS_PROTON_DIR}" "${PROJECT_BINARY_DIR}/SeriousProton" EXCLUDE_FROM_ALL)
+
+message(STATUS "Crash Logger is: ${ENABLE_CRASH_LOGGER}")
+
+set(EXTERNALS_DIR "${PROJECT_BINARY_DIR}/externals")
+set(DOWNLOADS_DIR "${PROJECT_BINARY_DIR}/downloads")
+file(MAKE_DIRECTORY "${EXTERNAL_DIR}" "${DOWNLOADS_DIR}")
 
 # Discord
-# Some magical Win 32 stuff
 if(WIN32)
   set(DISCORD_ARCH "x86_64")
   if(${CMAKE_SIZEOF_VOID_P} EQUAL 4)
     set(DISCORD_ARCH "x86")
   endif()
-  set(DISCORD_LIB_PATH "${PROJECT_BINARY_DIR}/discord/lib/${DISCORD_ARCH}")
+  set(DISCORD_LIB_PATH "${EXTERNALS_DIR}/discord/lib/${DISCORD_ARCH}")
+  file(MAKE_DIRECTORY "${DISCORD_LIB_PATH}")
   if(NOT EXISTS "${DISCORD_LIB_PATH}/discord_game_sdk.dll.lib")
-    file(DOWNLOAD "https://dl-game-sdk.discordapp.net/latest/discord_game_sdk.zip" "${PROJECT_BINARY_DIR}/discord/game_sdk.zip" TIMEOUT 60 TLS_VERIFY ON)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${PROJECT_BINARY_DIR}/discord/game_sdk.zip" WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/discord")
+    set(DISCORD_GAME_SDK "${DOWNLOADS_DIR}/discord_game_sdk.zip")
+    file(DOWNLOAD "https://dl-game-sdk.discordapp.net/latest/discord_game_sdk.zip" "${DISCORD_GAME_SDK}" TIMEOUT 60 TLS_VERIFY ON)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${DISCORD_GAME_SDK}" WORKING_DIRECTORY "${EXTERNALS_DIR}/discord")
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
       # Discord uses Windows.h (capital W) and that does not play nice when cross-compiling.
       # we want to patch with a lowercase windows.h
-      message(STATUS "Patching discord_game._sdk.h, using a lowercase Windows.h (cross-compilation compatibility)")
-      execute_process(COMMAND sed -i "s/<Windows.h>/<windows.h>/g" c/discord_game_sdk.h WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/discord")
+      message(STATUS "Patching discord_game_sdk.h, using a lowercase Windows.h (cross-compilation compatibility)")
+      execute_process(COMMAND sed -i "s/<Windows.h>/<windows.h>/g" c/discord_game_sdk.h WORKING_DIRECTORY "${EXTERNALS_DIR}/discord")
     endif()
   endif()
+  
   add_library(discord SHARED IMPORTED)
   set_target_properties(discord PROPERTIES
     IMPORTED_LOCATION "${DISCORD_LIB_PATH}/discord_game_sdk.dll"
     IMPORTED_IMPLIB "${DISCORD_LIB_PATH}/discord_game_sdk.dll.lib"
-    INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/discord/c/"
+    INTERFACE_INCLUDE_DIRECTORIES "${EXTERNALS_DIR}/discord/c/"
   )
 endif()
+
+# GLM
+set(GLM_BASE_PATH "${EXTERNALS_DIR}")
+
+if(NOT EXISTS "${GLM_BASE_PATH}/glm/CMakeLists.txt")
+  set(GLM_ZIP "${DOWNLOADS_DIR}/glm.zip")
+  file(DOWNLOAD "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip" "${GLM_ZIP}" TIMEOUT 60 TLS_VERIFY ON)
+
+  file(MAKE_DIRECTORY "${GLM_BASE_PATH}/glm")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${GLM_ZIP}" WORKING_DIRECTORY "${GLM_BASE_PATH}")
+endif()
+
+add_subdirectory("${GLM_BASE_PATH}/glm" "${PROJECT_BINARY_DIR}/glm" EXCLUDE_FROM_ALL)
+add_subdirectory(texconverter/meshoptimizer EXCLUDE_FROM_ALL)
+
+
+# Set minimum target macOS version
+if(APPLE)
+    set(MACOSX_DEPLOYMENT_TARGET "10.10")
+    set(CMAKE_INSTALL_PREFIX ".")
+endif()
+
 
 set(SOURCES
     src/main.cpp
@@ -105,7 +125,6 @@ set(SOURCES
     src/factionInfo.cpp
     src/mesh.cpp
     src/scenarioInfo.cpp
-    src/shaderRegistry.cpp
     src/repairCrew.cpp
     src/GMScriptCallback.cpp
     src/GMMessage.cpp
@@ -266,44 +285,16 @@ set(SOURCES
     src/hardware/devices/uDMXDevice.cpp
     src/hardware/devices/virtualOutputDevice.cpp
     src/hardware/devices/philipsHueDevice.cpp
-    $<$<BOOL:${WIN32}>:EmptyEpsilon.rc>
-    $<$<BOOL:${WIN32}>:src/discord.cpp>
 )
+
+if (WIN32)
+  list(APPEND SOURCES EmptyEpsilon.rc src/discord.cpp)
+endif()
 
 if(ANDROID)
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
 else()
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE WIN32 ${SOURCES})
-endif()
-
-target_include_directories(${PROJECT_NAME} PUBLIC
-    "${PROJECT_SOURCE_DIR}/src"
-    ${SFML_INCLUDE_DIR}
-    ${SDL2_INCLUDE_DIRS}
-    $<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/include>
-)
-
-target_compile_options(${PROJECT_NAME} PUBLIC
-    $<$<NOT:$<BOOL:${MSVC}>>:-Wall -Werror=return-type>
-    $<$<BOOL:${MSVC}>:/MP /permissive->
-)
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    #LINK_FLAGS $<$<SYSTEM_NAME:Darwin>:-framework OpenGL -framework Foundation>
-    MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/osx/MacOSXBundleInfo.plist.in
-    MACOSX_BUNDLE_ICON_FILE "${PROJECT_NAME}.icns"
-)
-
-if(ANDROID)
-  target_link_libraries(${PROJECT_NAME}
-      GLESv1_CM ${SFML_main_LIBRARY} log android EGL
-      "-Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
-else()
-    target_link_libraries(${PROJECT_NAME} PUBLIC
-    seriousproton meshoptimizer
-    ${SDL2_LIBRARIES}
-    $<$<BOOL:${WIN32}>:wsock32> $<$<BOOL:${WIN32}>:iphlpapi> $<$<BOOL:${WIN32}>:discord>
-    $<$<AND:$<BOOL:${MINGW}>,$<BOOL:${ENABLE_CRASH_LOGGER}>>:${DRMINGW_ROOT}/lib/exchndl>
-)	  
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
 endif()
 
 if(COMPRESS_TEXTURES OR CONVERT_MESHES)
@@ -447,47 +438,62 @@ if(COMPRESS_TEXTURES OR CONVERT_MESHES)
     add_dependencies(${PROJECT_NAME} convert_assets)
 endif()
 
+target_compile_definitions(seriousproton_deps
+    INTERFACE
+        WINDOW_TITLE="${PROJECT_NAME}"
+        VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
+
+        # Set RESOURCE_BASE_DIR on Unix so the built binary is able to find resources
+        $<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+        $<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
+        $<$<NOT:$<BOOL:${CONFIG_DIR}>>:CONFIG_DIR="${CMAKE_INSTALL_PREFIX}/share/emptyepsilon/">
+)
+
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+)
+
+add_library(opengl INTERFACE)
+target_link_libraries(opengl
+    INTERFACE
+        "$<IF:$<BOOL:${ANDROID}>,GLESv1_CM;EGL,OpenGL::GL>"
+)
+
+target_link_libraries(${PROJECT_NAME}
+    PUBLIC
+        seriousproton glm::glm opengl
+        "$<$<BOOL:${ANDROID}>:log;android>"
+        "$<$<BOOL:${WIN32}>:iphlpapi;discord>"
+        "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"   
+)
+
+set_target_properties(${PROJECT_NAME}
+    PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/osx/MacOSXBundleInfo.plist.in
+        MACOSX_BUNDLE_ICON_FILE "${PROJECT_NAME}.icns")
+
+if(ANDROID)
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--whole-archive ${SFML_INSTALL_PATH}/lib/${ANDROID_ABI}/libsfml-main.a -Wl,--no-whole-archive")
+endif()
 
 include(InstallRequiredSystemLibraries)
 
+
+set(EE_RESOURCES resources scripts packs)
 if(WIN32)
-if(MINGW)
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++-6.dll OUTPUT_VARIABLE MINGW_STDCPP_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libgcc_s_sjlj-1.dll OUTPUT_VARIABLE MINGW_LIBGCC_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libwinpthread-1.dll OUTPUT_VARIABLE MINGW_PTHREAD_DLL OUTPUT_STRIP_TRAILING_WHITESPACE)
-  install(FILES ${MINGW_STDCPP_DLL} ${MINGW_LIBGCC_DLL} ${MINGW_PTHREAD_DLL} DESTINATION .)
-endif()
-  install(FILES ${SFML_ROOT}/bin/OpenAL32.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libFLAC-8.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libjpeg-62.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libogg-0.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbis-0.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbisenc-2.dll DESTINATION .)
-  #install(FILES ${SFML_ROOT}/bin/libvorbisfile-3.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-audio-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-graphics-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-network-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-system-2.dll DESTINATION .)
-  install(FILES ${SFML_ROOT}/bin/sfml-window-2.dll DESTINATION .)
-  if(ENABLE_CRASH_LOGGER AND MINGW)
-    install(FILES ${DRMINGW_ROOT}/bin/dbghelp.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/exchndl.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/mgwhelp.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/symsrv.dll DESTINATION .)
-    install(FILES ${DRMINGW_ROOT}/bin/symsrv.yes DESTINATION .)
-  endif()
-  install(FILES "${DISCORD_LIB_PATH}/discord_game_sdk.dll" DESTINATION .)
+    
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
+    install(DIRECTORY ${EE_RESOURCES} DESTINATION .)
 
-  install(DIRECTORY resources DESTINATION .)
-  install(DIRECTORY scripts DESTINATION .)
-  install(DIRECTORY packs DESTINATION .)
-  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
+    install(FILES "$<TARGET_PROPERTY:discord,IMPORTED_LOCATION>" DESTINATION .)
+    if(MSVC)
+      # Not all configuration emit a pdb (ie Release), make this optional.
+      install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>" DESTINATION . OPTIONAL)
+    endif()
 elseif(APPLE)
-  install(FILES logo.icns DESTINATION "EmptyEpsilon.app/Contents/Resources" RENAME "${PROJECT_NAME}.icns")
-
-  install(DIRECTORY resources DESTINATION "EmptyEpsilon.app/Contents/Resources")
-  install(DIRECTORY scripts DESTINATION "EmptyEpsilon.app/Contents/Resources")
-  install(DIRECTORY packs DESTINATION "EmptyEpsilon.app/Contents/Resources")
+  install(FILES logo.icns DESTINATION "${PROJECT_NAME}.app/Contents/Resources" RENAME "${PROJECT_NAME}.icns")
+  install(DIRECTORY ${EE_RESOURCES} DESTINATION "${PROJECT_NAME}.app/Contents/Resources")
 elseif(ANDROID)
   android_apk(EmptyEpsilon)
 else()
@@ -540,21 +546,22 @@ endif()
 
 find_package(PythonInterp)
 if(PYTHONINTERP_FOUND)
-  add_custom_command(
-        OUTPUT ${PROJECT_BINARY_DIR}/script_reference.html
-        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/compile_script_docs.py ${PROJECT_BINARY_DIR}/script_reference.html
+    set(SCRIPT_REFERENCE_HTML "${PROJECT_BINARY_DIR}/script_reference.html")
+    add_custom_command(
+        OUTPUT "${SCRIPT_REFERENCE_HTML}"
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/compile_script_docs.py "${SCRIPT_REFERENCE_HTML}"
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Building script reference documentation.")
-  add_custom_target(script_reference ALL DEPENDS ${CMAKE_BINARY_DIR}/script_reference.html)
+    add_custom_target(script_reference ALL DEPENDS "${SCRIPT_REFERENCE_HTML}")
   
   # Matches install logic above.
   if(WIN32)
-    install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION .)
+    install(FILES "${SCRIPT_REFERENCE_HTML}" DESTINATION .)
   elseif(APPLE)
-    install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "EmptyEpsilon.app/Contents/Resources")
+    install(FILES "${SCRIPT_REFERENCE_HTML}" DESTINATION "${PROJECT_NAME}.app/Contents/Resources")
   elseif(NOT ANDROID)
     # DOCDIR already has PROJECT_NAME (EmptyEpsilon) appended (from CMake docs)
-    install(FILES ${CMAKE_BINARY_DIR}/script_reference.html DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+    install(FILES "${SCRIPT_REFERENCE_HTML}" DESTINATION "${CMAKE_INSTALL_DOCDIR}")
   endif()
 endif()
 
@@ -577,5 +584,13 @@ if(NOT DEFINED CPACK_GENERATOR)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfml")
   endif()
 endif()
+
+# Setup install targets:
+# - For EE, we use everything that's been provided with install command.
+# - For SP, we use only the things having the 'runtime' component (ie shared libs).
+set(CPACK_INSTALL_CMAKE_PROJECTS
+    "${PROJECT_BINARY_DIR};${PROJECT_NAME};ALL;/"
+    "${PROJECT_BINARY_DIR}/SeriousProton;SeriousProton;runtime;/"
+)
 
 include(CPack)
