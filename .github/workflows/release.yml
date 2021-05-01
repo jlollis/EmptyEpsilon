@@ -133,7 +133,7 @@ jobs:
           Expand-Archive -LiteralPath $sfml_zip -DestinationPath "${{github.workspace}}/externals"
           echo @"
           cmake_generator="Visual Studio 16 2019"
-          cpack_generator="ZIP;WIX"
+          cpack_generator="ZIP"
           cmake_platform_args=-A Win32 -DSFML_ROOT:PATH=../externals/SFML-2.5.1
           "@ >> $Env:GITHUB_ENV
       - name: SeriousProton Checkout
