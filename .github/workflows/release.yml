@@ -68,6 +68,10 @@ jobs:
           -DCMAKE_MAKE_PROGRAM:FILEPATH=$(which ninja)
           -DCMAKE_BUILD_TYPE:STRING=Release
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
+          -DCPACK_PACKAGE_VERSION_MAJOR:STRING=${{ env.version_major }}
+          -DCPACK_PACKAGE_VERSION_MINOR:STRING=${{ env.version_minor }}
+          -DCPACK_PACKAGE_VERSION_PATCH:STRING=${{ env.version_patch }}
+          -DCPACK_PACKAGE_VERSION_TWEAK:STRING=${{ env.version_tweak }}
           -DANDROID_SDK_PATH:PATH=$ANDROID_SDK_ROOT
           -DANDROID_API_TARGET:STRING=27
           -DANDROID_SIGN_KEY_NAME:STRING=androiddebugkey
@@ -156,10 +160,10 @@ jobs:
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
           -DCPACK_GENERATOR=${{ env.cpack_generator }}
-          -DCPACK_PACKAGE_VERSION_MAJOR=${{ env.version_major }}
-          -DCPACK_PACKAGE_VERSION_MINOR=${{ env.version_minor }}
-          -DCPACK_PACKAGE_VERSION_PATCH=${{ env.version_patch }}
-          -DCPACK_PACKAGE_VERSION_TWEAK=${{ env.version_tweak }}
+          -DCPACK_PACKAGE_VERSION_MAJOR:STRING=${{ env.version_major }}
+          -DCPACK_PACKAGE_VERSION_MINOR:STRING=${{ env.version_minor }}
+          -DCPACK_PACKAGE_VERSION_PATCH:STRING=${{ env.version_patch }}
+          -DCPACK_PACKAGE_VERSION_TWEAK:STRING=${{ env.version_tweak }}
           ${{ env.cmake_platform_args }}
       - name: Build
         working-directory: ${{github.workspace}}/build
