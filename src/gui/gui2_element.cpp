@@ -272,8 +272,19 @@ void GuiElement::updateRect(sf::FloatRect parent_rect)
     }
 }
 
-void GuiElement::adjustRenderTexture(sf::RenderTexture& texture)
+[[nodiscard]]
+bool GuiElement::adjustRenderTexture(sf::RenderTexture& texture)
 {
+#ifdef SFML_SYSTEM_ANDROID
+    /* On GL ES systems, SFML runs on assumptions regarding
+    the available GL extensions, for instance considering packed depth/stencil is never available.[1]
+    Because of that unreliability, just forego render textures on those systems.
+
+      [1]: https://github.com/SFML/SFML/blob/2f11710abc5aa478503a7ff3f9e654bd2078ebab/src/SFML/Graphics/GLExtensions.hpp#L128
+    */
+    return false;
+#else
+    auto success = true;
     P<WindowManager> window_manager = engine->getObject("windowManager");
 
     //Hack the rectangle for this element so it sits perfectly on pixel boundaries.
@@ -283,11 +294,18 @@ void GuiElement::adjustRenderTexture(sf::RenderTexture& texture)
     if (texture.getSize() != texture_size)
     {
         sf::ContextSettings settings{};
-        texture.create(texture_size.x, texture_size.y, settings);
+        settings.stencilBits = 8;
+        success = texture.create(texture_size.x, texture_size.y, settings);
     }
 
-    //Set the view so it covers this elements normal rect. So we can draw exactly the same on this texture as no the normal screen.
-    texture.setView(sf::View{ rect });
+    if (success)
+    {
+        //Set the view so it covers this elements normal rect. So we can draw exactly the same on this texture as no the normal screen.
+        texture.setView(sf::View{ rect });
+    }
+
+    return success;
+#endif
 }
 
 void GuiElement::drawRenderTexture(sf::RenderTexture& texture, sf::RenderTarget& window, sf::Color color, const sf::RenderStates& states)

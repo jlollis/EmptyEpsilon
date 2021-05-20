@@ -9,6 +9,8 @@
 
 #include "scriptInterface.h"
 
+#include "i18n.h"
+
 /// A mine object. Simple, effective, deadly.
 REGISTER_SCRIPT_SUBCLASS(Mine, SpaceObject)
 {
@@ -157,10 +159,10 @@ std::unordered_map<string, string> Mine::getGMInfo()
 
     if (owner)
     {
-        ret["Owner"] = owner->getCallSign();
+        ret[trMark("gm_info", "Owner")] = owner->getCallSign();
     }
 
-    ret["Faction"] = getLocaleFaction();
+    ret[trMark("gm_info", "Faction")] = getLocaleFaction();
 
     return ret;
 }
