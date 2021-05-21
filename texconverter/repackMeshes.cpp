@@ -322,21 +322,6 @@ size_t optimize_model(const std::vector<uint8_t>& mesh, std::vector<uint8_t>& op
 	std::vector<Vertex> vertices(vertex_count);
 
 	memcpy(vertices.data(), mesh.data() + sizeof(int32_t), vertex_count * sizeof(Vertex));
-	
-#if 1
-	for (auto tri = 0; tri < vertex_count; tri += 3)
-	{
-		for (auto v = 0; v < 3; ++v)
-		{
-			// unflip X.
-			vertices[tri + v].position[0] = -vertices[tri + v].position[0];
-			vertices[tri + v].normal[0] = -vertices[tri + v].normal[0];
-		}
-
-		// Model vertices are stored clockwise - we want to go counter-clockwise.
-		std::swap(vertices[tri + 1], vertices[tri + 2]);
-	}
-#endif
 
 	return optimize_vertices(vertices.data(), vertices.size(), optimized);
 }
