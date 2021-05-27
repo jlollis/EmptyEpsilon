@@ -207,6 +207,8 @@ void ModelData::render(const glm::mat4& model_matrix)
 
     ShaderRegistry::ScopedShader shader(shader_id);
 
+    // EE's coordinate flips to a Z-up left hand.
+    // To account for that, flip the model around 180deg.
     auto modeldata_matrix = glm::rotate(model_matrix, glm::radians(180.f), glm::vec3{ 0.f, 0.f, 1.f });
     modeldata_matrix = glm::scale(modeldata_matrix, glm::vec3(scale));
     modeldata_matrix = glm::translate(modeldata_matrix, glm::vec3(mesh_offset.x, mesh_offset.y, mesh_offset.z));

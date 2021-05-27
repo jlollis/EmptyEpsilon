@@ -121,7 +121,6 @@ void ModelInfo::renderShield(float alpha, float angle, const glm::mat4& model_ma
 {
 #if FEATURE_3D_RENDERING
     if (!data) return;
-
     Mesh* m = Mesh::getMesh("half_sphere.obj");
     {
         ShaderRegistry::ScopedShader basicShader(ShaderRegistry::Shaders::Basic);
