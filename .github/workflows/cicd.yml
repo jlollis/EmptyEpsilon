@@ -163,3 +163,15 @@ jobs:
         with:
           name: emptyepsilon-win-${{ matrix.arch }}-${{matrix.build_type }}.zip
           path: ${{ github.workspace }}/build/EmptyEpsilon.zip
+  luatest:
+    name: LuaTest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Update apt index
+      run: sudo apt-get update -qq
+    - name: Install SFML
+      run: sudo apt-get install lua5.3
+    - name: Checkout EmptyEpsilon
+      uses: actions/checkout@v2
+    - name: Test if lua scripts parse
+      run: find scripts/ -iname "*.lua" | xargs -P 4 -n 1 luac -p
