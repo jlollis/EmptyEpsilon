@@ -138,7 +138,7 @@ jobs:
           echo @"
           cmake_generator="Visual Studio 16 2019"
           cpack_generator="ZIP;WIX"
-          cmake_platform_args=-A Win32 -DSFML_ROOT:PATH=../externals/SFML-2.5.1
+          cmake_platform_args=-DENABLE_CRASH_LOGGER:BOOL=ON -A Win32 -DSFML_ROOT:PATH=../externals/SFML-2.5.1
           "@ >> $Env:GITHUB_ENV
       - name: SeriousProton Checkout
         uses: actions/checkout@v2
@@ -157,7 +157,8 @@ jobs:
         run: >
           cmake ../EmptyEpsilon
           -G ${{ env.cmake_generator }}
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DWITH_DISCORD:BOOL=ON
+          -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
           -DCPACK_GENERATOR=${{ env.cpack_generator }}
           -DCPACK_PACKAGE_VERSION_MAJOR:STRING=${{ env.version_major }}
