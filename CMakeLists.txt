@@ -427,6 +427,13 @@ add_custom_target(update_locale
     COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -d resources/locale/tutorial.en scripts/tutorial_*.lua
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+if(APPLE)
+  # This *MUST* be the last install target.
+  # Otherwise, for some messed up reason,
+  # other install targets will not be accounted for when creating a DMG bundle.
+  install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION . RUNTIME DESTINATION bin)
+endif()
+
 # Generic settings
 set(CPACK_PACKAGE_EXECUTABLES "${PROJECT_NAME};Empty Epsilon (${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})")
 set(CPACK_PACKAGE_CONTACT "https://github.com/daid/")
