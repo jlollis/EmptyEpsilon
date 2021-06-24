@@ -1,6 +1,41 @@
+set(sp_runtime_root "/")
+
 if(CPACK_GENERATOR MATCHES "DEB")
     # On UNIX, the CMAKE_INSTALL_PREFIX will default to /usr/local.
     # But the debian *package* will default to put everything under /usr.
     # Since the resource path are hardcoded inside EE, make sure they line up.
     set(CPACK_PACKAGING_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
+endif()
+
+if(CPACK_GENERATOR MATCHES "WIX")
+    if (CPACK_PACKAGE_VERSION_MAJOR GREATER 100)
+	    # WIX does not like major version number > 256.
+	    # So if we're above 100, assume it's a year-like format and strip out century/millenium.
+	    math(EXPR CPACK_PACKAGE_VERSION_MAJOR "${CPACK_PACKAGE_VERSION_MAJOR} % 100")
+
+        # WIX only care for the bundled PACKAGE_VERSION - fix only this one.
+        set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+    endif()
+
+    # WIX is... weird.
+    # When packaging, it puts each 'component' into a subdirectory.
+    # Things without a specific component fall under an 'Unspecified' catch-all one[1]
+    # Now when using components, with install targets coming from different projects (via the CPACK_INSTALL_CMAKE_PROJECTS below)
+    # it seems it's just... lost: components ends up in the root directory of the packaging tree instead of the component's.
+    # So we shove everything that's coming from runtime straight under the 'runtime' tree, and voila, we pleased the CMake gods.
+    #
+    # [1]: https://cmake.org/cmake/help/v3.8/variable/CMAKE_INSTALL_DEFAULT_COMPONENT_NAME.html#variable:CMAKE_INSTALL_DEFAULT_COMPONENT_NAME
+    set(sp_runtime_root "/runtime")
+endif()
+
+# Setup install targets:
+# - For EE, we use everything that's been provided with install command.
+# - For SP, we use only the things having the 'runtime' component (ie shared libs).
+set(CPACK_INSTALL_CMAKE_PROJECTS
+    "@PROJECT_BINARY_DIR@;@PROJECT_NAME@;ALL;/"
+    "@PROJECT_BINARY_DIR@/SeriousProton;SeriousProton;runtime;${sp_runtime_root}"
+)
+
+if(DEFINED @CPACK_PACKAGE_VERSION_TWEAK@)  
+	set(CPACK_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION}.@CPACK_PACKAGE_VERSION_TWEAK@)
 endif()
