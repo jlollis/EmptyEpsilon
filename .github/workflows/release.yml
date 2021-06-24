@@ -116,7 +116,7 @@ jobs:
           cat >> $GITHUB_ENV <<EOF
           cmake_generator=Ninja
           cpack_generator=DragNDrop
-          cmake_platform_args=-DCMAKE_INSTALL_PREFIX:PATH=. -DSFML_ROOT:PATH=../SFML-2.5.1-macos-clang/Frameworks
+          cmake_platform_args=-DSFML_ROOT:PATH=../SFML-2.5.1-macos-clang/Frameworks
           EOF
       - name: Linux Setup
         if: matrix.os == 'ubuntu'
