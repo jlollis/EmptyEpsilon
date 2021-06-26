@@ -105,19 +105,6 @@ if(WITH_DISCORD)
   target_link_libraries(discord INTERFACE discord_h)
 endif()
 
-# GLM
-set(GLM_BASE_PATH "${EXTERNALS_DIR}")
-
-if(NOT EXISTS "${GLM_BASE_PATH}/glm/CMakeLists.txt")
-  set(GLM_ZIP "${DOWNLOADS_DIR}/glm.zip")
-  file(DOWNLOAD "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip" "${GLM_ZIP}" TIMEOUT 60 TLS_VERIFY ON)
-
-  file(MAKE_DIRECTORY "${GLM_BASE_PATH}/glm")
-  execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf "${GLM_ZIP}" WORKING_DIRECTORY "${GLM_BASE_PATH}")
-endif()
-
-add_subdirectory("${GLM_BASE_PATH}/glm" "${PROJECT_BINARY_DIR}/glm" EXCLUDE_FROM_ALL)
-
 set(SOURCES
     src/main.cpp
     src/threatLevelEstimate.cpp
@@ -347,7 +334,7 @@ target_link_libraries(opengl
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        seriousproton glm::glm opengl
+        seriousproton opengl
         "$<$<BOOL:${ANDROID}>:log;android>"
         "$<$<BOOL:${WIN32}>:iphlpapi>"
         "$<$<BOOL:${WITH_DISCORD}>:discord_h>"
@@ -377,7 +364,6 @@ if(WIN32)
       install(FILES "$<TARGET_PDB_FILE:${PROJECT_NAME}>" DESTINATION . OPTIONAL)
     endif()
 elseif(APPLE)
-  install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION . RUNTIME DESTINATION bin)
   install(FILES logo.icns DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources" RENAME "${PROJECT_NAME}.icns")
   install(DIRECTORY ${EE_RESOURCES} DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources")
 elseif(ANDROID)
@@ -426,6 +412,13 @@ add_custom_target(update_locale
     COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -j -d resources/locale/main.en scripts/shipTemplates_*.lua scripts/comms_ship.lua scripts/comms_station.lua scripts/comms_supply_drop.lua scripts/factionInfo.lua scripts/science_db.lua
     COMMAND xgettext --keyword=_:1c,2 --keyword=_:1 --omit-header -d resources/locale/tutorial.en scripts/tutorial_*.lua
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+if(APPLE)
+  # This *MUST* be the last install target.
+  # Otherwise, for some messed up reason,
+  # other install targets will not be accounted for when creating a DMG bundle.
+  install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION . RUNTIME DESTINATION bin)
+endif()
 
 # Generic settings
 set(CPACK_PACKAGE_EXECUTABLES "${PROJECT_NAME};Empty Epsilon (${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})")
