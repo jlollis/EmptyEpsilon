@@ -34,8 +34,10 @@ public:
     void setOrbit(P<SpaceObject> target, float orbit_time);
 
     virtual string getExportLine() override;
+
 protected:
     glm::mat4 getModelMatrix() const override;
+
 private:
     //Config:
     float planet_size;

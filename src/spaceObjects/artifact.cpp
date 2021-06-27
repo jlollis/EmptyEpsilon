@@ -3,6 +3,8 @@
 #include "playerSpaceship.h"
 #include "main.h"
 
+#include <glm/ext/matrix_transform.hpp>
+
 #include "scriptInterface.h"
 
 #include <glm/ext/matrix_transform.hpp>
@@ -212,7 +214,6 @@ string Artifact::getExportLine()
 glm::mat4 Artifact::getModelMatrix() const
 {
     auto matrix = SpaceObject::getModelMatrix();
-    
     if (artifact_spin != 0.f)
         matrix = glm::rotate(matrix, glm::radians(engine->getElapsedTime() * artifact_spin), glm::vec3(0.f, 0.f, 1.f));
     return matrix;

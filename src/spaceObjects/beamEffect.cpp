@@ -8,6 +8,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+#include <glm/ext/matrix_transform.hpp>
+
 #if FEATURE_3D_RENDERING
 struct VertexAndTexCoords
 {
@@ -191,6 +193,6 @@ void BeamEffect::setTarget(P<SpaceObject> target, sf::Vector2f hitLocation)
 
 glm::mat4 BeamEffect::getModelMatrix() const
 {
-    auto position = const_cast<BeamEffect*>(this)->getPosition();
+    auto position = getPosition();
     return glm::translate(SpaceObject::getModelMatrix(), -glm::vec3(position.x, position.y, 0.f));
 }

@@ -14,6 +14,8 @@
 #include "glObjects.h"
 #include "shaderRegistry.h"
 
+#include <glm/ext/matrix_transform.hpp>
+
 #define FORCE_MULTIPLIER          50.0
 #define FORCE_MAX                 10000.0
 #define ALPHA_MULTIPLIER          10.0
@@ -196,8 +198,5 @@ void WormHole::onTeleportation(ScriptSimpleCallback callback)
 
 glm::mat4 WormHole::getModelMatrix() const
 {
-    auto position = const_cast<WormHole*>(this)->getPosition();
-    auto rotation = const_cast<WormHole*>(this)->getRotation();
-    auto worm_matrix = glm::rotate(SpaceObject::getModelMatrix(), glm::radians(rotation), glm::vec3(0.f, 0.f, -1.f));
-    return glm::translate(worm_matrix, -glm::vec3(position.x, position.y, 0.f));
+    return glm::identity<glm::mat4>();
 }
