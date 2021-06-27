@@ -522,9 +522,6 @@ else()
         install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-audio.so.2.5.1"
                 DESTINATION "${bin_root}"
                 RENAME libsfml-audio.so.2.5)
-        install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-network.so.2.5.1"
-                DESTINATION "${bin_root}"
-                RENAME libsfml-network.so.2.5)
         install(PROGRAMS "${CMAKE_SYSROOT}/${SFML_ROOT}/lib/libsfml-system.so.2.5.1"
                 DESTINATION "${bin_root}"
                 RENAME libsfml-system.so.2.5)

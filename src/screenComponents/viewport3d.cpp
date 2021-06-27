@@ -357,7 +357,7 @@ void GuiViewport3D::onDraw(sf::RenderTarget& window)
         if (render_list.capacity() < space_object_list.size())
             render_list.reserve(space_object_list.size());
 
-        const auto model_matrix = obj->getWorldTransform();
+        const auto model_matrix = obj->getModelTransform();
         const glm::vec3 world_center{ model_matrix * glm::vec4{glm::vec3{0.f}, 1.f} };
         if (std::get<0>(frustum).IsBoxVisible(world_center - glm::vec3{ obj->getRadius() }, world_center + glm::vec3{ obj->getRadius() }))
             render_lists[render_list_index].emplace_back(*obj, depth);
