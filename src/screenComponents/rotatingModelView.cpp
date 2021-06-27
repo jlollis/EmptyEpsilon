@@ -26,7 +26,7 @@ void GuiRotatingModelView::onDraw(sf::RenderTarget& window)
     if (rect.width <= 0) return;
     if (!model) return;
 
-    window.popGLStates();
+    window.setActive();
 
     float camera_fov = 60.0f;
     float sx = window.getSize().x * window.getView().getViewport().width / window.getView().getSize().x;
@@ -140,6 +140,7 @@ void GuiRotatingModelView::onDraw(sf::RenderTarget& window)
     }
     glDisable(GL_DEPTH_TEST);
 
-    window.pushGLStates();
+    window.resetGLStates();
+    window.setActive(false);
 #endif//FEATURE_3D_RENDERING
 }

@@ -33,7 +33,13 @@ REGISTER_SCRIPT_CLASS(ModelData)
 std::unordered_map<string, P<ModelData> > ModelData::data_map;
 
 ModelData::ModelData()
-: loaded(false), mesh(nullptr), texture(nullptr), specular_texture(nullptr), illumination_texture(nullptr), shader_id(ShaderRegistry::Shaders::Count), scale(1.0), radius(1.0)
+:
+    loaded(false), mesh(nullptr),
+    texture(nullptr), specular_texture(nullptr), illumination_texture(nullptr),
+#if FEATURE_3D_RENDERING
+    shader_id(ShaderRegistry::Shaders::Count),
+#endif
+scale(1.f), radius(1.f)
 {
 }
 
@@ -163,7 +169,7 @@ void ModelData::load()
             specular_texture = textureManager.getTexture(specular_texture_name);
         if (illumination_texture_name != "")
             illumination_texture = textureManager.getTexture(illumination_texture_name);
-
+#if FEATURE_3D_RENDERING
         if (texture && specular_texture && illumination_texture)
             shader_id = ShaderRegistry::Shaders::ObjectSpecularIllumination;
         else if (texture && specular_texture)
@@ -172,7 +178,7 @@ void ModelData::load()
             shader_id = ShaderRegistry::Shaders::ObjectIllumination;
         else
             shader_id = ShaderRegistry::Shaders::Object;
-
+#endif
         loaded = true;
     }
 }
@@ -189,7 +195,8 @@ P<ModelData> ModelData::getModel(string name)
 
 std::vector<string> ModelData::getModelDataNames()
 {
-    std::vector<string> ret(data_map.size());
+    std::vector<string> ret;
+    ret.reserve(data_map.size());
     for(const auto &it : data_map)
     {
         ret.emplace_back(it.first);

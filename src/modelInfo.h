@@ -5,7 +5,7 @@
 
 #include <glm/mat4x4.hpp>
 
-class ModelInfo : sf::NonCopyable
+class ModelInfo : sp::NonCopyable
 {
 private:
     P<ModelData> data;

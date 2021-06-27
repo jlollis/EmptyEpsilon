@@ -4,6 +4,7 @@
 #include "scienceDatabase.h"
 #include "spaceObjects/nebula.h"
 #include "preferenceManager.h"
+#include "shipTemplate.h"
 
 #include "screenComponents/radarView.h"
 #include "screenComponents/rawScannerDataRadarOverlay.h"
@@ -254,7 +255,7 @@ void ScienceScreen::onDraw(sf::RenderTarget& window)
         if (targets.get() && (probe->getPosition() - targets.get()->getPosition()) > 5000.0f)
             targets.clear();
     }else{
-        if (targets.get() && Nebula::blockedByNebula(my_spaceship->getPosition(), targets.get()->getPosition()))
+        if (targets.get() && Nebula::blockedByNebula(my_spaceship->getPosition(), targets.get()->getPosition(), my_spaceship->getShortRangeRadarRange()))
             targets.clear();
     }
 
@@ -313,13 +314,12 @@ void ScienceScreen::onDraw(sf::RenderTarget& window)
         info_relspeed->setValue(string(rel_velocity / 1000.0f * 60.0f, 1) + DISTANCE_UNIT_1K + "/min");
 
         string description = obj->getDescriptionFor(my_spaceship);
-        string sidebar_pager_selection = sidebar_pager->getSelectionValue();
 
         if (description.size() > 0)
         {
             info_description->setText(description)->show();
 
-            if (!sidebar_pager->indexByValue("Description"))
+            if (sidebar_pager->indexByValue("Description") < 0)
             {
                 sidebar_pager->addEntry("Description", "Description");
             }
@@ -327,7 +327,11 @@ void ScienceScreen::onDraw(sf::RenderTarget& window)
         else
         {
             sidebar_pager->removeEntry(sidebar_pager->indexByValue("Description"));
+            if (sidebar_pager->getSelectionIndex() < 0)
+                sidebar_pager->setSelectionIndex(0);
         }
+
+        string sidebar_pager_selection = sidebar_pager->getSelectionValue();
 
         // If the target is a ship, show information about the ship based on how
         // deeply we've scanned it.
@@ -398,6 +402,20 @@ void ScienceScreen::onDraw(sf::RenderTarget& window)
                 {
                     info_shield_frequency->setFrequency(ship->shield_frequency);
                     info_beam_frequency->setFrequency(ship->beam_frequency);
+
+                    // Show on graph information that target has no shields instead of frequencies. 
+                    info_shield_frequency->setEnemyHasEquipment(ship->getShieldCount() > 0);
+
+                    // Show on graph information that target has no beams instad of frequencies. 
+                    bool has_beams = false;
+                    for(int n = 0; n < max_beam_weapons; n++)
+                    {
+                        if (ship->beam_weapons[n].getRange() > 0.0) {
+                            has_beams = true;
+                            break;
+                        }
+                    }
+                    info_beam_frequency->setEnemyHasEquipment(has_beams);
                 }
 
                 // Show the status of each subsystem.
@@ -485,7 +503,7 @@ void ScienceScreen::onHotkey(const HotkeyResult& key)
                 // If this object is my ship or not visible due to a Nebula,
                 // skip it.
                 if (obj == my_spaceship ||
-                    Nebula::blockedByNebula(my_spaceship->getPosition(), obj->getPosition()))
+                    Nebula::blockedByNebula(my_spaceship->getPosition(), obj->getPosition(), my_spaceship->getShortRangeRadarRange()))
                     continue;
 
                 // If this is a scannable object and the currently selected
@@ -504,7 +522,7 @@ void ScienceScreen::onHotkey(const HotkeyResult& key)
             {
                 if (obj == targets.get() ||
                     obj == my_spaceship ||
-                    Nebula::blockedByNebula(my_spaceship->getPosition(), obj->getPosition()))
+                    Nebula::blockedByNebula(my_spaceship->getPosition(), obj->getPosition(), my_spaceship->getShortRangeRadarRange()))
                     continue;
 
                 if (sf::length(obj->getPosition() - my_spaceship->getPosition()) < science_radar->getDistance() &&

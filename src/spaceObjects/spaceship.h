@@ -3,6 +3,7 @@
 #include <i18n.h>
 
 #include <array>
+#include <optional>
 
 #include "shipTemplateBasedObject.h"
 #include "spaceStation.h"
@@ -34,6 +35,14 @@ enum EDockingState
     DS_Docking,
     DS_Docked
 };
+
+struct Speeds
+{
+    float forward;
+    float reverse;
+};
+template<> int convert<Speeds>::returnType(lua_State* L, const Speeds &speeds);
+
 
 class ShipSystem
 {
@@ -118,9 +127,19 @@ public:
     float impulse_max_speed;
 
     /*!
+     * [config] Max speed of the reverse impulse engines, in m/s
+     */
+    float impulse_max_reverse_speed;
+
+    /*!
      * [config] Impulse engine acceleration, in (m/s)/s
      */
     float impulse_acceleration;
+
+    /*!
+     * [config] Impulse engine acceleration in reverse, in (m/s)/s
+     */
+    float impulse_reverse_acceleration;
 
     /*!
      * [config] True if we have a warpdrive.
@@ -320,6 +339,7 @@ public:
     bool isDocked(P<SpaceObject> target) { return docking_state == DS_Docked && docking_target == target; }
     P<SpaceObject> getDockedWith() { if (docking_state == DS_Docked) return docking_target; return NULL; }
     bool canStartDocking() { return current_warp <= 0.0 && (!has_jump_drive || jump_delay <= 0.0); }
+    EDockingState getDockingState() { return docking_state; }
     int getWeaponStorage(EMissileWeapons weapon) { if (weapon == MW_None) return 0; return weapon_storage[weapon]; }
     int getWeaponStorageMax(EMissileWeapons weapon) { if (weapon == MW_None) return 0; return weapon_storage_max[weapon]; }
     void setWeaponStorage(EMissileWeapons weapon, int amount) { if (weapon == MW_None) return; weapon_storage[weapon] = amount; }
@@ -348,16 +368,23 @@ public:
     void setSystemPowerFactor(ESystem system, float factor) { if (system >= SYS_COUNT) return; if (system <= SYS_None) return; systems[system].power_factor = factor; }
     float getSystemCoolant(ESystem system) { if (system >= SYS_COUNT) return 0.0; if (system <= SYS_None) return 0.0; return systems[system].coolant_level; }
     void setSystemCoolant(ESystem system, float coolant) { if (system >= SYS_COUNT) return; if (system <= SYS_None) return; systems[system].coolant_level = std::min(1.0f, std::max(0.0f, coolant)); }
+    Speeds getImpulseMaxSpeed() {return {impulse_max_speed, impulse_max_reverse_speed};}
+    void setImpulseMaxSpeed(float forward_speed, std::optional<float> reverse_speed) 
+    { 
+        impulse_max_speed = forward_speed; 
+        impulse_max_reverse_speed = reverse_speed.value_or(forward_speed);
+    }
     float getSystemCoolantRate(ESystem system) const { if (system >= SYS_COUNT) return 0.f; if (system <= SYS_None) return 0.f; return systems[system].coolant_rate_per_second; }
     void setSystemCoolantRate(ESystem system, float rate) { if (system >= SYS_COUNT) return; if (system <= SYS_None) return; systems[system].coolant_rate_per_second = rate; }
-    float getImpulseMaxSpeed() { return impulse_max_speed; }
-    void setImpulseMaxSpeed(float speed) { impulse_max_speed = speed; }
     float getRotationMaxSpeed() { return turn_speed; }
     void setRotationMaxSpeed(float speed) { turn_speed = speed; }
-    float getAcceleration() { return impulse_acceleration; }
-    void setAcceleration(float acceleration) { impulse_acceleration = acceleration; }
+    Speeds getAcceleration() { return {impulse_acceleration, impulse_reverse_acceleration};}
+    void setAcceleration(float acceleration, std::optional<float> reverse_acceleration) 
+    { 
+        impulse_acceleration = acceleration; 
+        impulse_reverse_acceleration = reverse_acceleration.value_or(acceleration);
+    }
     void setCombatManeuver(float boost, float strafe) { combat_maneuver_boost_speed = boost; combat_maneuver_strafe_speed = strafe; }
-
     bool hasJumpDrive() { return has_jump_drive; }
     void setJumpDrive(bool has_jump) { has_jump_drive = has_jump; }
     void setJumpDriveRange(float min, float max) { jump_drive_min_distance = min; jump_drive_max_distance = max; }
@@ -384,6 +411,7 @@ public:
      }
     float getJumpDriveCharge() { return jump_drive_charge; }
     void setJumpDriveCharge(float charge) { jump_drive_charge = charge; }
+    float getJumpDelay() { return jump_delay; }
 
     float getBeamWeaponArc(int index) { if (index < 0 || index >= max_beam_weapons) return 0.0; return beam_weapons[index].getArc(); }
     float getBeamWeaponDirection(int index) { if (index < 0 || index >= max_beam_weapons) return 0.0; return beam_weapons[index].getDirection(); }
@@ -470,6 +498,7 @@ public:
     // Return a string that can be appended to an object create function in the lua scripting.
     // This function is used in getScriptExport calls to adjust for tweaks done in the GM screen.
     string getScriptExportModificationsOnTemplate();
+    
 };
 
 float frequencyVsFrequencyDamageFactor(int beam_frequency, int shield_frequency);

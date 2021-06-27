@@ -85,7 +85,7 @@ bool EvasionAI::evadeIfNecessary()
         P<SpaceShip> ship = obj;
         if (!ship || !owner->isEnemy(ship))
             continue;
-        if (ship->canHideInNebula() && Nebula::blockedByNebula(position, ship->getPosition()))
+        if (ship->canHideInNebula() && Nebula::blockedByNebula(position, ship->getPosition(), owner->getShortRangeRadarRange()))
             continue;
         float score = evasionDangerScore(ship, scan_radius);
         if (score == std::numeric_limits<float>::min())
@@ -173,7 +173,8 @@ float EvasionAI::evasionDangerScore(P<SpaceShip> ship, float scan_radius)
         danger += enemy_beam_dps * (4*enemy_max_beam_range - std::max(distance, enemy_max_beam_range)) / (3 * enemy_max_beam_range);
     }
 
-    if (ship->getImpulseMaxSpeed() > owner->getImpulseMaxSpeed()) danger *= 1.5;
+    if (std::max(ship->getImpulseMaxSpeed().forward,ship->getImpulseMaxSpeed().reverse) 
+            > std::max(owner->getImpulseMaxSpeed().forward, owner->getImpulseMaxSpeed().reverse)) danger *= 1.5; //yes that sound stupid somebody had mounted its forward reactor on reverse but...
     if (P<CpuShip>(ship->getTarget()) == P<CpuShip>(owner)) danger = (danger + 1) * 2;
     return danger;
 }
