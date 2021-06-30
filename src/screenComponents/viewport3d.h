@@ -4,15 +4,18 @@
 #include "gui/gui2_element.h"
 #include "glObjects.h"
 
+#include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
+
 class GuiViewport3D : public GuiElement
 {
     bool show_callsigns;
     bool show_headings;
     bool show_spacedust;
 
-    double projection_matrix[16];
-    double model_matrix[16];
-    double viewport[4];
+    glm::mat4 projection_matrix;
+    glm::mat4 model_matrix;
+    glm::vec4 viewport;
 
 #if FEATURE_3D_RENDERING
     enum class Uniforms : uint8_t
@@ -71,7 +74,7 @@ public:
     GuiViewport3D* showHeadings() { show_headings = true; return this; }
     GuiViewport3D* showSpacedust() { show_spacedust = true; return this; }
 private:
-    sf::Vector3f worldToScreen(sf::RenderTarget& window, sf::Vector3f world);
+    glm::vec3 worldToScreen(sf::RenderTarget& window, glm::vec3 world);
 };
 
 #endif//VIEWPORT_3D_H

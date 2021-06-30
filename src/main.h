@@ -2,12 +2,9 @@
 #define MAIN_H
 
 #include "engine.h"
+#include "config.h"
 
-#ifndef VERSION_NUMBER
-#define VERSION_NUMBER 0x0000
-#endif
-
-extern sf::Vector3f camera_position;
+extern glm::vec3 camera_position;
 extern float camera_yaw;
 extern float camera_pitch;
 extern sf::Font* main_font;

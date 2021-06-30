@@ -80,7 +80,7 @@ void MissileWeapon::update(float delta)
 
     if (delta > 0)
     {
-        ParticleEngine::spawn(sf::Vector3f(getPosition().x, getPosition().y, 0), sf::Vector3f(getPosition().x, getPosition().y, 0), sf::Vector3f(1, 0.8, 0.8), sf::Vector3f(0, 0, 0), 5, 20, 5.0);
+        ParticleEngine::spawn(glm::vec3(getPosition().x, getPosition().y, 0), glm::vec3(getPosition().x, getPosition().y, 0), glm::vec3(1, 0.8, 0.8), glm::vec3(0, 0, 0), 5, 20, 5.0);
     }
 }
 
@@ -128,7 +128,7 @@ void MissileWeapon::updateMovement()
         // Small missiles have a larger speed & rotational speed, large ones are slower and turn less fast
         float size_speed_modifier = 1 / category_modifier;
 
-        float angle_diff = sf::angleDifference(getRotation(), target_angle);
+        float angle_diff = angleDifference(getRotation(), target_angle);
 
         if (angle_diff > 1.0)
             setAngularVelocity(data.turnrate * size_speed_modifier);

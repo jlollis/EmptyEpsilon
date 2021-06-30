@@ -49,6 +49,11 @@ endif()
 
 message(STATUS "EmptyEpsilon Version = ${PROJECT_VERSION}")
 
+# Enable colored output with Ninja
+if((CMAKE_GENERATOR MATCHES "Ninja") AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+    add_compile_options (-fdiagnostics-color)
+endif()
+
 # Dependencies
 
 # Setup OpenGL
@@ -491,6 +496,9 @@ if (WIN32)
   list(APPEND SOURCES EmptyEpsilon.rc)
 endif()
 
+# Config header.
+configure_file(cmake/config.h.in include/config.h)
+
 
 if(ANDROID)
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
@@ -498,21 +506,17 @@ else()
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
 endif()
 
-target_compile_definitions(seriousproton_deps
-    INTERFACE
-        VERSION_NUMBER=${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}
-
+target_compile_definitions(${PROJECT_NAME}
+    PUBLIC
         # Set RESOURCE_BASE_DIR on Unix so the built binary is able to find resources
         $<$<BOOL:${UNIX}>:RESOURCE_BASE_DIR="${CMAKE_INSTALL_FULL_DATADIR}/emptyepsilon/">
         $<$<BOOL:${CONFIG_DIR}>:CONFIG_DIR="${CONFIG_DIR}">
         $<$<NOT:$<BOOL:${CONFIG_DIR}>>:CONFIG_DIR="${CMAKE_INSTALL_FULL_DATADIR}/emptyepsilon/">
 )
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC WITH_DISCORD=$<BOOL:${WITH_DISCORD}>)
-
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src;${CMAKE_CURRENT_BINARY_DIR}/include>"
 )
 
 add_library(opengl INTERFACE)
