@@ -78,7 +78,6 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: |
           cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
-          cd build
           mv EmptyEpsilon-*-*.* EmptyEpsilon-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}-ubuntu_18_04.tgz
       - name: Upload artifact
         uses: actions/upload-artifact@v2
