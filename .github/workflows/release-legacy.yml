@@ -8,7 +8,7 @@ on:
       - EE-*.*.*.*
     
 jobs:
-  ubuntu-18.04:
+  ubuntu-18_04:
     name: Package Ubuntu 18.04
     runs-on: ubuntu-18.04
     steps:
@@ -78,7 +78,7 @@ jobs:
         run: |
           cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
           cd build
-          mv EmptyEpsilon-*-*.* EmptyEpsilon-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}-ubuntu1804.tgz
+          mv EmptyEpsilon-*-*.* EmptyEpsilon-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}-ubuntu_18_04.tgz
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
