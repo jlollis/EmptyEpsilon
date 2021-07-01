@@ -1,5 +1,5 @@
 ---
-name: Ship it
+name: Legacy platforms
 on:
   push:
     branches:
@@ -26,6 +26,7 @@ jobs:
           EOF
       - name: Setup
         run: |
+          sudo sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
           sudo apt-get update -qq
           sudo apt-get install ninja-build wget gcc-8 g++-8 cmake unzip
       - name: SFML 2.5
