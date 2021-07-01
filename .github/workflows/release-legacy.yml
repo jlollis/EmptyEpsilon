@@ -42,7 +42,7 @@ jobs:
         run: |
           cat >> $GITHUB_ENV <<EOF
           cmake_generator=Ninja
-          cpack_generator="TGZ"
+          cpack_generator="DEB"
           cmake_platform_args=
           EOF
       - name: SeriousProton Checkout
@@ -62,6 +62,7 @@ jobs:
         run: >
           CC=gcc-8 CXX=g++-8 cmake ../EmptyEpsilon
           -G ${{ env.cmake_generator }}
+          -DCMAKE_INSTALL_PREFIX:PATH=/usr/local
           -DWITH_DISCORD:BOOL=ON
           -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
@@ -78,7 +79,8 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: |
           cpack -C RelWithDebInfo --config CPackConfig.cmake --verbose
-          mv EmptyEpsilon-*-*.* EmptyEpsilon-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}-ubuntu_18_04.tgz
+          mv EmptyEpsilon-*-*.deb EmptyEpsilon-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}-ubuntu_18_04.deb
+          mv EmptyEpsilon-*-*.deb.sha256 EmptyEpsilon-${{ env.version_major }}.${{ env.version_minor }}.${{ env.version_patch }}-ubuntu_18_04.deb.sha256
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
