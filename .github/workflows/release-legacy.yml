@@ -86,8 +86,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: >
           CC=gcc-8 CXX=g++-8 cmake ../EmptyEpsilon
-          -G ${{ env.cmake_generator }}
-           ${{ env.arch_flags }}
+          -G ${{ env.cmake_generator }} ${{ env.arch_flags }}
           -DCMAKE_INSTALL_PREFIX:PATH=/usr/local
           -DWITH_DISCORD:BOOL=ON
           -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
