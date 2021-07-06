@@ -32,7 +32,7 @@ jobs:
         if: matrix.arch == 'i386'
         run: |
           sudo dpkg --add-architecture i386
-          echo "arch_flags=-DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32" >> $GITHUB_ENV
+          
       - name: Setup
         run: |
           sudo sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
@@ -40,11 +40,15 @@ jobs:
           sudo apt-get install ninja-build wget cmake unzip
       - name: Compiler
         if: matrix.arch == 'i386'
-        run: sudo apt-get install gcc-multilib g++-multilib gcc-8-multilib g++-8-multilib
+        run: |
+          sudo apt-get install gcc-multilib g++-multilib gcc-8-multilib g++-8-multilib
+          echo "arch_flags=-DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32" >> $GITHUB_ENV
       - name: Compiler
         if: matrix.arch == 'amd64'
-        run: sudo apt-get install gcc-8 g++-8
-      
+        run: |
+          sudo apt-get install gcc-8 g++-8
+          echo "cmake_platform_args=-DWITH_DISCORD:BOOL=ON" >> $GITHUB_ENV
+          
       - name: SFML 2.5
         run: >
           sudo apt-get install
@@ -88,7 +92,6 @@ jobs:
           CC=gcc-8 CXX=g++-8 cmake ../EmptyEpsilon
           -G ${{ env.cmake_generator }} ${{ env.arch_flags }}
           -DCMAKE_INSTALL_PREFIX:PATH=/usr/local
-          -DWITH_DISCORD:BOOL=ON
           -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
           -DSERIOUS_PROTON_DIR:PATH=../SeriousProton
           -DCPACK_GENERATOR=${{ env.cpack_generator }}
