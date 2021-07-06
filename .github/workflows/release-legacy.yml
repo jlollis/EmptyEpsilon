@@ -110,11 +110,11 @@ jobs:
           sudo apt-get install ninja-build wget gcc-8-multilib g++-8-multilib cmake unzip
       - name: SFML 2.5
         run: |
-          sudo apt-get build-dep -qq libsfml:i386
+          sudo apt-get build-dep -a i386 -qq libsfml
           wget http://www.sfml-dev.org/files/SFML-2.5.1-sources.zip
           unzip SFML-2.5.1-sources.zip
           cd SFML-2.5.1
-          cmake .
+          cmake -DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32 .
           make -j
           sudo make install
       - name: Setup
