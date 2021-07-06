@@ -105,7 +105,7 @@ jobs:
           EOF
       - name: Setup
         run: |
-          dpkg --add-architecture i386
+          sudo dpkg --add-architecture i386
           sudo sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
           sudo apt-get update -qq
           sudo apt-get install ninja-build wget gcc-8-multilib g++-8-multilib cmake unzip
