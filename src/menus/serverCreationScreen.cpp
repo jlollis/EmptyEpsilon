@@ -22,7 +22,7 @@ ServerCreationScreen::ServerCreationScreen()
     assert(game_server);
 
     new GuiOverlay(this, "", colorConfig.background);
-    (new GuiOverlay(this, "", sf::Color::White))->setTextureTiled("gui/BackgroundCrosses");
+    (new GuiOverlay(this, "", sf::Color::White))->setTextureTiled("gui/background/crosses.png");
 
     // Set defaults from preferences.
     gameGlobalInfo->player_warp_jump_drive_setting = EPlayerWarpJumpDrive(PreferencesManager::get("server_config_warp_jump_drive_setting", "0").toInt());
@@ -75,6 +75,7 @@ ServerCreationScreen::ServerCreationScreen()
     (new GuiLabel(row, "IP_LABEL", tr("Server IPs: "), 30))->setAlignment(ACenterRight)->setSize(250, GuiElement::GuiSizeMax);
     auto ips = new GuiSelector(row, "IP", [](int index, string value){});
     ips->setSize(GuiElement::GuiSizeMax, GuiElement::GuiSizeMax);
+    ips->setTextSize(20);
     for(auto addr_str : sp::io::network::Address::getLocalAddress().getHumanReadable())
     {
         if (addr_str == "::1" || addr_str == "127.0.0.1") continue;

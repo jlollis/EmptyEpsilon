@@ -68,7 +68,9 @@ REGISTER_SCRIPT_SUBCLASS(PlayerSpaceship, SpaceShip)
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, setMaxScanProbeCount);
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, getMaxScanProbeCount);
 
+    /// add a custom Button to the according station. Use order to sort (shared with custom info).
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, addCustomButton);
+    /// add a custom Info Label to the according station. Use order to sort (shared with custom button).
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, addCustomInfo);
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, addCustomMessage);
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, addCustomMessageWithCallback);
@@ -667,7 +669,7 @@ void PlayerSpaceship::update(float delta)
                 if (do_self_destruct)
                 {
                     self_destruct_countdown = PreferencesManager::get("self_destruct_countdown", "10").toFloat();
-                    playSoundOnMainScreen("vocal_self_destruction.wav");
+                    playSoundOnMainScreen("sfx/vocal_self_destruction.wav");
                 }
             }else{
                 // If the countdown has started, tick the clock.
@@ -1054,7 +1056,7 @@ bool PlayerSpaceship::hasPlayerAtPosition(ECrewPosition position)
     return false;
 }
 
-void PlayerSpaceship::addCustomButton(ECrewPosition position, string name, string caption, ScriptSimpleCallback callback)
+void PlayerSpaceship::addCustomButton(ECrewPosition position, string name, string caption, ScriptSimpleCallback callback, std::optional<int> order)
 {
     removeCustom(name);
     custom_functions.emplace_back();
@@ -1064,9 +1066,10 @@ void PlayerSpaceship::addCustomButton(ECrewPosition position, string name, strin
     csf.crew_position = position;
     csf.caption = caption;
     csf.callback = callback;
+    csf.order = order.value_or(0);
 }
 
-void PlayerSpaceship::addCustomInfo(ECrewPosition position, string name, string caption)
+void PlayerSpaceship::addCustomInfo(ECrewPosition position, string name, string caption, std::optional<int> order)
 {
     removeCustom(name);
     custom_functions.emplace_back();
@@ -1075,6 +1078,7 @@ void PlayerSpaceship::addCustomInfo(ECrewPosition position, string name, string 
     csf.name = name;
     csf.crew_position = position;
     csf.caption = caption;
+    csf.order = order.value_or(0);
 }
 
 void PlayerSpaceship::addCustomMessage(ECrewPosition position, string name, string caption)
@@ -1306,11 +1310,11 @@ void PlayerSpaceship::onReceiveClientCommand(int32_t client_id, sp::io::DataBuff
                 shields_active = active;
                 if (active)
                 {
-                    playSoundOnMainScreen("shield_up.wav");
+                    playSoundOnMainScreen("sfx/shield_up.wav");
                 }
                 else
                 {
-                    playSoundOnMainScreen("shield_down.wav");
+                    playSoundOnMainScreen("sfx/shield_down.wav");
                 }
             }
         }

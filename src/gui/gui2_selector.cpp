@@ -8,7 +8,7 @@ GuiSelector::GuiSelector(GuiContainer* owner, string id, func_t func)
 : GuiEntryList(owner, id, func), text_size(30)
 {
     left = new GuiArrowButton(this, id + "_ARROW_LEFT", 0, [this]() {
-        soundManager->playSound("button.wav");
+        soundManager->playSound("sfx/button.wav");
         if (getSelectionIndex() <= 0)
             setSelectionIndex(entries.size() - 1);
         else
@@ -17,7 +17,7 @@ GuiSelector::GuiSelector(GuiContainer* owner, string id, func_t func)
     });
     left->setPosition(0, 0, ATopLeft)->setSize(GuiSizeMatchHeight, GuiSizeMax);
     right = new GuiArrowButton(this, id + "_ARROW_RIGHT", 180, [this]() {
-        soundManager->playSound("button.wav");
+        soundManager->playSound("sfx/button.wav");
         if (getSelectionIndex() >= (int)entries.size() - 1)
             setSelectionIndex(0);
         else
@@ -39,7 +39,7 @@ void GuiSelector::onDraw(sf::RenderTarget& window)
     if (entries.size() < 1 || !enabled)
         color = sf::Color(128, 128, 128, 255);
 
-    drawStretched(window, rect, "gui/SelectorBackground", color);
+    drawStretched(window, rect, "gui/widget/SelectorBackground.png", color);
     if (selection_index >= 0 && selection_index < (int)entries.size())
         drawText(window, rect, entries[selection_index].name, ACenter, text_size, main_font, color);
 
@@ -69,7 +69,7 @@ void GuiSelector::onMouseUp(sf::Vector2f position)
 {
     if (rect.contains(position))
     {
-        soundManager->playSound("button.wav");
+        soundManager->playSound("sfx/button.wav");
         for(unsigned int n=0; n<entries.size(); n++)
         {
             if (popup_buttons.size() <= n)
@@ -80,6 +80,7 @@ void GuiSelector::onMouseUp(sf::Vector2f position)
                     callback();
                 }));
                 popup_buttons[n]->setSize(GuiElement::GuiSizeMax, 50);
+                popup_buttons[n]->setTextSize(text_size);
             }else{
                 popup_buttons[n]->setText(entries[n].name);
             }

@@ -19,7 +19,7 @@
 TutorialMenu::TutorialMenu()
 {
     new GuiOverlay(this, "", colorConfig.background);
-    (new GuiOverlay(this, "", sf::Color::White))->setTextureTiled("gui/BackgroundCrosses");
+    (new GuiOverlay(this, "", sf::Color::White))->setTextureTiled("gui/background/crosses.png");
 
     // Draw a one-column autolayout container with margins.
     container = new GuiAutoLayout(this, "TUTORIAL_CONTAINER", GuiAutoLayout::ELayoutMode::LayoutVerticalTopToBottom);
@@ -35,7 +35,7 @@ TutorialMenu::TutorialMenu()
     tutorial_list->setSize(GuiElement::GuiSizeMax, 350);
 
     // Fetch and sort all Lua files starting with "tutorial_".
-    std::vector<string> tutorial_filenames = findResources("tutorial_*.lua");
+    std::vector<string> tutorial_filenames = findResources("tutorial/*.lua");
     std::sort(tutorial_filenames.begin(), tutorial_filenames.end());
 
     // For each scenario file, extract its name, then add it to the list.

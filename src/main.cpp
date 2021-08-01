@@ -47,10 +47,6 @@ float camera_yaw;
 float camera_pitch;
 sf::Font* main_font;
 sf::Font* bold_font;
-RenderLayer* backgroundLayer;
-RenderLayer* objectLayer;
-RenderLayer* effectLayer;
-RenderLayer* hudLayer;
 RenderLayer* mouseLayer;
 PostProcessor* glitchPostProcessor;
 PostProcessor* warpPostProcessor;
@@ -163,24 +159,21 @@ int main(int argc, char** argv)
 
     new DirectoryResourceProvider("resources/");
     new DirectoryResourceProvider("scripts/");
-    new DirectoryResourceProvider("packs/SolCommand/");
     PackResourceProvider::addPackResourcesForDirectory("packs/");
     if (getenv("HOME"))
     {
         new DirectoryResourceProvider(string(getenv("HOME")) + "/.emptyepsilon/resources/");
         new DirectoryResourceProvider(string(getenv("HOME")) + "/.emptyepsilon/scripts/");
-        new DirectoryResourceProvider(string(getenv("HOME")) + "/.emptyepsilon/packs/SolCommand/");
     }
 #ifdef RESOURCE_BASE_DIR
     new DirectoryResourceProvider(RESOURCE_BASE_DIR "resources/");
     new DirectoryResourceProvider(RESOURCE_BASE_DIR "scripts/");
-    new DirectoryResourceProvider(RESOURCE_BASE_DIR "packs/SolCommand/");
     PackResourceProvider::addPackResourcesForDirectory(RESOURCE_BASE_DIR "packs");
 #endif
     textureManager.setDefaultSmooth(true);
     textureManager.setDefaultRepeated(true);
     textureManager.setAutoSprite(false);
-    textureManager.getTexture("Tokka_WalkingMan.png", sf::Vector2i(6, 1)); //Setup the sprite mapping.
+    textureManager.getTexture("topdownCrew.png", sf::Vector2i(6, 1)); //Setup the sprite mapping.
     i18n::load("locale/main." + PreferencesManager::get("language", "en") + ".po");
 
     if (PreferencesManager::get("httpserver").toInt() != 0)
@@ -190,9 +183,7 @@ int main(int argc, char** argv)
             port_nr = 80;
         LOG(INFO) << "Enabling HTTP script access on port: " << port_nr;
         LOG(INFO) << "NOTE: This is potentially a risk!";
-        HttpServer* server = new HttpServer(port_nr);
-        server->addHandler(new HttpRequestFileHandler(PreferencesManager::get("www_directory","www")));
-        server->addHandler(new HttpScriptHandler());
+        new EEHttpServer(port_nr, PreferencesManager::get("www_directory", "www"));
     }
 
     colorConfig.load();
@@ -210,16 +201,12 @@ int main(int argc, char** argv)
     if (PreferencesManager::get("headless") == "")
     {
         //Setup the rendering layers.
-        backgroundLayer = new RenderLayer();
-        objectLayer = new RenderLayer(backgroundLayer);
-        effectLayer = new RenderLayer(objectLayer);
-        hudLayer = new RenderLayer(effectLayer);
-        mouseLayer = new RenderLayer(hudLayer);
+        defaultRenderLayer = new RenderLayer();
+        mouseLayer = new RenderLayer(defaultRenderLayer);
         glitchPostProcessor = new PostProcessor("shaders/glitch", mouseLayer);
         glitchPostProcessor->enabled = false;
         warpPostProcessor = new PostProcessor("shaders/warp", glitchPostProcessor);
         warpPostProcessor->enabled = false;
-        defaultRenderLayer = objectLayer;
 
         int width = 1200;
         int height = 900;
