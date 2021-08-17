@@ -437,7 +437,7 @@ RawRadarSignatureInfo SpaceShip::getDynamicRadarSignatureInfo()
     return info;
 }
 
-void SpaceShip::drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range)
+void SpaceShip::drawOnRadar(sp::RenderTarget& renderer, glm::vec2 position, float scale, float rotation, bool long_range)
 {
     // Draw beam arcs on short-range radar only, and only for fully scanned
     // ships.
@@ -452,11 +452,11 @@ void SpaceShip::drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, flo
 
             // Color beam arcs red.
             // TODO: Make this color configurable.
-            sf::Color color = sf::Color::Red;
+            glm::u8vec4 color = glm::u8vec4(255, 0, 0, 255);
 
             // If the beam is cooling down, flash and fade the arc color.
             if (beam_weapons[n].getCooldown() > 0)
-                color = sf::Color(255, 255 * (beam_weapons[n].getCooldown() / beam_weapons[n].getCycleTime()), 0);
+                color = glm::u8vec4(255, 255 * (beam_weapons[n].getCooldown() / beam_weapons[n].getCycleTime()), 0, 255);
 
             // Initialize variables from the beam's data.
             float beam_direction = beam_weapons[n].getDirection();
@@ -465,44 +465,31 @@ void SpaceShip::drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, flo
 
             // Set the beam's origin on radar to its relative position on the
             // mesh.
-            auto beam_offset_vec2 = rotateVec2(ship_template->model_data->getBeamPosition2D(n) * scale, getRotation()-rotation);
-            sf::Vector2f beam_offset(beam_offset_vec2.x, beam_offset_vec2.y);
-
-            // Configure an array to hold each point of the arc. Each point in
-            // the array draws a line to the next point. If the color between
-            // points is different, it's drawn as a gradient from the origin
-            // point's color to the destination point's.
-            sf::VertexArray a(sf::LinesStrip, 3);
-            a[0].color = color;
-            a[1].color = color;
-            a[2].color = sf::Color(color.r, color.g, color.b, 0);
-
-            // Drop the pen onto the beam's origin.
-            a[0].position = beam_offset + position;
+            auto beam_offset = rotateVec2(ship_template->model_data->getBeamPosition2D(n) * scale, getRotation()-rotation);
 
             // Draw the beam's left bound.
-            a[1].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (beam_direction + beam_arc / 2.0f)) * beam_range * scale;
-            a[2].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (beam_direction + beam_arc / 2.0f)) * beam_range * scale * 1.3f;
-            window.draw(a);
+            glm::vec2 r = vec2FromAngle(getRotation()-rotation + (beam_direction + beam_arc / 2.0f));
+            renderer.drawLine(beam_offset + position, beam_offset + position + r * beam_range * scale, color);
+            renderer.drawLine(beam_offset + position + r * beam_range * scale, beam_offset + position + r * beam_range * scale * 1.3f, color, glm::u8vec4(color.r, color.g, color.b, 0));
 
             // Draw the beam's right bound.
-            a[1].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (beam_direction - beam_arc / 2.0f)) * beam_range * scale;
-            a[2].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (beam_direction - beam_arc / 2.0f)) * beam_range * scale * 1.3f;
-            window.draw(a);
+            r = vec2FromAngle(getRotation()-rotation + (beam_direction - beam_arc / 2.0f));
+            renderer.drawLine(beam_offset + position, beam_offset + position + r * beam_range * scale, color);
+            renderer.drawLine(beam_offset + position + r * beam_range * scale, beam_offset + position + r * beam_range * scale * 1.3f, color, glm::u8vec4(color.r, color.g, color.b, 0));
 
             // Draw the beam's arc.
             int arcPoints = int(beam_arc / 10) + 1;
-            sf::VertexArray arc_line(sf::LinesStrip, arcPoints);
+            std::vector<glm::vec2> arc_line;
             for(int i=0; i<arcPoints; i++)
             {
-                arc_line[i].color = color;
-                arc_line[i].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (beam_direction - beam_arc / 2.0f + 10 * i)) * beam_range * scale;
+                arc_line.push_back(beam_offset + position + vec2FromAngle(getRotation()-rotation + (beam_direction - beam_arc / 2.0f + 10 * i)) * beam_range * scale);
             }
-            arc_line[arcPoints-1].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (beam_direction + beam_arc / 2.0f)) * beam_range * scale;
-            window.draw(arc_line);
+            arc_line.push_back(beam_offset + position + vec2FromAngle(getRotation()-rotation + (beam_direction + beam_arc / 2.0f)) * beam_range * scale);
+            renderer.drawLine(arc_line, color);
 
             // If the beam is turreted, draw the turret's arc. Otherwise, exit.
-            if (beam_weapons[n].getTurretArc() == 0.0) continue;
+            if (beam_weapons[n].getTurretArc() == 0.0)
+                continue;
 
             // Initialize variables from the turret data.
             float turret_arc = beam_weapons[n].getTurretArc();
@@ -510,29 +497,27 @@ void SpaceShip::drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, flo
 
             // Draw the turret's bounds, at half the transparency of the beam's.
             // TODO: Make this color configurable.
-            a[0].color = sf::Color(color.r, color.g, color.b, color.a / 2);
-            a[1].color = sf::Color(color.r, color.g, color.b, color.a / 2);
+            color.a /= 2;
 
             // Draw the turret's left bound. (We're reusing the beam's origin.)
-            a[1].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (turret_direction + turret_arc / 2.0f)) * beam_range * scale;
-            a[2].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (turret_direction + turret_arc / 2.0f)) * beam_range * scale * 1.3f;
-            window.draw(a);
+            r = vec2FromAngle(getRotation()-rotation + (turret_direction + turret_arc / 2.0f));
+            renderer.drawLine(beam_offset + position, beam_offset + position + r * beam_range * scale, color);
+            renderer.drawLine(beam_offset + position + r * beam_range * scale, beam_offset + position + r * beam_range * scale * 1.3f, color, glm::u8vec4(color.r, color.g, color.b, 0));
 
             // Draw the turret's right bound.
-            a[1].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (turret_direction - turret_arc / 2.0f)) * beam_range * scale;
-            a[2].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (turret_direction - turret_arc / 2.0f)) * beam_range * scale * 1.3f;
-            window.draw(a);
+            r = vec2FromAngle(getRotation()-rotation + (turret_direction - turret_arc / 2.0f));
+            renderer.drawLine(beam_offset + position, beam_offset + position + r * beam_range * scale, color);
+            renderer.drawLine(beam_offset + position + r * beam_range * scale, beam_offset + position + r * beam_range * scale * 1.3f, color, glm::u8vec4(color.r, color.g, color.b, 0));
 
             // Draw the turret's arc.
             int turret_points = int(turret_arc / 10) + 1;
-            sf::VertexArray turret_line(sf::LinesStrip, turret_points);
+            std::vector<glm::vec2> turret_line;
             for(int i = 0; i < turret_points; i++)
             {
-                turret_line[i].color = sf::Color(color.r, color.g, color.b, color.a / 2);
-                turret_line[i].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (turret_direction - turret_arc / 2.0f + 10 * i)) * beam_range * scale;
+                turret_line.push_back(beam_offset + position + vec2FromAngle(getRotation()-rotation + (turret_direction - turret_arc / 2.0f + 10 * i)) * beam_range * scale);
             }
-            turret_line[turret_points-1].position = beam_offset + position + sf::vector2FromAngle(getRotation()-rotation + (turret_direction + turret_arc / 2.0f)) * beam_range * scale;
-            window.draw(turret_line);
+            turret_line.push_back(beam_offset + position + vec2FromAngle(getRotation()-rotation + (turret_direction + turret_arc / 2.0f)) * beam_range * scale);
+            renderer.drawLine(turret_line, color);
         }
     }
     // If not on long-range radar ...
@@ -543,64 +528,50 @@ void SpaceShip::drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, flo
         if (!my_spaceship || getScannedStateFor(my_spaceship) >= SS_SimpleScan)
         {
             // ... draw and show shield indicators on our radar.
-            drawShieldsOnRadar(window, position, scale, rotation, 1.0, true);
+            drawShieldsOnRadar(renderer, position, scale, rotation, 1.0, true);
         } else {
             // Otherwise, draw the indicators, but don't show them.
-            drawShieldsOnRadar(window, position, scale, rotation, 1.0, false);
+            drawShieldsOnRadar(renderer, position, scale, rotation, 1.0, false);
         }
     }
 
     // Set up the radar sprite for objects.
-    sf::Sprite objectSprite;
-
+    string object_sprite = radar_trace;
     // If the object is a ship that hasn't been scanned, draw the default icon.
     // Otherwise, draw the ship-specific icon.
     if (my_spaceship && (getScannedStateFor(my_spaceship) == SS_NotScanned || getScannedStateFor(my_spaceship) == SS_FriendOrFoeIdentified))
     {
-        textureManager.setTexture(objectSprite, "radar/arrow.png");
-    }
-    else
-    {
-        textureManager.setTexture(objectSprite, radar_trace);
+        object_sprite = "radar/arrow.png";
     }
 
-    objectSprite.setRotation(getRotation()-rotation);
-    objectSprite.setPosition(position);
-    if (long_range)
-    {
-        objectSprite.setScale(0.7, 0.7);
-    }
+    glm::u8vec4 color;
     if (my_spaceship == this)
     {
-        objectSprite.setColor(sf::Color(192, 192, 255));
+        color = glm::u8vec4(192, 192, 255, 255);
     }else if (my_spaceship)
     {
         if (getScannedStateFor(my_spaceship) != SS_NotScanned)
         {
             if (isEnemy(my_spaceship))
-                objectSprite.setColor(sf::Color::Red);
+                color = glm::u8vec4(255, 0, 0, 255);
             else if (isFriendly(my_spaceship))
-                objectSprite.setColor(sf::Color(128, 255, 128));
+                color = glm::u8vec4(128, 255, 128, 255);
             else
-                objectSprite.setColor(sf::Color(128, 128, 255));
+                color = glm::u8vec4(128, 128, 255, 255);
         }else{
-            objectSprite.setColor(sf::Color(192, 192, 192));
+            color = glm::u8vec4(192, 192, 192, 255);
         }
     }else{
-        objectSprite.setColor(factionInfo[getFactionId()]->gm_color);
+        color = factionInfo[getFactionId()]->gm_color;
     }
-    window.draw(objectSprite);
+    renderer.drawRotatedSprite(object_sprite, position, long_range ? 22 : 32, getRotation() - rotation, color);
 }
 
-void SpaceShip::drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range)
+void SpaceShip::drawOnGMRadar(sp::RenderTarget& renderer, glm::vec2 position, float scale, float rotation, bool long_range)
 {
     if (!long_range)
     {
-        sf::RectangleShape bar(sf::Vector2f(60, 10));
-        bar.setPosition(position.x - 30, position.y - 30);
-        bar.setSize(sf::Vector2f(60 * hull_strength / hull_max, 5));
-        bar.setFillColor(sf::Color(128, 255, 128, 128));
-        window.draw(bar);
+        renderer.fillRect(sp::Rect(position.x - 30, position.y - 30, 60 * hull_strength / hull_max, 5), glm::u8vec4(128, 255, 128, 128));
     }
 }
 
@@ -1354,7 +1325,7 @@ void SpaceShip::addBroadcast(int threshold, string message)
 
     message = this->getCallSign() + " : " + message; //append the callsign at the start of broadcast
 
-    sf::Color color = sf::Color(255, 204, 51); //default : yellow, should never be seen
+    glm::u8vec4 color = glm::u8vec4(255, 204, 51, 255); //default : yellow, should never be seen
 
     for(int n=0; n<GameGlobalInfo::max_player_ships; n++)
     {
@@ -1364,17 +1335,17 @@ void SpaceShip::addBroadcast(int threshold, string message)
         {
             if (this->isFriendly(ship))
             {
-                color = sf::Color(154,255,154); //ally = light green
+                color = glm::u8vec4(154, 255, 154, 255); //ally = light green
                 addtolog = 1;
             }
             else if ((factionInfo[this->getFactionId()]->states[ship->getFactionId()] == FVF_Neutral) && ((threshold >= FVF_Neutral)))
             {
-                color = sf::Color(128,128,128); //neutral = grey
+                color = glm::u8vec4(128,128,128, 255); //neutral = grey
                 addtolog = 1;
             }
             else if ((this->isEnemy(ship)) && (threshold == FVF_Enemy))
             {
-                color = sf::Color(255,102,102); //enemy = light red
+                color = glm::u8vec4(255,102,102, 255); //enemy = light red
                 addtolog = 1;
             }
 

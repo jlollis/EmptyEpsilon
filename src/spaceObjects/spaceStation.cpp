@@ -26,32 +26,27 @@ SpaceStation::SpaceStation()
     callsign = "DS" + string(getMultiplayerId());
 }
 
-void SpaceStation::drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range)
+void SpaceStation::drawOnRadar(sp::RenderTarget& renderer, glm::vec2 position, float scale, float rotation, bool long_range)
 {
-    sf::Sprite objectSprite;
-    textureManager.setTexture(objectSprite, radar_trace);
-    objectSprite.setPosition(position);
-    float sprite_scale = scale * getRadius() * 1.5 / objectSprite.getTextureRect().width;
+    float sprite_scale = scale * getRadius() * 1.5 / 32;
 
     if (!long_range)
     {
         sprite_scale *= 0.7;
-        drawShieldsOnRadar(window, position, scale, rotation, sprite_scale, true);
+        drawShieldsOnRadar(renderer, position, scale, rotation, sprite_scale, true);
     }
     sprite_scale = std::max(0.15f, sprite_scale);
-    objectSprite.setScale(sprite_scale, sprite_scale);
+    glm::u8vec4 color = factionInfo[getFactionId()]->gm_color;
     if (my_spaceship)
     {
         if (isEnemy(my_spaceship))
-            objectSprite.setColor(sf::Color::Red);
+            color = glm::u8vec4(255, 0, 0, 255);
         else if (isFriendly(my_spaceship))
-            objectSprite.setColor(sf::Color(128, 255, 128));
+            color = glm::u8vec4(128, 255, 128, 255);
         else
-            objectSprite.setColor(sf::Color(128, 128, 255));
-    }else{
-        objectSprite.setColor(factionInfo[getFactionId()]->gm_color);
+            color = glm::u8vec4(128, 128, 255, 255);
     }
-    window.draw(objectSprite);
+    renderer.drawSprite(radar_trace, position, sprite_scale * 32, color);
 }
 
 void SpaceStation::applyTemplateValues()

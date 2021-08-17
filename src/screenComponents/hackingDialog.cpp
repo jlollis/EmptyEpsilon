@@ -16,16 +16,16 @@
 #include "gui/gui2_progressbar.h"
 
 GuiHackingDialog::GuiHackingDialog(GuiContainer* owner, string id)
-: GuiOverlay(owner, id, sf::Color(0,0,0,64))
+: GuiOverlay(owner, id, glm::u8vec4(0,0,0,64))
 {
     setSize(GuiElement::GuiSizeMax, GuiElement::GuiSizeMax);
     hide();
     //dummy game panel until we choose a system
     minigame_box = new GuiPanel(this, id + "_GAME_BOX");
 
-    minigame_box->setPosition(0, 0, ACenter);
+    minigame_box->setPosition(0, 0, sp::Alignment::Center);
     game = std::make_shared<MiniGame>(minigame_box, this, 2);
-    sf::Vector2f board_size = game->getBoardSize();
+    auto board_size = game->getBoardSize();
     minigame_box->setSize(board_size.x + 100, board_size.y + 150);
     status_label = new GuiLabel(minigame_box, "", "...", 25);
     status_label->setSize(GuiElement::GuiSizeMax, 50)->setPosition(0, 30);
@@ -37,20 +37,20 @@ GuiHackingDialog::GuiHackingDialog(GuiContainer* owner, string id)
         game->reset();
     });
     reset_button->setSize(200, 50);
-    reset_button->setPosition(25, -25, ABottomLeft);
+    reset_button->setPosition(25, -25, sp::Alignment::BottomLeft);
     close_button = new GuiButton(minigame_box, "", tr("button", "Close"), [this]()
     {
         hide();
     });
     close_button->setSize(200, 50);
-    close_button->setPosition(-25, -25, ABottomRight);
+    close_button->setPosition(-25, -25, sp::Alignment::BottomRight);
 
     progress_bar = new GuiProgressbar(minigame_box, "", 0, 1, 0.0);
-    progress_bar->setPosition(-25, 75, ATopRight);
+    progress_bar->setPosition(-25, 75, sp::Alignment::TopRight);
     progress_bar->setSize(50, game->getBoardSize().y);
 
     target_selection_box = new GuiPanel(this, id + "_BOX");
-    target_selection_box->setSize(300, 545)->setPosition(board_size.x / 2 + 200, 0, ACenter);
+    target_selection_box->setSize(300, 545)->setPosition(board_size.x / 2 + 200, 0, sp::Alignment::Center);
 
     GuiLabel* target_selection_label = new GuiLabel(target_selection_box, "", tr("hacking", "Target system:"), 25);
     target_selection_label->setSize(GuiElement::GuiSizeMax, 50)->setPosition(0, 15);
@@ -61,7 +61,7 @@ GuiHackingDialog::GuiHackingDialog(GuiContainer* owner, string id)
         locale_target_system = target_list->getEntryName(index);
         getNewGame();
     });
-    target_list->setPosition(25, 75, ATopLeft);
+    target_list->setPosition(25, 75, sp::Alignment::TopLeft);
     target_list->setSize(250, 445);
 
     last_game_success = false;
@@ -90,14 +90,14 @@ void GuiHackingDialog::open(P<SpaceObject> target)
     }
 }
 
-void GuiHackingDialog::onDraw(sf::RenderTarget& window)
+void GuiHackingDialog::onDraw(sp::RenderTarget& renderer)
 {
     if (!target)
     {
         hide();
         return;
     }
-    GuiOverlay::onDraw(window);
+    GuiOverlay::onDraw(renderer);
     if (game->isGameComplete())
     {
         if (reset_time - engine->getElapsedTime() < 0.0)
@@ -128,7 +128,7 @@ void GuiHackingDialog::onDraw(sf::RenderTarget& window)
     }
 }
 
-bool GuiHackingDialog::onMouseDown(sf::Vector2f position)
+bool GuiHackingDialog::onMouseDown(glm::vec2 position)
 {
     return true;
 }
@@ -160,11 +160,11 @@ void GuiHackingDialog::getNewGame() {
     default:
       irandom(0,1) ? game = std::make_shared<LightsOut>(minigame_box, this, difficulty) : game = std::make_shared<MineSweeper>(minigame_box, this, difficulty);
     }
-    sf::Vector2f board_size = game->getBoardSize();
+    glm::vec2 board_size = game->getBoardSize();
 
     minigame_box->setSize(std::max(board_size.x + 100, 500.f), std::max(board_size.y + 150, 450.f));
     progress_bar->setSize(50, game->getBoardSize().y);
-    progress_bar->setPosition(-25, (minigame_box->getSize().y - board_size.y)/2, ATopRight);
+    progress_bar->setPosition(-25, (minigame_box->getSize().y - board_size.y)/2, sp::Alignment::TopRight);
 
-    target_selection_box->setPosition(minigame_box->getSize().x / 2 + 150, 0, ACenter);
+    target_selection_box->setPosition(minigame_box->getSize().x / 2 + 150, 0, sp::Alignment::Center);
 }

@@ -8,8 +8,8 @@ class Zone : public SpaceObject
 public:
     Zone();
 
-    virtual void drawOnRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
-    virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
+    virtual void drawOnRadar(sp::RenderTarget& renderer, glm::vec2 position, float scale, float rotation, bool long_range) override;
+    virtual void drawOnGMRadar(sp::RenderTarget& renderer, glm::vec2 position, float scale, float rotation, bool long_range) override;
 
     virtual bool canHideInNebula()  override { return false; }
 
@@ -22,7 +22,7 @@ public:
     //virtual string getExportLine() override { return "Zone():setPosition(" + string(getPosition().x, 0) + ", " + string(getPosition().y, 0) + ")"; }
 
 private:
-    sf::Color color;
+    glm::u8vec4 color{255,255,255,255};
     std::vector<glm::vec2> outline;
     std::vector<glm::vec2> triangles;
     string label;

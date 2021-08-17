@@ -22,7 +22,7 @@ REGISTER_SCRIPT_SUBCLASS(PlayerSpaceship, SpaceShip)
     /// Takes a Boolean value.
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, setShieldsActive);
     /// Adds a message to the ship's log. Takes a string as the message and a
-    /// sf::Color.
+    /// glm::u8vec4.
     REGISTER_SCRIPT_CLASS_FUNCTION(PlayerSpaceship, addToShipLog);
     /// Move all players connected to this ship to the same stations on a
     /// different PlayerSpaceship. If the target isn't a PlayerSpaceship, this
@@ -976,7 +976,7 @@ void PlayerSpaceship::setRepairCrewCount(int amount)
     }
 }
 
-void PlayerSpaceship::addToShipLog(string message, sf::Color color)
+void PlayerSpaceship::addToShipLog(string message, glm::u8vec4 color)
 {
     // Cap the ship's log size to 100 entries. If it exceeds that limit,
     // start erasing entries from the beginning.
@@ -1119,7 +1119,7 @@ void PlayerSpaceship::setCommsMessage(string message)
 {
     // Record a new comms message to the ship's log.
     for(string line : message.split("\n"))
-        addToShipLog(line, sf::Color(192, 192, 255));
+        addToShipLog(line, glm::u8vec4(192, 192, 255, 255));
     // Display the message in the messaging window.
     comms_incomming_message = message;
 }
@@ -1128,7 +1128,7 @@ void PlayerSpaceship::addCommsIncommingMessage(string message)
 {
     // Record incoming comms messages to the ship's log.
     for(string line : message.split("\n"))
-        addToShipLog(line, sf::Color(192, 192, 255));
+        addToShipLog(line, glm::u8vec4(192, 192, 255, 255));
     // Add the message to the messaging window.
     comms_incomming_message = comms_incomming_message + "\n> " + message;
 }
@@ -2080,9 +2080,9 @@ void PlayerSpaceship::onReceiveServerCommand(sp::io::DataBuffer& packet)
     }
 }
 
-void PlayerSpaceship::drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range)
+void PlayerSpaceship::drawOnGMRadar(sp::RenderTarget& renderer, glm::vec2 position, float scale, float rotation, bool long_range)
 {
-    SpaceShip::drawOnGMRadar(window, position, scale, rotation, long_range);
+    SpaceShip::drawOnGMRadar(renderer, position, scale, rotation, long_range);
 
     if (long_range)
     {
@@ -2090,22 +2090,10 @@ void PlayerSpaceship::drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f posit
         float short_radar_indicator_radius = getShortRangeRadarRange() * scale;
 
         // Draw long-range radar radius indicator
-        sf::CircleShape radar_radius(long_radar_indicator_radius);
-        radar_radius.setOrigin(long_radar_indicator_radius, long_radar_indicator_radius);
-        radar_radius.setPosition(position);
-        radar_radius.setFillColor(sf::Color::Transparent);
-        radar_radius.setOutlineColor(sf::Color(255, 255, 255, 64));
-        radar_radius.setOutlineThickness(3.0);
-        window.draw(radar_radius);
+        renderer.drawCircleOutline(position, long_radar_indicator_radius, 3.0, glm::u8vec4(255, 255, 255, 64));
 
         // Draw short-range radar radius indicator
-        sf::CircleShape short_radar_radius(short_radar_indicator_radius);
-        short_radar_radius.setOrigin(short_radar_indicator_radius, short_radar_indicator_radius);
-        short_radar_radius.setPosition(position);
-        short_radar_radius.setFillColor(sf::Color::Transparent);
-        short_radar_radius.setOutlineColor(sf::Color(255, 255, 255, 64));
-        short_radar_radius.setOutlineThickness(3.0);
-        window.draw(short_radar_radius);
+        renderer.drawCircleOutline(position, short_radar_indicator_radius, 3.0, glm::u8vec4(255, 255, 255, 64));
     }
 }
 

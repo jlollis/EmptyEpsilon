@@ -58,10 +58,10 @@ public:
     public:
         string prefix;
         string text;
-        sf::Color color;
+        glm::u8vec4 color;
 
         ShipLogEntry() {}
-        ShipLogEntry(string prefix, string text, sf::Color color)
+        ShipLogEntry(string prefix, string text, glm::u8vec4 color)
         : prefix(prefix), text(text), color(color) {}
 
         bool operator!=(const ShipLogEntry& e) { return prefix != e.prefix || text != e.text || color != e.color; }
@@ -318,7 +318,7 @@ public:
     float getNetSystemEnergyUsage();
 
     // Ship's log functions
-    void addToShipLog(string message, sf::Color color);
+    void addToShipLog(string message, glm::u8vec4 color);
     void addToShipLogBy(string message, P<SpaceObject> target);
     const std::vector<ShipLogEntry>& getShipsLog() const;
 
@@ -339,7 +339,7 @@ public:
     void setControlCode(string code) { control_code = code.upper(); }
 
     // Radar function
-    virtual void drawOnGMRadar(sf::RenderTarget& window, sf::Vector2f position, float scale, float rotation, bool long_range) override;
+    virtual void drawOnGMRadar(sp::RenderTarget& renderer, glm::vec2 position, float scale, float rotation, bool long_range) override;
 
     // Script export function
     virtual string getExportLine() override;

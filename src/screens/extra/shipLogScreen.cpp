@@ -13,15 +13,15 @@ ShipLogScreen::ShipLogScreen(GuiContainer* owner)
     shiplog_layout->setPosition(50, 120)->setSize(GuiElement::GuiSizeMax, GuiElement::GuiSizeMax);
     custom_function_sidebar= new GuiCustomShipFunctions(shiplog_layout, shipLog, "");
     custom_function_sidebar->setSize(270, GuiElement::GuiSizeMax);
-    (new GuiOverlay(this, "", sf::Color::White))->setTextureTiled("gui/background/crosses.png");
+    (new GuiOverlay(this, "", glm::u8vec4{255,255,255,255}))->setTextureTiled("gui/background/crosses.png");
     log_text = new GuiAdvancedScrollText(shiplog_layout, "SHIP_LOG");
     log_text->enableAutoScrollDown();
     log_text->setSize(GuiElement::GuiSizeMax, GuiElement::GuiSizeMax);
 }
 
-void ShipLogScreen::onDraw(sf::RenderTarget& window)
+void ShipLogScreen::onDraw(sp::RenderTarget& renderer)
 {
-    GuiOverlay::onDraw(window);
+    GuiOverlay::onDraw(renderer);
 
     if (my_spaceship)
     {

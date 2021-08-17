@@ -8,12 +8,12 @@ class GuiKeyValueDisplay : public GuiElement
 public:
     GuiKeyValueDisplay(GuiContainer* owner, const string& id, float div_distance, const string& key, const string& value);
 
-    virtual void onDraw(sf::RenderTarget& window);
+    virtual void onDraw(sp::RenderTarget& target) override;
 
     GuiKeyValueDisplay* setKey(const string& key);
     GuiKeyValueDisplay* setValue(const string& value);
     GuiKeyValueDisplay* setTextSize(float text_size);
-    GuiKeyValueDisplay* setColor(sf::Color color);
+    GuiKeyValueDisplay* setColor(glm::u8vec4 color);
     GuiKeyValueDisplay* setIcon(const string& icon_texture);
 
 private:
@@ -22,7 +22,7 @@ private:
     string icon_texture;
     float text_size{};
     float div_distance{};
-    sf::Color color;
+    glm::u8vec4 color{255,255,255,255};
 };
 
 #endif//GUI_KEYVALUEDISPLAY_H
