@@ -4,7 +4,8 @@
 --- Mission consists of one ship with a full crew. Engineer and Science will be busy
 ---
 --- Version 4 Adds more activity for the weapons officer (6Apr2020)
--- Type: Mission, somewhat replayable
+-- Type: Mission
+-- Type: Replayable Mission
 -- Variation[Easy]: Easy goals and/or enemies
 -- Variation[Hard]: Hard goals and/or enemies
 
@@ -4210,7 +4211,7 @@ function handleUndockedState()
 		end	--end public relations if branch
 	end)
 	if isAllowedTo(comms_target.comms_data.services.supplydrop) then
-        addCommsReply(string.format(_("commsStation", "Can you send a supply drop? (%d rep"), getServiceCost("supplydrop")), function()
+        addCommsReply(string.format(_("commsStation", "Can you send a supply drop? (%d rep)"), getServiceCost("supplydrop")), function()
             if player:getWaypointCount() < 1 then
                 setCommsMessage(_("commsStation", "You need to set a waypoint before you can request backup."));
             else

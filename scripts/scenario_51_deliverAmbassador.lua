@@ -294,7 +294,7 @@ function getAmbassador(delta)
 end
 
 function playMsgMichael()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Michael.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Michael.ogg")
 	player:removeCustom(playMsgMichaelButton)
 	playMsgMichaelButton = nil
 end
@@ -315,7 +315,7 @@ function revolutionFomenting(delta)
 end
 
 function playMsgGremus1()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Gremus1.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Gremus1.ogg")
 	player:removeCustom(playMsgGremus1Button)
 	playMsgGremus1Button = nil
 end
@@ -335,7 +335,7 @@ function revolutionOccurs(delta)
 		else
 			globalMessage(_("globalMsg", [[Ambassador lost to hostile mob. The Kraylors are victorious]]))
 			bpcommnex:sendCommsMessage(player, _([[(Compound Sentry) I'm sad to report the loss of ambassador Gremus to a hostile mob.]]))
-			playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Sentry2.ogg")
+			playSoundFile("audio/scenario/51/sa_51_Sentry2.ogg")
 			plot2 = defeat
 		end
 		if player.mob_timer ~= nil then
@@ -367,7 +367,7 @@ function revolutionOccurs(delta)
 end
 
 function playMsgSentry1()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Sentry1.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Sentry1.ogg")
 	player:removeCustom(playMsgSentry1Button)
 	playMsgSentry1Button = nil
 end
@@ -450,7 +450,7 @@ function ambassadorAboard(delta)
 end
 
 function playMsgGremus2()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Gremus2.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Gremus2.ogg")
 	player:removeCustom(playMsgGremus2Button)
 	playMsgGremus2Button = nil
 end
@@ -531,7 +531,7 @@ function gotoNingling(delta)
 end
 
 function playMsgProtocol()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Protocol.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Protocol.ogg")
 	player:removeCustom(playMsgProtocolButton)
 	playMsgProtocolButton = nil
 end
@@ -582,7 +582,7 @@ function waitForAmbassador(delta)
 end
 
 function playMsgGremus3()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Gremus3.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Gremus3.ogg")
 	player:removeCustom(playMsgGremus3Button)
 	playMsgGremus3Button = nil
 end
@@ -617,7 +617,7 @@ function getFromNingling(delta)
 end
 
 function playMsgGremus4()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Gremus4.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Gremus4.ogg")
 	player:removeCustom(playMsgGremus4Button)
 end
 
@@ -641,7 +641,7 @@ function artifactResearch(delta)
 end
 
 function playMsgFordina()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Fordina.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Fordina.ogg")
 	player:removeCustom(playMsgFordinaButton)
 	playMsgFordinaButton = nil
 end
@@ -727,7 +727,7 @@ end
 
 function pangoraArtifactChange(delta)
 	if player.pangora_reading_change_message == nil then
-		player:addCustomMessage("Science", "Warning", _("warningMsgScience", "The readings on the Pangora artifact have changed"))
+		player:addCustomMessage("Science", _("warningMsgScience", "Warning"), _("warningMsgScience", "The readings on the Pangora artifact have changed"))
 		player.pangora_reading_change_message = "sent"
 	end
 	plot4 = pangoraArtifactExplode
@@ -800,7 +800,7 @@ function travelGoltin(delta)
 		if distance(player,goltin) < 3300 then
 			globalMessage(_([[Goltin 7 welcomes ambassador Gremus]]))
 			goltincomms:sendCommsMessage(player, string.format(_("(Ambassador Gremus) Thanks for transporting me, %s. Tensions are high, but I think negotiations will succeed.\nIn the meantime, be careful of hostile ships."), playerCallSign))
-			playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Gremus5.ogg")
+			playSoundFile("audio/scenario/51/sa_51_Gremus5.ogg")
 			lastMessage = 0.0
 			plot1 = finalMessage
 		end
@@ -810,7 +810,7 @@ function travelGoltin(delta)
 			player:addToShipLog(string.format(_("[AMBGREMUS032](Ambassador Gremus) Thanks for transporting me, %s. I will need artifact research for successful negotiation. Please return with that research when you can."),playerCallSign),"Yellow")
 			if playMsgGremus6Button == nil then
 				playMsgGremus6Button = "play"
-				player:addCustomButton("Relay",playMsgGremus6Button,_("audioButton", "|> AMBGREMUS021"),playMsgGremus6)
+				player:addCustomButton("Relay",playMsgGremus6Button,_("audioButton", "|> AMBGREMUS032"),playMsgGremus6)
 			end			
 			plot1 = departForResearch
 		end
@@ -818,7 +818,7 @@ function travelGoltin(delta)
 end
 
 function playMsgGremus6()
-	playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Gremus6.ogg")
+	playSoundFile("audio/scenario/51/sa_51_Gremus6.ogg")
 	player:removeCustom(playMsgGremus6Button)
 	playMsgGremus6Button = nil
 end
@@ -835,7 +835,7 @@ function goltinAndResearch(delta)
 		if distance(player,goltin) < 3300 then
 			globalMessage(_([[Goltin 7 welcomes ambassador Gremus]]))
 			goltincomms:sendCommsMessage(player, string.format(_("(Ambassador Gremus) Thanks for researching the artifacts, %d. Tensions are high, but I think negotiations will succeed. In the meantime, be careful of hostile ships."), playerCallSign))
-			playSoundFile("scenariosSounds/51_deliverAmbassador/sa_51_Gremus7.ogg")
+			playSoundFile("audio/scenario/51/sa_51_Gremus7.ogg")
 			lastMessage = 0.0
 			plot1 = finalMessage			
 		end
@@ -1256,7 +1256,7 @@ function handleUndockedState()
 	end
 	if isAllowedTo(askForScience37ArtifactLocation) then
 		addCommsReply(_("Has anyone reported seeing artifacts near Science-37?"), function()
-			setCommsMessage(_("Freighters doing business here occasionally report an objecton approximate heading zero from Science-37 station"))
+			setCommsMessage(_("Freighters doing business here occasionally report an object on approximate heading zero from Science-37 station"))
 			askForScience37ArtifactLocation = "complete"
 			addCommsReply(_("Back"), commsStation)
 		end)
