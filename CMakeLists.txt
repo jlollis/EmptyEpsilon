@@ -2,7 +2,9 @@
 # SDL2 targets 10.5, however EE targets C++17 features only available in 10.15+ (Catalina, June 2019).
 # Must be first!
 if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
-  set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.15")
+  set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.9")
+else()
+  message(STATUS "Mac deployment target is: $ENV{MACOSX_DEPLOYMENT_TARGET}")
 endif()
 
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
