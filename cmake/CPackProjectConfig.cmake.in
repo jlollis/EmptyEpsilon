@@ -3,9 +3,4 @@ if(CPACK_GENERATOR MATCHES "DEB")
     # But the debian *package* will default to put everything under /usr.
     # Since the resource path are hardcoded inside EE, make sure they line up.
     set(CPACK_PACKAGING_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
-elseif(CPACK_GENERATOR MATCHES "DragNDrop")
-    install(CODE [[
-        include(BundleUtilities)
-        fixup_bundle("${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app" "" "${SDL2_LIBRARIES}/..;${SDL2_LIBRARIES}/Versions/Current/Frameworks")
-    ]])
 endif()

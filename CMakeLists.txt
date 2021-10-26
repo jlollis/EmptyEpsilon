@@ -671,6 +671,18 @@ endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPackProjectConfig.cmake.in" "${PROJECT_BINARY_DIR}/CPackProjectConfig.cmake" @ONLY)
 set(CPACK_PROJECT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CPackProjectConfig.cmake")
 
+if(APPLE)
+  if("DragNDrop" IN_LIST CPACK_GENERATOR)
+    if(SDL2_LIBRARIES matches "\\.framework/?$")
+      install(CODE "
+  		      include(BundleUtilities)
+  		      fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"${SDL2_LIBRARIES}/..;${SDL2_LIBRARIES}/Versions/Current/Frameworks\")
+	        ")
+    else()
+      message(WARNING "${SDL2_LIBRARIES} is not a framework path: dmg package may not work properly.")
+  endif()
+endif()
+
 set(sp_runtime_root "/")
 
 if ("WIX" IN_LIST CPACK_GENERATOR)    
