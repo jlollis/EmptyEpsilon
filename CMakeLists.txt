@@ -1,5 +1,5 @@
 # Set minimum target macOS version: https://cmake.org/cmake/help/v3.8/variable/CMAKE_OSX_DEPLOYMENT_TARGET.html#variable:CMAKE_OSX_DEPLOYMENT_TARGET
-# SFML targets 10.7, however EE targets C++17 features only available in 10.15+ (Catalina, June 2019).
+# SDL2 targets 10.5, however EE targets C++17 features only available in 10.15+ (Catalina, June 2019).
 # Must be first!
 if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
   set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.15")
