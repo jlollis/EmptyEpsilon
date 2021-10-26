@@ -674,7 +674,7 @@ if(APPLE)
   if("DragNDrop" IN_LIST CPACK_GENERATOR)
     install(CODE "
   		    include(BundleUtilities)
-  		    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"/Volumes/SDL2\")
+  		    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"/Volumes/SDL2;/Volumes/SDL2/SDL2.framework/Frameworks\")
 	      ")
   endif()
 endif()
