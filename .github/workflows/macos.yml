@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p _build_macos
           cd _build_macos
-          cmake ../EmptyEpsilon -G Ninja -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
+          cmake ../EmptyEpsilon -G Ninja -DCPACK_GENERATOR=DragNDrop -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
           ninja
           ninja install
   
