@@ -37,4 +37,6 @@ jobs:
           cd _build_macos
           cmake ../EmptyEpsilon -G Ninja -DCPACK_GENERATOR=DragNDrop -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
           cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
+          ls -l /Volumes/SDL2/SDL2.framework/Frameworks/
           cpack --config CPackConfig.cmake --verbose
+          ls -l /Volumes/SDL2/
