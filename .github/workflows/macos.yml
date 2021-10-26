@@ -1,0 +1,35 @@
+---
+name: macOS framework
+on:
+  push:
+    branches:
+      - packaging-sdl2
+jobs:
+  macos-framework:
+    name: MacOS (Framework)
+    runs-on: macos-latest
+    steps:
+      - name: Dependencies
+        run: brew install cmake ninja
+      - name: SDL2
+        run: |
+          SDL2_VERSION=2.0.16
+          curl -LO https://libsdl.org/release/SDL2-$SDL2_VERSION.dmg
+          hdiutil attach -verbose SDL2-$SDL2_VERSION.dmg
+      - name: SeriousProton Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: gcask/SeriousProton
+          path: SeriousProton
+      - name: EmptyEpsilon Checkout
+        uses: actions/checkout@v2
+        with:
+          path: EmptyEpsilon
+      - name: Build
+        run: |
+          mkdir -p _build_macos
+          cd _build_macos
+          cmake ../EmptyEpsilon -G Ninja -DWARNING_IS_ERROR=1
+          ninja
+          ninja install
+  
