@@ -30,6 +30,7 @@ jobs:
         with:
           repository: gcask/SeriousProton
           path: SeriousProton
+          ref: macos-lower-req
       - name: EmptyEpsilon Checkout
         uses: actions/checkout@v2
         with:
