@@ -674,7 +674,7 @@ if(APPLE)
   if("DragNDrop" IN_LIST CPACK_GENERATOR)
     install(CODE "
   		    include(BundleUtilities)
-  		    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"hidapi\" \"/Volumes/SDL2/SDL2.framework/Frameworks;/Volumes/SDL2\")
+  		    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"hidapi.framework\" \"/Volumes/SDL2/SDL2.framework/Frameworks;/Volumes/SDL2\")
 	      ")
   endif()
 endif()
