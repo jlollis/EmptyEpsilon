@@ -36,5 +36,5 @@ jobs:
           mkdir -p _build_macos
           cd _build_macos
           cmake ../EmptyEpsilon -G Ninja -DCPACK_GENERATOR=DragNDrop -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
-          ninja package
-  
+          cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
+          cpack --config CPackConfig.cmake --verbose
