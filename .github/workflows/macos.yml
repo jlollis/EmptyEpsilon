@@ -22,6 +22,10 @@ jobs:
             find_path(SDL2_INCLUDE_DIRS SDL.h PATHS /Volumes/SDL2/SDL2.framework PATH_SUFFIXES Headers)
             message(STATUS "SDL2: \${SDL2_LIBRARIES} / \${SDL2_INCLUDE_DIRS}")
           EOF
+          ls -l /Volumes
+          ls -l /Volumes/SDL2
+          ls -l /Volumes/SDL2/SDL2.framework
+          exit 1
       - name: SeriousProton Checkout
         uses: actions/checkout@v2
         with:
@@ -37,6 +41,8 @@ jobs:
           cd _build_macos
           cmake ../EmptyEpsilon -G Ninja -DCPACK_GENERATOR=DragNDrop -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
           cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
-          ls -l /Volumes/SDL2/SDL2.framework/Frameworks/
+          ls -l /Volumes
+          ls -l /Volumes/SDL2
+          ls -l /Volumes/SDL2/SDL2.framework
           cpack --config CPackConfig.cmake --verbose
           ls -l /Volumes/SDL2/
