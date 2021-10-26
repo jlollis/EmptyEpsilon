@@ -9,6 +9,8 @@ jobs:
     name: MacOS (Framework)
     runs-on: macos-latest
     steps:
+      - name: select xcode version
+        run: xcversion select --symlink 11.5
       - name: Dependencies
         run: brew install cmake ninja tree
       - name: SDL2
