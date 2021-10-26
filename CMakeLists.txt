@@ -2,7 +2,7 @@
 # SDL2 targets 10.5, however EE targets C++17 features only available in 10.15+ (Catalina, June 2019).
 # Must be first!
 if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
-  set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.9")
+  set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.15")
 else()
   message(STATUS "Mac deployment target is: $ENV{MACOSX_DEPLOYMENT_TARGET}")
 endif()
@@ -629,7 +629,6 @@ add_custom_target(update_locale
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 if(APPLE)
-  #install(DIRECTORY "${SDL2_LIBRARIES}" DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Frameworks")
   # This *MUST* be the last install target.
   # Otherwise, for some messed up reason,
   # other install targets will not be accounted for when creating a DMG bundle.
@@ -671,15 +670,6 @@ endif()
 # Allows injection of per-generator logic.
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPackProjectConfig.cmake.in" "${PROJECT_BINARY_DIR}/CPackProjectConfig.cmake" @ONLY)
 set(CPACK_PROJECT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CPackProjectConfig.cmake")
-
-if(APPLE)
-  if("DragNDrop" IN_LIST CPACK_GENERATOR)
-    install(CODE "
-  		    include(BundleUtilities)
-  		    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"/Volumes/SDL2;/Volumes/SDL2/SDL2.framework/Versions/Current/Frameworks\")
-	      ")
-  endif()
-endif()
 
 set(sp_runtime_root "/")
 
