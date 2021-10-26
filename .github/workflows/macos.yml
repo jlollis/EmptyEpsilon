@@ -22,7 +22,6 @@ jobs:
             find_path(SDL2_INCLUDE_DIRS SDL.h PATHS /Volumes/SDL2/SDL2.framework PATH_SUFFIXES Headers)
             message(STATUS "SDL2: \${SDL2_LIBRARIES} / \${SDL2_INCLUDE_DIRS}")
           EOF
-          ls -l /Volumes
           ls -l /Volumes/SDL2
           ls -l /Volumes/SDL2/SDL2.framework
           exit 1
