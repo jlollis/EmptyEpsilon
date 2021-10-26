@@ -16,6 +16,12 @@ jobs:
           SDL2_VERSION=2.0.16
           curl -LO https://libsdl.org/release/SDL2-$SDL2_VERSION.dmg
           hdiutil attach -verbose SDL2-$SDL2_VERSION.dmg
+          mkdir -p $GITHUB_WORKSPACE/externals/
+          cat <<EOF > $GITHUB_WORKSPACE/externals/sdl2-config.cmake
+            find_library(SDL2_LIBRARIES SDL2 PATHS /Volumes/SDL2)
+            find_path(SDL2_INCLUDE_DIRS SDL.h PATHS /Volumes/SDL2/SDL2.framework PATH_SUFFIXES Headers)
+            message(STATUS "SDL2: \${SDL2_LIBRARIES} / \${SDL2_INCLUDE_DIRS}")
+          EOF
       - name: SeriousProton Checkout
         uses: actions/checkout@v2
         with:
@@ -29,7 +35,7 @@ jobs:
         run: |
           mkdir -p _build_macos
           cd _build_macos
-          cmake ../EmptyEpsilon -G Ninja -DWARNING_IS_ERROR=1
+          cmake ../EmptyEpsilon -G Ninja -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
           ninja
           ninja install
   
