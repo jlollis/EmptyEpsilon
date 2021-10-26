@@ -627,6 +627,7 @@ add_custom_target(update_locale
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 if(APPLE)
+  install(DIRECTORY "${SDL2_LIBRARIES}" DESTINATION "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Frameworks")
   # This *MUST* be the last install target.
   # Otherwise, for some messed up reason,
   # other install targets will not be accounted for when creating a DMG bundle.
@@ -671,7 +672,6 @@ set(CPACK_PROJECT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CPackProjectConfig.cmake")
 
 if(APPLE)
   if("DragNDrop" IN_LIST CPACK_GENERATOR)
-    install(DIRECTORY "${SDL2_LIBRARIES}" DESTINATION Frameworks)
     install(CODE "
   		    include(BundleUtilities)
   		    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"\")
