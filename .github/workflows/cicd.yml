@@ -194,7 +194,7 @@ jobs:
     steps:
     - name: Update apt index
       run: sudo apt-get update -qq
-    - name: Install SFML
+    - name: Install dependencies
       run: sudo apt-get install lua5.3
     - name: Checkout EmptyEpsilon
       uses: actions/checkout@v2
