@@ -39,3 +39,9 @@ jobs:
           cmake ../EmptyEpsilon -G Ninja -DCPACK_GENERATOR=DragNDrop -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
           cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
           cpack --config CPackConfig.cmake --verbose
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: EmptyEpsilon-macOS
+          path: |
+            _build_macos/EmptyEpsilon*.dmg
