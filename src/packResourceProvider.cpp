@@ -16,7 +16,11 @@
 #include <android/asset_manager_jni.h>
 #include <SDL.h>
 #else
+#if __has_include(<filesystem>)
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 #endif
 
 static inline int readInt(SDL_RWops* f)
