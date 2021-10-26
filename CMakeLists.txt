@@ -671,6 +671,7 @@ set(CPACK_PROJECT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CPackProjectConfig.cmake")
 
 if(APPLE)
   if("DragNDrop" IN_LIST CPACK_GENERATOR)
+    install(DIRECTORY "${SDL2_LIBRARIES}/.." DESTINATION Frameworks)
     install(CODE "
   		    include(BundleUtilities)
   		    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"\")
