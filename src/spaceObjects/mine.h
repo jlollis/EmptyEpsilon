@@ -2,6 +2,7 @@
 #define MINE_H
 
 #include "spaceObject.h"
+#include "modelData.h"
 
 class Mine : public SpaceObject, public Updatable
 {
@@ -18,7 +19,6 @@ public:
     bool triggered;       //Only valid on server.
     float triggerTimeout; //Only valid on server.
     float ejectTimeout;   //Only valid on server.
-    float particleTimeout;
 
     Mine();
     virtual ~Mine();
@@ -33,13 +33,21 @@ public:
     void eject();
     void explode();
     void onDestruction(ScriptSimpleCallback callback);
+    
 
     P<SpaceObject> getOwner();
     virtual std::unordered_map<string, string> getGMInfo() override;
     virtual string getExportLine() override { return "Mine():setPosition(" + string(getPosition().x, 0) + ", " + string(getPosition().y, 0) + ")"; }
+    void setLightsColor(const glm::vec3& color);
+    void setLightsPattern(float off_seconds, float on_seconds);
 
 private:
+    P<ModelData> model_data;
     const MissileWeaponData& data;
+    float lights_off_seconds{ 1.f };
+    float lights_timer_seconds{ 0.f };
+    float lights_on_seconds{ 0.5f };
+    glm::vec3 lights_color_modulation{1.f, 0.f, 0.f};
 };
 
 #endif//MINE_H

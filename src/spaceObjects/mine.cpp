@@ -6,6 +6,7 @@
 #include "pathPlanner.h"
 #include "random.h"
 #include "multiplayer_server.h"
+#include "tween.h"
 
 #include "scriptInterface.h"
 
@@ -19,17 +20,27 @@ REGISTER_SCRIPT_SUBCLASS(Mine, SpaceObject)
   // Set a function that will be called if the mine explodes.
   // First argument is the mine, second argument is the mine's owner/instigator (or nil).
   REGISTER_SCRIPT_CLASS_FUNCTION(Mine, onDestruction);
+
+  // Change the mine's lights' color.
+  REGISTER_SCRIPT_CLASS_FUNCTION(Mine, setLightsColor);
+  // Changes the lights' pattern:
+  // - off_seconds is the duration for which the lights are off.
+  // - on_seconds is how long the lights stay on.
+  //    The duration includes "warm up" and "shut down" time
+  //    (it reaches peak brightness at on_seconds/2).
+  REGISTER_SCRIPT_CLASS_FUNCTION(Mine, setLightsPattern);
 }
 
 REGISTER_MULTIPLAYER_CLASS(Mine, "Mine");
 Mine::Mine()
 : SpaceObject(50, "Mine"), data(MissileWeaponData::getDataFor(MW_Mine))
+// Add some jitter so mines with the same parameters aren't all lined up.
+, lights_timer_seconds{random(0.f, 1.f)} 
 {
     setCollisionRadius(trigger_range);
     triggered = false;
     triggerTimeout = triggerDelay;
     ejectTimeout = 0.0;
-    particleTimeout = 0.0;
     setRadarSignatureInfo(0.0, 0.05, 0.0);
 
     PathPlannerManager::getInstance()->addAvoidObject(this, blastRange * 1.2f);
@@ -41,6 +52,39 @@ Mine::~Mine()
 
 void Mine::draw3D()
 {
+    if (!model_data)
+        model_data = ModelData::getModel("mine");
+
+    glm::vec3 current_color{};
+
+    if (lights_off_seconds == 0.f)
+    {
+        // always on.
+        current_color = lights_color_modulation;
+    }
+    else if (lights_off_seconds > 0.f)
+    {
+        const auto lights_start = lights_timer_seconds - lights_off_seconds;
+        if (lights_start >= 0.f)
+        {
+            auto half_pulse_width = lights_on_seconds / 2.f;
+            if (lights_start <= half_pulse_width)
+            {
+                current_color = Tween<glm::vec3>::easeInQuad(lights_start, 0, half_pulse_width, glm::vec3{}, lights_color_modulation);
+            }
+            else if (lights_start <= lights_on_seconds)
+            {
+                current_color = Tween<glm::vec3>::easeOutQuad(lights_start, half_pulse_width, lights_on_seconds, lights_color_modulation, glm::vec3{});
+            }
+            else
+            {
+                lights_timer_seconds = 0.f;
+            }
+        }
+    }
+
+    model_data->modulateIllumination(glm::vec4(current_color, 1.f));
+    model_data->render(getModelMatrix());
 }
 
 void Mine::draw3DTransparent()
@@ -59,14 +103,7 @@ void Mine::drawOnGMRadar(sp::RenderTarget& renderer, glm::vec2 position, float s
 
 void Mine::update(float delta)
 {
-    if (particleTimeout > 0)
-    {
-        particleTimeout -= delta;
-    }else{
-        glm::vec3 pos = glm::vec3(getPosition().x, getPosition().y, 0);
-        ParticleEngine::spawn(pos, pos + glm::vec3(random(-100, 100), random(-100, 100), random(-100, 100)), glm::vec3(1, 1, 1), glm::vec3(0, 0, 1), 30, 0, 10.0);
-        particleTimeout = 0.4;
-    }
+    lights_timer_seconds += delta;
 
     if (ejectTimeout > 0.0f)
     {
@@ -75,6 +112,7 @@ void Mine::update(float delta)
     }else{
         setVelocity(glm::vec2(0, 0));
     }
+
     if (!triggered)
         return;
     triggerTimeout -= delta;
@@ -151,4 +189,15 @@ std::unordered_map<string, string> Mine::getGMInfo()
     ret[trMark("gm_info", "Faction")] = getLocaleFaction();
 
     return ret;
+}
+
+void Mine::setLightsColor(const glm::vec3& color)
+{
+    lights_color_modulation = color;
+}
+
+void Mine::setLightsPattern(float off_seconds, float on_seconds)
+{
+    lights_off_seconds = off_seconds;
+    lights_on_seconds = on_seconds;
 }
