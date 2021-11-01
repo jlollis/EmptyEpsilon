@@ -105,7 +105,8 @@ int main(int argc, char** argv)
 #ifdef DEBUG
     Logging::setLogLevel(LOGLEVEL_DEBUG);
 #else
-    Logging::setLogLevel(LOGLEVEL_INFO);
+    SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
+    Logging::setLogLevel(LOGLEVEL_DEBUG);
 #endif
 #if defined(_WIN32) && !defined(DEBUG)
     Logging::setLogFile("EmptyEpsilon.log");
