@@ -36,8 +36,8 @@ jobs:
         run: |
           mkdir -p _build_macos
           cd _build_macos
-          cmake ../EmptyEpsilon -G Ninja -DCPACK_GENERATOR=DragNDrop -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
-          cmake --build . --config RelWithDebInfo --parallel --target EmptyEpsilon --verbose
+          cmake ../EmptyEpsilon -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCPACK_GENERATOR=DragNDrop -DSDL2_DIR=$GITHUB_WORKSPACE/externals -DWARNING_IS_ERROR=1
+          cmake --build . --config Debug --parallel --target EmptyEpsilon --verbose
           cpack --config CPackConfig.cmake --verbose
       - name: Upload artifact
         uses: actions/upload-artifact@v2
