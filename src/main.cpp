@@ -296,10 +296,15 @@ int main(int argc, char** argv)
         }
     }
 
+    // On Android, this requires the 'record audio' permissions,
+    // which is always a scary thing for users.
+    // Since there is no way to access it (yet) via a touchscreen, compile out.
+#if !defined(ANDROID)
     // Set up voice chat and key bindings.
     NetworkAudioRecorder* nar = new NetworkAudioRecorder();
     nar->addKeyActivation(&keys.voice_all, 0);
     nar->addKeyActivation(&keys.voice_ship, 1);
+#endif
 
     P<HardwareController> hardware_controller = new HardwareController();
 #ifdef CONFIG_DIR
@@ -327,8 +332,8 @@ int main(int argc, char** argv)
     engine->runMainLoop();
 
     // Set FSAA and fullscreen defaults from windowManager.
-    P<Window> window = main_window;
-    if (window)
+    
+    if (P<Window> window = main_window; window)
     {
         PreferencesManager::set("fsaa", window->getFSAA());
         PreferencesManager::set("fullscreen", window->isFullscreen() ? 1 : 0);
@@ -365,7 +370,7 @@ int main(int argc, char** argv)
         }
         sp::io::Keybinding::saveKeybindings("keybindings.json");
     }
-
+    main_window = nullptr;
     delete engine;
 
     return 0;

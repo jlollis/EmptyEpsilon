@@ -1,9 +1,11 @@
 # Set minimum target macOS version: https://cmake.org/cmake/help/v3.8/variable/CMAKE_OSX_DEPLOYMENT_TARGET.html#variable:CMAKE_OSX_DEPLOYMENT_TARGET
 # SDL2 targets 10.5, however EE targets C++17 features only available in 10.15+ (Catalina, June 2019).
 # Must be first!
-if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
-  set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.15")
-else()
+if(APPLE)
+  if(NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
+    set(ENV{MACOSX_DEPLOYMENT_TARGET} "10.15")
+  endif()
+  
   message(STATUS "Mac deployment target is: $ENV{MACOSX_DEPLOYMENT_TARGET}")
 endif()
 
@@ -60,8 +62,6 @@ endif()
 # Dependencies
 
 # SeriousProton
-# Use SP provided json library.
-set(SERIOUSPROTON_WITH_JSON ON CACHE BOOL "" FORCE)
 add_subdirectory("${SERIOUS_PROTON_DIR}" "${PROJECT_BINARY_DIR}/SeriousProton" EXCLUDE_FROM_ALL)
 
 set(EXTERNALS_DIR "${PROJECT_BINARY_DIR}/externals")
@@ -663,7 +663,7 @@ if(NOT DEFINED CPACK_GENERATOR)
     set(CPACK_GENERATOR "ZIP")
   elseif(UNIX)
     set(CPACK_GENERATOR "DEB")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS libfreetype6 libsdl2)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libfreetype6, libsdl2-2.0-0")
   endif()
 endif()
 
@@ -673,13 +673,17 @@ set(CPACK_PROJECT_CONFIG_FILE "${PROJECT_BINARY_DIR}/CPackProjectConfig.cmake")
 
 if(APPLE)
   if("DragNDrop" IN_LIST CPACK_GENERATOR)
-    if(SDL2_LIBRARIES MATCHES "\\.framework/?$")
+    if(SDL2_LIBRARIES MATCHES "\\.framework$")
+      # SDL2_LIBRARIES points to the framework itself.
+      # For fixup_bundle to pick it up, we need to get its parent directory as the 'root'.
+      # SDL2 also depends on hidapi.framework, which comes with the official DMG (https://libsdl.org/download-2.0.php)
+      # Same idea - need the path to it for the dependency manager to pick it up.
       install(CODE "
         include(BundleUtilities)
         fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/EmptyEpsilon.app\" \"\" \"${SDL2_LIBRARIES}/..;${SDL2_LIBRARIES}/Versions/Current/Frameworks\")
       ")
     else()
-      message(WARNING "${SDL2_LIBRARIES} is not a framework path: dmg package may not work properly.")
+      message(WARNING "macOS DMG packaging: ${SDL2_LIBRARIES} does not appear to be a framework. The bundle will not be fixed up properly.")
     endif()
   endif()
 endif()
