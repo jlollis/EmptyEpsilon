@@ -28,6 +28,7 @@ jobs:
         with:
           repository: gcask/SeriousProton
           path: SeriousProton
+          ref: macos-compat
       - name: EmptyEpsilon Checkout
         uses: actions/checkout@v2
         with:
